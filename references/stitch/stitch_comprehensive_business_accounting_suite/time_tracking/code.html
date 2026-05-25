@@ -1,0 +1,426 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Time Tracking | Acme Ledger</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Work+Sans:wght@600;700&amp;family=JetBrains+Mono&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#b45b00",
+                        "secondary": "#096e00",
+                        "on-primary-fixed-variant": "#00497c",
+                        "on-tertiary-fixed": "#301400",
+                        "on-primary-fixed": "#001d36",
+                        "secondary-container": "#86f96d",
+                        "primary-fixed-dim": "#9ecaff",
+                        "surface-bright": "#f9f9ff",
+                        "on-background": "#1a1b20",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-fixed": "#012200",
+                        "tertiary-fixed-dim": "#ffb785",
+                        "surface-container-high": "#e8e7ee",
+                        "surface-dim": "#dad9e0",
+                        "outline": "#707882",
+                        "inverse-surface": "#2f3035",
+                        "on-surface": "#1a1b20",
+                        "secondary-fixed-dim": "#6ddf56",
+                        "on-secondary-container": "#0a7300",
+                        "background": "#f9f9ff",
+                        "inverse-on-surface": "#f0f0f7",
+                        "error-container": "#ffdad6",
+                        "surface-tint": "#0061a3",
+                        "surface-variant": "#e2e2e9",
+                        "on-primary-container": "#fafaff",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed-variant": "#055300",
+                        "outline-variant": "#c0c7d3",
+                        "secondary-fixed": "#89fc6f",
+                        "on-surface-variant": "#404751",
+                        "tertiary-fixed": "#ffdcc6",
+                        "primary": "#005e9d",
+                        "surface-container": "#eeedf4",
+                        "inverse-primary": "#9ecaff",
+                        "error": "#ba1a1a",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#fff9f7",
+                        "surface-container-low": "#f3f3fa",
+                        "on-tertiary-fixed-variant": "#713700",
+                        "on-primary": "#ffffff",
+                        "surface": "#f9f9ff",
+                        "tertiary": "#8f4700",
+                        "primary-container": "#0077c5",
+                        "surface-container-highest": "#e2e2e9",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "primary-fixed": "#d1e4ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "unit": "4px",
+                        "margin-desktop": "40px",
+                        "sm": "8px",
+                        "gutter": "20px",
+                        "xs": "4px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Work Sans"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Work Sans"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["Work Sans"],
+                        "display": ["Work Sans"],
+                        "headline-sm": ["Work Sans"],
+                        "body-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "data-mono": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "data-mono": ["13px", {"lineHeight": "18px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #F4F5F8;
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- SideNavBar Shell -->
+<aside class="flex flex-col h-screen fixed left-0 top-0 overflow-y-auto bg-surface-container-lowest dark:bg-surface-dim h-full w-64 border-r border-outline-variant">
+<div class="px-lg py-xl">
+<div class="flex items-center gap-sm mb-xl">
+<div class="w-10 h-10 rounded bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined">account_balance</span>
+</div>
+<div>
+<h1 class="font-headline-sm text-headline-sm text-primary">Acme Ledger</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">Management Suite</p>
+</div>
+</div>
+<nav class="space-y-unit">
+<a class="flex items-center gap-md px-md py-sm rounded transition-colors hover:bg-surface-container-low text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-body-md text-body-md">Projects</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded transition-colors hover:bg-surface-container-low text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-body-md text-body-md">Customers</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded transition-colors hover:bg-surface-container-low text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="font-body-md text-body-md">Invoices</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded transition-colors hover:bg-surface-container-low text-primary font-bold" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-body-md text-body-md">Tracking</span>
+</a>
+</nav>
+<div class="mt-xl pt-lg border-t border-outline-variant">
+<button class="w-full flex items-center justify-center gap-sm py-sm px-md bg-primary text-on-primary rounded font-label-md text-label-md hover:bg-primary-container transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined">add</span>
+                    New Project
+                </button>
+</div>
+</div>
+<div class="mt-auto px-lg py-lg space-y-unit border-t border-outline-variant">
+<a class="flex items-center gap-md px-md py-sm rounded text-on-surface-variant hover:bg-surface-container-low" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded text-on-surface-variant hover:bg-surface-container-low" href="#">
+<span class="material-symbols-outlined">help_outline</span>
+<span class="font-body-md text-body-md">Support</span>
+</a>
+</div>
+</aside>
+<!-- TopAppBar Shell -->
+<header class="flex justify-between items-center h-16 w-full px-lg ml-64 bg-surface-container-lowest border-b border-outline-variant fixed top-0 z-10 shadow-sm">
+<div class="flex items-center gap-md">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="pl-xl pr-md py-sm rounded border border-outline-variant bg-surface-container-low font-body-md text-body-md w-80 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" placeholder="Search entries..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-lg">
+<h2 class="font-headline-sm text-headline-sm text-primary mr-xl">Accounting Central</h2>
+<div class="flex items-center gap-md">
+<button class="p-sm rounded-full hover:bg-surface-container transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-sm rounded-full hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">help</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="A professional headshot of a business executive in a high-end corporate office setting. The lighting is soft and cinematic, highlighting the friendly yet authoritative expression. The background shows a blurred modern office with sleek glass surfaces and minimalist decor, consistent with a premium corporate management application." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkxynOG_m4MEAFLLD_BYrBsawQ5sLYWanqjyslmfbwZuv0t0HX44y8ygEXrgtxR49Hikweb48oQ3OAtA0_oHJqO2HLWDqAfsUDd2VpQNj2wjPv66KlA05mO5yE9sJ1f7vfRMTZMuCxZkRKLyV0Zv37QvNDz6jqqFRejcb22IvriMICFc6Ngx9F1bdkjI40539ZdcE54I7ltiZdkIRzSqmXyiZYuC2uZuX--h8Xlq_rR2dN_ZrZuPAyEhPsiFQVuhoR_Bk77th-y1Bb">
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-24 px-margin-desktop min-h-screen">
+<div class="max-w-[1200px] mx-auto">
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-xl">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-xs">Time Tracking</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Review and log hours across all active projects and billable tasks.</p>
+</div>
+<button class="flex items-center gap-sm bg-primary text-on-primary px-lg py-md rounded-lg font-label-md text-label-md hover:bg-primary-container transition-all shadow-sm active:scale-95 duration-150">
+<span class="material-symbols-outlined">timer</span>
+                    New Time Entry
+                </button>
+</div>
+<!-- Dashboard Stats Summary (Bento-lite) -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-lg mb-xl">
+<div class="bg-surface-container-lowest p-md border border-outline-variant rounded-xl flex flex-col gap-xs">
+<span class="font-label-md text-label-md text-on-surface-variant">TOTAL HOURS (MTD)</span>
+<span class="font-headline-md text-headline-md text-primary">164.5</span>
+<div class="flex items-center gap-xs text-secondary">
+<span class="material-symbols-outlined text-[16px]">arrow_upward</span>
+<span class="font-body-sm text-body-sm">+12% from last month</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-md border border-outline-variant rounded-xl flex flex-col gap-xs">
+<span class="font-label-md text-label-md text-on-surface-variant">BILLABLE AMOUNT</span>
+<span class="font-headline-md text-headline-md text-on-surface">$18,420.00</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Across 12 projects</span>
+</div>
+<div class="bg-surface-container-lowest p-md border border-outline-variant rounded-xl flex flex-col gap-xs">
+<span class="font-label-md text-label-md text-on-surface-variant">UNINVOICED HOURS</span>
+<span class="font-headline-md text-headline-md text-tertiary">42.2</span>
+<span class="font-body-sm text-body-sm text-tertiary underline cursor-pointer">Generate Invoices</span>
+</div>
+<div class="bg-surface-container-lowest p-md border border-outline-variant rounded-xl flex flex-col gap-xs">
+<span class="font-label-md text-label-md text-on-surface-variant">TEAM EFFICIENCY</span>
+<span class="font-headline-md text-headline-md text-on-surface">92%</span>
+<div class="w-full bg-surface-container-high h-1 rounded-full mt-sm">
+<div class="bg-secondary h-full rounded-full w-[92%]"></div>
+</div>
+</div>
+</div>
+<!-- Filters & Actions -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-t-xl px-lg py-md flex items-center justify-between">
+<div class="flex items-center gap-md">
+<div class="flex items-center gap-sm bg-surface-container-low px-md py-sm rounded border border-outline-variant cursor-pointer hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">calendar_today</span>
+<span class="font-body-md text-body-md">This Month</span>
+<span class="material-symbols-outlined text-on-surface-variant">expand_more</span>
+</div>
+<div class="flex items-center gap-sm bg-surface-container-low px-md py-sm rounded border border-outline-variant cursor-pointer hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">filter_list</span>
+<span class="font-body-md text-body-md">All Projects</span>
+<span class="material-symbols-outlined text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="p-sm text-on-surface-variant hover:bg-surface-container-low rounded">
+<span class="material-symbols-outlined">print</span>
+</button>
+<button class="p-sm text-on-surface-variant hover:bg-surface-container-low rounded">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+</div>
+<!-- Data Table -->
+<div class="bg-surface-container-lowest border-x border-b border-outline-variant rounded-b-xl overflow-hidden mb-xl">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container text-on-surface-variant font-label-md text-label-md border-b border-outline-variant">
+<th class="px-lg py-md font-semibold uppercase tracking-wider">Date</th>
+<th class="px-lg py-md font-semibold uppercase tracking-wider">Project</th>
+<th class="px-lg py-md font-semibold uppercase tracking-wider">Customer</th>
+<th class="px-lg py-md font-semibold uppercase tracking-wider">Task Description</th>
+<th class="px-lg py-md font-semibold uppercase tracking-wider text-right">Hours</th>
+<th class="px-lg py-md font-semibold uppercase tracking-wider">Status</th>
+<th class="px-lg py-md"></th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md divide-y divide-outline-variant/30">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-lg py-md font-data-mono">Oct 24, 2023</td>
+<td class="px-lg py-md font-medium">Q4 Audit Prep</td>
+<td class="px-lg py-md">Stellar Dynamics</td>
+<td class="px-lg py-md text-on-surface-variant">Financial statement reconciliation for subsidiary entities.</td>
+<td class="px-lg py-md text-right font-medium">4.5</td>
+<td class="px-lg py-md">
+<span class="inline-flex items-center px-sm py-xs rounded-full bg-primary-container/10 text-primary-container font-label-md text-[11px] font-bold">
+                                    BILLABLE
+                                </span>
+</td>
+<td class="px-lg py-md text-right opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-xs text-outline hover:text-primary"><span class="material-symbols-outlined">edit</span></button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="bg-surface-container-lowest/50 hover:bg-surface-container-low transition-colors group">
+<td class="px-lg py-md font-data-mono">Oct 23, 2023</td>
+<td class="px-lg py-md font-medium">Tax Consultation</td>
+<td class="px-lg py-md">Vertex Global</td>
+<td class="px-lg py-md text-on-surface-variant">Initial strategy call regarding R&amp;D tax credits for FY23.</td>
+<td class="px-lg py-md text-right font-medium">1.2</td>
+<td class="px-lg py-md">
+<span class="inline-flex items-center px-sm py-xs rounded-full bg-secondary-container/10 text-on-secondary-container font-label-md text-[11px] font-bold">
+                                    INVOICED
+                                </span>
+</td>
+<td class="px-lg py-md text-right opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-xs text-outline hover:text-primary"><span class="material-symbols-outlined">edit</span></button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-lg py-md font-data-mono">Oct 23, 2023</td>
+<td class="px-lg py-md font-medium">Cloud Infrastructure</td>
+<td class="px-lg py-md">Lumina Tech</td>
+<td class="px-lg py-md text-on-surface-variant">Azure cost optimization and ledger integration review.</td>
+<td class="px-lg py-md text-right font-medium">6.0</td>
+<td class="px-lg py-md">
+<span class="inline-flex items-center px-sm py-xs rounded-full bg-surface-container-highest text-on-surface-variant font-label-md text-[11px] font-bold">
+                                    DRAFT
+                                </span>
+</td>
+<td class="px-lg py-md text-right opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-xs text-outline hover:text-primary"><span class="material-symbols-outlined">edit</span></button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="bg-surface-container-lowest/50 hover:bg-surface-container-low transition-colors group">
+<td class="px-lg py-md font-data-mono">Oct 22, 2023</td>
+<td class="px-lg py-md font-medium">Compliance Review</td>
+<td class="px-lg py-md">Apex Logistics</td>
+<td class="px-lg py-md text-on-surface-variant">On-site audit of inventory tracking systems.</td>
+<td class="px-lg py-md text-right font-medium">8.0</td>
+<td class="px-lg py-md">
+<span class="inline-flex items-center px-sm py-xs rounded-full bg-primary-container/10 text-primary-container font-label-md text-[11px] font-bold">
+                                    BILLABLE
+                                </span>
+</td>
+<td class="px-lg py-md text-right opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-xs text-outline hover:text-primary"><span class="material-symbols-outlined">edit</span></button>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-lg py-md font-data-mono">Oct 21, 2023</td>
+<td class="px-lg py-md font-medium">Payroll Setup</td>
+<td class="px-lg py-md">Nova Retail</td>
+<td class="px-lg py-md text-on-surface-variant">Configuring international payroll for UK/EU expansion.</td>
+<td class="px-lg py-md text-right font-medium">3.5</td>
+<td class="px-lg py-md">
+<span class="inline-flex items-center px-sm py-xs rounded-full bg-secondary-container/10 text-on-secondary-container font-label-md text-[11px] font-bold">
+                                    INVOICED
+                                </span>
+</td>
+<td class="px-lg py-md text-right opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-xs text-outline hover:text-primary"><span class="material-symbols-outlined">edit</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Footer Pagination -->
+<div class="flex items-center justify-between pb-xl">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Showing 1-5 of 48 entries</span>
+<div class="flex items-center gap-xs">
+<button class="p-sm rounded hover:bg-surface-container transition-colors disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded bg-primary text-on-primary font-label-md text-label-md">1</button>
+<button class="w-8 h-8 rounded hover:bg-surface-container text-on-surface font-label-md text-label-md">2</button>
+<button class="w-8 h-8 rounded hover:bg-surface-container text-on-surface font-label-md text-label-md">3</button>
+<button class="p-sm rounded hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Contextual Help / Feature Card -->
+<div class="bg-primary-container/5 rounded-xl p-lg border border-primary/20 flex items-center justify-between">
+<div class="flex items-start gap-lg">
+<div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">auto_awesome</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-primary mb-xs">Automated Time Entry</h3>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-lg">Enable the smart-timer desktop app to automatically categorize your billable hours based on active project files. Save up to 4 hours of manual logging per week.</p>
+</div>
+</div>
+<button class="text-primary font-label-md text-label-md border border-primary px-lg py-md rounded-lg hover:bg-primary hover:text-on-primary transition-all">
+                    Learn More
+                </button>
+</div>
+</div>
+</main>
+<!-- Floating Action Button for quick timer -->
+<button class="fixed bottom-xl right-margin-desktop w-14 h-14 bg-tertiary-container text-on-tertiary-container rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all group z-20" id="quick-timer">
+<span class="material-symbols-outlined text-[28px] group-hover:rotate-12 transition-transform">play_arrow</span>
+<div class="absolute right-16 bg-inverse-surface text-inverse-on-surface px-md py-sm rounded font-label-md text-label-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            Start Quick Timer
+        </div>
+</button>
+<script>
+        // Micro-interaction for the FAB
+        const timerFab = document.getElementById('quick-timer');
+        let isTimerActive = false;
+
+        timerFab.addEventListener('click', () => {
+            isTimerActive = !isTimerActive;
+            const icon = timerFab.querySelector('.material-symbols-outlined');
+            
+            if(isTimerActive) {
+                icon.textContent = 'stop';
+                timerFab.classList.remove('bg-tertiary-container');
+                timerFab.classList.add('bg-error');
+                timerFab.classList.add('animate-pulse');
+            } else {
+                icon.textContent = 'play_arrow';
+                timerFab.classList.add('bg-tertiary-container');
+                timerFab.classList.remove('bg-error');
+                timerFab.classList.remove('animate-pulse');
+            }
+        });
+
+        // Tonal depth shift on scroll
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 20) {
+                header.classList.add('shadow-md');
+                header.classList.remove('shadow-sm');
+            } else {
+                header.classList.remove('shadow-md');
+                header.classList.add('shadow-sm');
+            }
+        });
+    </script>
+</body></html>

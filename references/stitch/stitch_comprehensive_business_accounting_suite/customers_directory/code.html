@@ -1,0 +1,390 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Customers Directory | LedgerFlow</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Work+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-container": "#b45b00",
+                    "secondary": "#096e00",
+                    "on-primary-fixed-variant": "#00497c",
+                    "on-tertiary-fixed": "#301400",
+                    "on-primary-fixed": "#001d36",
+                    "secondary-container": "#86f96d",
+                    "primary-fixed-dim": "#9ecaff",
+                    "surface-bright": "#f9f9ff",
+                    "on-background": "#1a1b20",
+                    "on-secondary": "#ffffff",
+                    "on-secondary-fixed": "#012200",
+                    "tertiary-fixed-dim": "#ffb785",
+                    "surface-container-high": "#e8e7ee",
+                    "surface-dim": "#dad9e0",
+                    "outline": "#707882",
+                    "inverse-surface": "#2f3035",
+                    "on-surface": "#1a1b20",
+                    "secondary-fixed-dim": "#6ddf56",
+                    "on-secondary-container": "#0a7300",
+                    "background": "#f9f9ff",
+                    "inverse-on-surface": "#f0f0f7",
+                    "error-container": "#ffdad6",
+                    "surface-tint": "#0061a3",
+                    "surface-variant": "#e2e2e9",
+                    "on-primary-container": "#fafaff",
+                    "on-error": "#ffffff",
+                    "on-secondary-fixed-variant": "#055300",
+                    "outline-variant": "#c0c7d3",
+                    "secondary-fixed": "#89fc6f",
+                    "on-surface-variant": "#404751",
+                    "tertiary-fixed": "#ffdcc6",
+                    "primary": "#0077c5",
+                    "surface-container": "#eeedf4",
+                    "inverse-primary": "#9ecaff",
+                    "error": "#ba1a1a",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-container": "#fff9f7",
+                    "surface-container-low": "#f3f3fa",
+                    "on-tertiary-fixed-variant": "#713700",
+                    "on-primary": "#ffffff",
+                    "surface": "#f9f9ff",
+                    "tertiary": "#8f4700",
+                    "primary-container": "#0077c5",
+                    "surface-container-highest": "#e2e2e9",
+                    "surface-container-lowest": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "primary-fixed": "#d1e4ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "xl": "32px",
+                    "unit": "4px",
+                    "margin-desktop": "40px",
+                    "sm": "8px",
+                    "gutter": "20px",
+                    "xs": "4px",
+                    "md": "16px",
+                    "lg": "24px",
+                    "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Work Sans"],
+                    "headline-md": ["Work Sans"],
+                    "headline-sm": ["Work Sans"],
+                    "display": ["Work Sans"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "data-mono": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "data-mono": ["13px", {"lineHeight": "18px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            background-color: #f9f9ff;
+            color: #1a1b20;
+        }
+        .customer-card-hover {
+            transition: all 0.2s ease;
+        }
+        .customer-card-hover:hover {
+            border-color: #0077c5;
+            box-shadow: 0 4px 12px rgba(0, 119, 197, 0.08);
+        }
+    </style>
+</head>
+<body class="font-body-md bg-background overflow-x-hidden">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant flex flex-col py-6 px-4 z-50">
+<div class="mb-10 px-2">
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary">LedgerFlow</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Accounting Suite</p>
+</div>
+<nav class="flex-grow space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded group" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-body-md text-body-md">Projects</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-primary bg-primary-fixed/30 font-semibold rounded group" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-body-md text-body-md">Customers</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded group" href="#">
+<span class="material-symbols-outlined">receipt</span>
+<span class="font-body-md text-body-md">Invoices</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded group" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-body-md text-body-md">Tracking</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 border-t border-outline-variant space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded group" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded group" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-body-md text-body-md">Support</span>
+</a>
+</div>
+</aside>
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-16rem)] h-16 bg-surface border-b border-outline-variant flex justify-between items-center px-8 z-40">
+<div class="flex items-center gap-4 flex-grow">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded py-2 pl-10 pr-4 font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none placeholder:text-on-surface-variant/50 transition-all" placeholder="Search customers, transactions, or contacts..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border border-outline-variant">
+<img alt="User Avatar" class="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyC5txDBv_3xT2e1kH5SNJx9-kIjF_OoEr9I4X-ZP_bIECM5EWLVA9BDWoJFL-SnGv1Z9qQSujuT6KqmZlR1O-AEnuvXdA5UnLza36jpXK9Bxtx8LzKnsloYyoT7Vei4kaF0zuGJtUCiBLZokHrJeZXxUpo5Dq_FFsRPcEAo-ngwjjkyga3S_a3wSk_l8UJk7EfNiJ_cF5pm9y1cDD6af738T33qFEfU--0VokGkKnx1bR-Gu82PMfsrk-85tvzenoFzh2tSGYuPRp">
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="ml-64 pt-16 min-h-screen bg-background p-10">
+<div class="max-w-[1440px] mx-auto">
+<!-- Header Section -->
+<div class="flex justify-between items-end mb-10">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-2">Customers Directory</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Manage your client relationships and outstanding balances.</p>
+</div>
+<button class="bg-primary-container text-on-primary px-6 py-2.5 rounded-full flex items-center gap-2 font-label-md text-label-md shadow-sm hover:brightness-110 transition-all active:scale-95">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                    ADD CUSTOMER
+                </button>
+</div>
+<!-- Stats Overview -->
+<div class="grid grid-cols-12 gap-6 mb-10">
+<div class="col-span-12 md:col-span-4 bg-surface-container-lowest border border-outline-variant/60 p-6 rounded-lg">
+<p class="font-label-md text-label-md text-on-surface-variant mb-4 uppercase">Total Active Clients</p>
+<div class="flex items-baseline gap-2">
+<span class="font-display text-display text-on-surface">1,284</span>
+<span class="text-secondary font-body-sm">+12% this month</span>
+</div>
+</div>
+<div class="col-span-12 md:col-span-4 bg-surface-container-lowest border border-outline-variant/60 p-6 rounded-lg">
+<p class="font-label-md text-label-md text-on-surface-variant mb-4 uppercase">Global Outstanding Balance</p>
+<div class="flex items-baseline gap-2">
+<span class="font-display text-display text-on-surface font-data-mono">$42.8k</span>
+<span class="text-error font-body-sm font-semibold">Action Required</span>
+</div>
+</div>
+<div class="col-span-12 md:col-span-4 bg-primary text-on-primary border border-primary/20 p-6 rounded-lg flex flex-col justify-between shadow-lg shadow-primary/10">
+<div>
+<p class="font-label-md text-label-md opacity-80 mb-1 uppercase">Top Performer</p>
+<h3 class="font-headline-sm text-headline-sm">Nexa Synergy Group</h3>
+</div>
+<div class="flex justify-between items-center mt-4">
+<span class="font-data-mono text-body-md">$12,400 Billed</span>
+<span class="bg-white/20 text-white px-2 py-1 rounded text-[10px] font-bold">PLATINUM</span>
+</div>
+</div>
+</div>
+<!-- Customer Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+<!-- Customer Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant/60 rounded-lg p-6 customer-card-hover flex flex-col h-full">
+<div class="flex justify-between items-start mb-6">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center overflow-hidden border border-outline-variant/30">
+<img alt="Nexa Logo" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2BtKfV504lEjHDtDoKemtna6WfyejrIJ28UKyqJ7hRD8jv8avuThCSkB32uu7eJbi6uhBGl0xXiFoMRb1CYBS8Lf5wlskDRvW23i-6i1jWq45nOvh8n6lkFD1_oJrJAceNGzsOJYyKqssAR_c0fVZ-qoGEwyloP2lGK8l3T1Ac7sKX1s-XiDIJ3Oa8TgP0N_yB-aMR6c1NmYiO3aqevBxQVIIbcWSd-foPL8Jx0HZi8-ABDYzMhuDKcaZpX9xMMkcEtQy0DCVSIAI">
+</div>
+<div class="bg-secondary-container/20 text-secondary px-3 py-1 rounded-full font-label-md text-[10px] border border-secondary/20">ACTIVE</div>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-1">Nexa Synergy Group</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">Primary: Sarah Jenkins</p>
+<div class="mt-auto space-y-4 pt-4 border-t border-outline-variant/40">
+<div class="flex justify-between items-center">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Total Billed</span>
+<span class="font-data-mono text-body-md font-medium text-on-surface">$12,450.00</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Current Balance</span>
+<span class="font-data-mono text-body-md font-bold text-secondary">$0.00</span>
+</div>
+</div>
+<button class="mt-6 w-full py-2 border border-outline-variant rounded font-label-md text-label-md text-primary hover:bg-primary/5 transition-colors">VIEW DETAILS</button>
+</div>
+<!-- Customer Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant/60 rounded-lg p-6 customer-card-hover flex flex-col h-full">
+<div class="flex justify-between items-start mb-6">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center overflow-hidden border border-outline-variant/30">
+<img alt="Horizon Logo" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNq78Xn4Ex4-MCF5VKrF2Ypr66uhrWI9u6mmNSTMG8kfLk8k0oJg3HDzGZdH1u2X-B5ibOHTzl5ru8x4IpEbVnh2fN-yO8hxRVJ2VFybs5bKgfFD423VDvLGTKd8_D8YCBSk5HBuWZeVDT8L1ec2COJZiwomqkM9Qg8_L9uEdQUyxHqqtlwV9GtU2iUMN_zMe7g2S5_JbMXKe8Pyof4zkP9tasmqLZm-2Dc3-Vto0fYlFlRt6LrbY8_42S9otPKQ0Kp5qsTpAxckWt">
+</div>
+<div class="bg-error-container/20 text-error px-3 py-1 rounded-full font-label-md text-[10px] border border-error/20">OVERDUE</div>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-1">Horizon Ventures</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">Primary: Michael Chen</p>
+<div class="mt-auto space-y-4 pt-4 border-t border-outline-variant/40">
+<div class="flex justify-between items-center">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Total Billed</span>
+<span class="font-data-mono text-body-md font-medium text-on-surface">$8,200.00</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Current Balance</span>
+<span class="font-data-mono text-body-md font-bold text-error">$3,150.00</span>
+</div>
+</div>
+<button class="mt-6 w-full py-2 border border-outline-variant rounded font-label-md text-label-md text-primary hover:bg-primary/5 transition-colors">VIEW DETAILS</button>
+</div>
+<!-- Customer Card 3 -->
+<div class="bg-surface-container-lowest border border-outline-variant/60 rounded-lg p-6 customer-card-hover flex flex-col h-full">
+<div class="flex justify-between items-start mb-6">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center overflow-hidden border border-outline-variant/30">
+<img alt="Aura Logo" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNe5OhODbsH3uGYNq7-TwaPaNka-Fpy5YaCQ3BtfJ8X0yTNp87kk0urSa94_B9IkLhGiaUMM6xaDsCKnRFEsO1nDGk6NtZi06W_4mNmltc0yBqW71oD-UySdM9bf5XvLvIu1YUvzFHehuNdapQNd_BIhYUJledsOhvvUA2j9gUb_M7CJ7MCZf9RCLGYIPC_hOm8tWVCR6cX1BC0kiTExtJZTiVG54pfOFqvw0fl3ar18ApxEb1NrSL1PbIEU6mxju8-6V4bTKWp4yC">
+</div>
+<div class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full font-label-md text-[10px] border border-outline-variant/50">PENDING</div>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-1">Aura Design Studio</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">Primary: Elena Rodriguez</p>
+<div class="mt-auto space-y-4 pt-4 border-t border-outline-variant/40">
+<div class="flex justify-between items-center">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Total Billed</span>
+<span class="font-data-mono text-body-md font-medium text-on-surface">$5,600.00</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Current Balance</span>
+<span class="font-data-mono text-body-md font-bold text-on-surface">$450.00</span>
+</div>
+</div>
+<button class="mt-6 w-full py-2 border border-outline-variant rounded font-label-md text-label-md text-primary hover:bg-primary/5 transition-colors">VIEW DETAILS</button>
+</div>
+<!-- Customer Card 4 -->
+<div class="bg-surface-container-lowest border border-outline-variant/60 rounded-lg p-6 customer-card-hover flex flex-col h-full">
+<div class="flex justify-between items-start mb-6">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center overflow-hidden border border-outline-variant/30">
+<img alt="Vector Logo" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCt3h_ag-V17jWb9cV_D4srv_sh6gQ1mYQlIvllct3jKfuQn-BFpmWv-ZyhO0vf7y0Q6d1LDV0dMS2NOZpPr9azJGC-VzFuzdJypcLB7LIIXC4ePIheHqUHnt6DwFrLYWG74PAFKOhdZ8czBHrjay2YG9QpIT8a1d2hieGbgySk0OCVtPwxT-KhDCOM3xI796tAt7LoQ9EEKCnBHV-qiRocDwyGMeYngivRC6eXHuJJnuIwRVagBBRwFlwlYqUxSnFd7GGqgjakVcPn">
+</div>
+<div class="bg-secondary-container/20 text-secondary px-3 py-1 rounded-full font-label-md text-[10px] border border-secondary/20">ACTIVE</div>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-1">Vector Logistics</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">Primary: Robert Thorne</p>
+<div class="mt-auto space-y-4 pt-4 border-t border-outline-variant/40">
+<div class="flex justify-between items-center">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Total Billed</span>
+<span class="font-data-mono text-body-md font-medium text-on-surface">$19,300.00</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Current Balance</span>
+<span class="font-data-mono text-body-md font-bold text-secondary">$0.00</span>
+</div>
+</div>
+<button class="mt-6 w-full py-2 border border-outline-variant rounded font-label-md text-label-md text-primary hover:bg-primary/5 transition-colors">VIEW DETAILS</button>
+</div>
+<!-- Customer Card 5 -->
+<div class="bg-surface-container-lowest border border-outline-variant/60 rounded-lg p-6 customer-card-hover flex flex-col h-full">
+<div class="flex justify-between items-start mb-6">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center overflow-hidden border border-outline-variant/30">
+<img alt="Solaris Logo" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHRTI9zOKb2_ZDY3d-izX0WToUm22REWasf2xE3gMIR3eV53xJ_tcBbBAG2iZyz9BZDJeH3-q2ibpEZWXuxvc9FJtgE1Z5aG0gWzI1KKQx6Lfp6XgLpW7OFQggmASo8yn6Mmq7rrGpiKcZVxjnm5UfoDRwn8RLv4EuXJ08LZK0oTmvXN7i1O8A9s0P1v1a-OBHs_I_AL9ltiejnZlilRCOD9wXVVzuepq6UWwkZhQC0feULDcZwth34PY-OnV5E7dy1_YJ31syKYMY">
+</div>
+<div class="bg-error-container/20 text-error px-3 py-1 rounded-full font-label-md text-[10px] border border-error/20">OVERDUE</div>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-1">Solaris Systems</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">Primary: David Grant</p>
+<div class="mt-auto space-y-4 pt-4 border-t border-outline-variant/40">
+<div class="flex justify-between items-center">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Total Billed</span>
+<span class="font-data-mono text-body-md font-medium text-on-surface">$11,100.00</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Current Balance</span>
+<span class="font-data-mono text-body-md font-bold text-error">$2,400.00</span>
+</div>
+</div>
+<button class="mt-6 w-full py-2 border border-outline-variant rounded font-label-md text-label-md text-primary hover:bg-primary/5 transition-colors">VIEW DETAILS</button>
+</div>
+<!-- Customer Card 6 -->
+<div class="bg-surface-container-lowest border border-outline-variant/60 rounded-lg p-6 customer-card-hover flex flex-col h-full">
+<div class="flex justify-between items-start mb-6">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center overflow-hidden border border-outline-variant/30">
+<img alt="Bloom Logo" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHRLh972VZK1RGkaDzMFsD7ccqBWGgafJAbad58aywrzJMMiolNytZIT9yQ71fhiBW5HCIKIvWa1lJsNXneH53MSzsZzv4WxVpet9jgQNyaLZnOXkiH_2WfomwL_VDfeWKNHTwR0ZPPmGsGAR9IoeTUBfzN9oZPzXx-sgpiw6NIQCJOqHaajZPYSJ_41OAG2qzVABgsSd0TAqRlSnJZTT1oXppDcSxjQfe-CUivvzIeGZxhezTr6KlvmaNJd7HFVH8S06hGk7RZPhS">
+</div>
+<div class="bg-secondary-container/20 text-secondary px-3 py-1 rounded-full font-label-md text-[10px] border border-secondary/20">ACTIVE</div>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-1">Bloom Analytics</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">Primary: Sarah Bloom</p>
+<div class="mt-auto space-y-4 pt-4 border-t border-outline-variant/40">
+<div class="flex justify-between items-center">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Total Billed</span>
+<span class="font-data-mono text-body-md font-medium text-on-surface">$4,250.00</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Current Balance</span>
+<span class="font-data-mono text-body-md font-bold text-secondary">$0.00</span>
+</div>
+</div>
+<button class="mt-6 w-full py-2 border border-outline-variant rounded font-label-md text-label-md text-primary hover:bg-primary/5 transition-colors">VIEW DETAILS</button>
+</div>
+</div>
+<!-- Pagination/Footer -->
+<div class="mt-12 flex justify-between items-center border-t border-outline-variant/60 pt-8">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Showing 1-6 of 1,284 customers</span>
+<div class="flex gap-1">
+<button class="p-2 rounded hover:bg-surface-container-low transition-colors disabled:opacity-20 text-on-surface-variant" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded bg-primary text-on-primary font-body-sm text-body-sm font-semibold">1</button>
+<button class="w-8 h-8 flex items-center justify-center rounded hover:bg-surface-container-low font-body-sm text-body-sm text-on-surface-variant transition-colors">2</button>
+<button class="w-8 h-8 flex items-center justify-center rounded hover:bg-surface-container-low font-body-sm text-body-sm text-on-surface-variant transition-colors">3</button>
+<span class="w-8 h-8 flex items-center justify-center text-on-surface-variant">...</span>
+<button class="w-8 h-8 flex items-center justify-center rounded hover:bg-surface-container-low font-body-sm text-body-sm text-on-surface-variant transition-colors">214</button>
+<button class="p-2 rounded hover:bg-surface-container-low transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Micro-interactions and Search Filter Logic
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            document.querySelectorAll('.customer-card-hover').forEach(card => {
+                const name = card.querySelector('h4').textContent.toLowerCase();
+                const primary = card.querySelector('p').textContent.toLowerCase();
+                if (name.includes(query) || primary.includes(query)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body></html>
