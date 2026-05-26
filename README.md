@@ -10,10 +10,10 @@ This repository is in early architecture and project setup. The source workbook,
 
 ## Planned Stack
 
-  - Backend: Python, FastAPI, SQLite, SQLAlchemy or SQLModel
-  - Frontend: React, TypeScript, Vite
-  - Reports: PDF invoices and Excel/CSV exports
-  - Automation: future receipt OCR pipeline through the Python backend
+- Backend: Python, FastAPI, SQLite, SQLAlchemy 2.x, Alembic
+- Frontend: React, TypeScript, Vite, npm
+- Reports: PDF invoices and Excel/CSV exports
+- Automation: future receipt OCR pipeline through the Python backend
 
 ## Project Goals
 
@@ -30,9 +30,14 @@ backend/             FastAPI application source
 frontend/            React application source
 docs/architecture/   Architecture blueprints and technical decisions
 docs/discovery/      Workbook analysis and refined requirements
+docs/development.md  Local development setup and check commands
 docs/product/        Product workflow, UX, and screen planning
 references/          Source workbook and Stitch design references
 ```
+
+## Development
+
+See `docs/development.md` for local setup, check commands, and dev server startup.
 
 ## First Proof Workflow
 
