@@ -7,7 +7,9 @@ from sqlalchemy.orm import Session
 from app.api.errors import ConflictError, NotFoundError
 from app.db.session import get_session
 from app.models import Customer
+from app.schemas.balances import CustomerBalanceRead
 from app.schemas.customers import CustomerCreate, CustomerRead, CustomerUpdate
+from app.services.balances import customer_balance
 
 router = APIRouter(prefix="/customers", tags=["customers"])
 
@@ -48,6 +50,15 @@ def get_customer(
     session: Annotated[Session, Depends(get_session)],
 ) -> Customer:
     return _get_customer(session, customer_id)
+
+
+@router.get("/{customer_id}/balance", response_model=CustomerBalanceRead)
+def get_customer_balance(
+    customer_id: int,
+    session: Annotated[Session, Depends(get_session)],
+) -> dict:
+    _get_customer(session, customer_id)
+    return customer_balance(session, customer_id)
 
 
 @router.patch("/{customer_id}", response_model=CustomerRead)

@@ -85,4 +85,7 @@ The first implemented API groups are:
 /api/expenses
 /api/invoice-builder/candidates
 /api/invoices
+/api/payments
+/api/customers/{customer_id}/balance
+/api/reports/ar-aging
 ```

@@ -19,4 +19,5 @@ The first accounting foundation is scaffolded:
 - API routes and tests for customer and project CRUD.
 - API routes and tests for time entries, expenses, and expense categories.
 - Invoice builder candidate, draft invoice, invoice register, and send/finalize routes.
+- Payment recording, payment application, customer balance, and AR aging routes.
 - Idempotent development seed data for the first proof customer/project.
