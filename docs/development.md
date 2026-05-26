@@ -23,6 +23,13 @@ cd backend
 ..\.venv\Scripts\python.exe -m alembic upgrade head
 ```
 
+Seed development data:
+
+```powershell
+cd backend
+..\.venv\Scripts\python.exe -m app.dev.seed
+```
+
 Start the API:
 
 ```powershell
@@ -60,4 +67,10 @@ Run the backend and frontend in separate terminals:
 ```text
 Backend:  http://127.0.0.1:8000
 Frontend: http://127.0.0.1:5173
+```
+
+After starting the backend, API docs are available at:
+
+```text
+http://127.0.0.1:8000/docs
 ```

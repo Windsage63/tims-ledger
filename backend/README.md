@@ -13,6 +13,8 @@ The backend owns business rules, accounting validation, imports, exports, invoic
 
 The first accounting foundation is scaffolded:
 
-  - SQLAlchemy models for customers, projects, time entries, expenses, invoices, invoice lines, payments, payment applications, files, OCR jobs, audit events, and app settings.
-  - Alembic migration `202605250001_initial_accounting_schema`.
-  - Service tests for draft invoice creation, sending invoices, and applying payments safely.
+- SQLAlchemy models for customers, projects, time entries, expenses, invoices, invoice lines, payments, payment applications, files, OCR jobs, audit events, and app settings.
+- Alembic migration `202605250001_initial_accounting_schema`.
+- Service tests for draft invoice creation, sending invoices, and applying payments safely.
+- API routes and tests for customer and project CRUD.
+- Idempotent development seed data for the first proof customer/project.
