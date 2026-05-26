@@ -39,6 +39,8 @@ references/          Source workbook and Stitch design references
 
 See `docs/development.md` for local setup, check commands, and dev server startup.
 
+See `docs/roadmap.md` for the current implementation roadmap.
+
 ## First Proof Workflow
 
 The first technical milestone should prove this end-to-end workflow:

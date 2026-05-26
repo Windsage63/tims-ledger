@@ -60,6 +60,12 @@ Start the Vite dev server:
 npm run dev
 ```
 
+If the backend is running on a non-default port, create `frontend/.env.local`:
+
+```text
+VITE_API_BASE_URL=http://127.0.0.1:8001
+```
+
 ## Full Local Workflow
 
 Run the backend and frontend in separate terminals:
