@@ -21,4 +21,5 @@ The first accounting foundation is scaffolded:
 - Invoice builder candidate, draft invoice, invoice register, and send/finalize routes.
 - Payment recording, payment application, customer balance, and AR aging routes.
 - Workbook preview and CSV report export routes.
+- Receipt file registration, OCR job suggestion, and OCR review-to-expense routes.
 - Idempotent development seed data for the first proof customer/project.

@@ -8,6 +8,7 @@ from app.api.routes import (
     invoices,
     payments,
     projects,
+    receipts,
     reports,
     time_entries,
 )
@@ -23,3 +24,5 @@ api_router.include_router(invoices.router)
 api_router.include_router(payments.router)
 api_router.include_router(reports.router)
 api_router.include_router(imports.router)
+api_router.include_router(receipts.router)
+api_router.include_router(receipts.ocr_router)

@@ -91,4 +91,6 @@ The first implemented API groups are:
 /api/reports/ar-aging.csv
 /api/reports/open-invoices.csv
 /api/imports/workbook/preview
+/api/receipts
+/api/ocr-jobs/{job_id}
 ```

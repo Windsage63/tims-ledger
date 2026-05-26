@@ -22,6 +22,14 @@ from app.schemas.payments import (
     PaymentRead,
 )
 from app.schemas.projects import ProjectCreate, ProjectRead, ProjectUpdate
+from app.schemas.receipts import (
+    FileRead,
+    OcrJobRead,
+    OcrReviewCreate,
+    OcrSuggestionsUpdate,
+    ReceiptCreate,
+    ReceiptCreateRead,
+)
 from app.schemas.time_entries import TimeEntryCreate, TimeEntryRead, TimeEntryUpdate
 
 __all__ = [
@@ -51,6 +59,12 @@ __all__ = [
     "PaymentApplicationsCreate",
     "PaymentCreate",
     "PaymentRead",
+    "FileRead",
+    "OcrJobRead",
+    "OcrReviewCreate",
+    "OcrSuggestionsUpdate",
+    "ReceiptCreate",
+    "ReceiptCreateRead",
     "ProjectCreate",
     "ProjectRead",
     "ProjectUpdate",

@@ -7,6 +7,7 @@ from app.services.accounting import (
     send_invoice,
 )
 from app.services.balances import ar_aging, customer_balance
+from app.services.files import store_local_file
 from app.services.imports import preview_workbook
 from app.services.report_exports import ar_aging_csv, open_invoices_csv
 
@@ -22,4 +23,5 @@ __all__ = [
     "ar_aging_csv",
     "open_invoices_csv",
     "send_invoice",
+    "store_local_file",
 ]
