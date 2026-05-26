@@ -5,6 +5,14 @@ from app.schemas.expense_categories import (
     ExpenseCategoryUpdate,
 )
 from app.schemas.expenses import ExpenseCreate, ExpenseRead, ExpenseUpdate
+from app.schemas.invoices import (
+    InvoiceCandidatesRead,
+    InvoiceCreate,
+    InvoiceDetailRead,
+    InvoiceLineRead,
+    InvoiceRead,
+    InvoiceSend,
+)
 from app.schemas.projects import ProjectCreate, ProjectRead, ProjectUpdate
 from app.schemas.time_entries import TimeEntryCreate, TimeEntryRead, TimeEntryUpdate
 
@@ -18,6 +26,12 @@ __all__ = [
     "ExpenseCreate",
     "ExpenseRead",
     "ExpenseUpdate",
+    "InvoiceCandidatesRead",
+    "InvoiceCreate",
+    "InvoiceDetailRead",
+    "InvoiceLineRead",
+    "InvoiceRead",
+    "InvoiceSend",
     "ProjectCreate",
     "ProjectRead",
     "ProjectUpdate",

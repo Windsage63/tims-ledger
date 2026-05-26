@@ -83,4 +83,6 @@ The first implemented API groups are:
 /api/expense-categories
 /api/time-entries
 /api/expenses
+/api/invoice-builder/candidates
+/api/invoices
 ```
