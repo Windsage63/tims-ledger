@@ -6,15 +6,15 @@ The backend now covers the core local-first accounting workflows. The next work 
 
 ## Phase A: Frontend Foundation
 
-- Replace the placeholder screen with a real app shell and navigation.
-- Add a typed API client.
-- Show backend health and local workflow status.
-- Add first dashboard summaries for the proof workflow.
+- [x] Replace the placeholder screen with a real app shell and navigation.
+- [x] Add a typed API client.
+- [x] Show backend health and local workflow status.
+- [x] Add first dashboard summaries for the proof workflow.
 
 ## Phase B: Frontend CRUD Workflows
 
-- Build customer and project screens.
-- Build time entry and expense screens.
+- [x] Build first customer and project screens.
+- [ ] Build time entry and expense screens.
 - Add expense category management.
 - Preserve dense, work-focused layouts suitable for repeated accounting work.
 

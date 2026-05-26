@@ -97,6 +97,25 @@ textarea {
   min-height: 64px;
 }
 
+.topbar-actions {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.icon-button {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #cbd4dc;
+  border-radius: 6px;
+  color: #31424d;
+  cursor: pointer;
+  display: inline-flex;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
+}
+
 .eyebrow {
   color: #516371;
   font-size: 0.72rem;
@@ -188,6 +207,15 @@ h2 {
   padding: 24px;
 }
 
+.error-banner {
+  background: #fbe9e7;
+  border: 1px solid #efb5ad;
+  border-radius: 6px;
+  color: #9d2c1f;
+  font-weight: 700;
+  padding: 12px 14px;
+}
+
 .panel-header {
   align-items: center;
   display: flex;
@@ -265,6 +293,95 @@ code {
   padding: 10px 12px;
 }
 
+.record-layout {
+  align-items: start;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+}
+
+.form-panel {
+  display: grid;
+  gap: 14px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+}
+
+label span {
+  color: #52636f;
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+input,
+select {
+  background: #ffffff;
+  border: 1px solid #cbd4dc;
+  border-radius: 6px;
+  color: #1d252c;
+  min-height: 38px;
+  padding: 0 10px;
+  width: 100%;
+}
+
+.primary-button {
+  align-items: center;
+  background: #176078;
+  border: 0;
+  border-radius: 6px;
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 750;
+  gap: 8px;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 14px;
+}
+
+.table-panel {
+  min-width: 0;
+}
+
+.data-table {
+  border: 1px solid #e0e6eb;
+  border-radius: 6px;
+  overflow: auto;
+}
+
+.data-row {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  min-width: 620px;
+  padding: 12px 14px;
+}
+
+.data-row + .data-row {
+  border-top: 1px solid #e6ebef;
+}
+
+.data-row.header {
+  background: #f4f7f8;
+  color: #52636f;
+  font-size: 0.78rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.empty-copy {
+  color: #667782;
+  margin: 0;
+  padding: 16px;
+}
+
+.empty-state {
+  max-width: 720px;
+}
+
 @media (max-width: 960px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -290,6 +407,7 @@ code {
 
   .topbar,
   .panel-header,
+  .record-layout,
   .two-column {
     align-items: stretch;
     display: grid;

@@ -3,12 +3,85 @@ export type ApiHealth = {
   app: string;
 };
 
+export type Customer = {
+  id: number;
+  name: string;
+  billing_email: string | null;
+  phone: string | null;
+  default_terms: string;
+  active: boolean;
+  notes: string | null;
+};
+
+export type Project = {
+  id: number;
+  project_no: string | null;
+  customer_id: number;
+  name: string;
+  description: string | null;
+  contract_type: "time_and_materials" | "fixed_fee" | "hourly";
+  status: "active" | "completed" | "inactive";
+  default_hourly_rate: string | null;
+  fixed_fee_amount: string | null;
+};
+
+export type CustomerCreate = {
+  name: string;
+  billing_email?: string | null;
+  phone?: string | null;
+  default_terms?: string;
+  notes?: string | null;
+};
+
+export type ProjectCreate = {
+  customer_id: number;
+  name: string;
+  project_no?: string | null;
+  description?: string | null;
+  contract_type?: Project["contract_type"];
+  status?: Project["status"];
+  default_hourly_rate?: string | null;
+  fixed_fee_amount?: string | null;
+};
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
 
 export async function getHealth(): Promise<ApiHealth> {
-  const response = await fetch(`${API_BASE_URL}/health`);
+  return apiRequest<ApiHealth>("/health");
+}
+
+export async function listCustomers(): Promise<Customer[]> {
+  return apiRequest<Customer[]>("/api/customers");
+}
+
+export async function createCustomer(payload: CustomerCreate): Promise<Customer> {
+  return apiRequest<Customer>("/api/customers", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function listProjects(): Promise<Project[]> {
+  return apiRequest<Project[]>("/api/projects");
+}
+
+export async function createProject(payload: ProjectCreate): Promise<Project> {
+  return apiRequest<Project>("/api/projects", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...init.headers,
+    },
+    ...init,
+  });
   if (!response.ok) {
-    throw new Error(`Health check failed with ${response.status}`);
+    throw new Error(`Request failed with ${response.status}`);
   }
-  return response.json() as Promise<ApiHealth>;
+  return response.json() as Promise<T>;
 }
