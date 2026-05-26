@@ -64,11 +64,11 @@ If this flow reproduces the existing invoice behavior and fixes customer balance
 
 The repo has initial project scaffolding plus the first backend accounting foundation:
 
-- `backend/` contains FastAPI routes for customers, projects, source records, invoices, payments, reports, imports, receipts/OCR review, and backups.
-- `backend/` contains SQLAlchemy models, Alembic migration setup, accounting services, and backend tests for invoice/payment/source-record rules.
-- `frontend/` contains a minimal React/Vite placeholder app.
-- `docs/` contains architecture, discovery, product, and ADR notes.
-- `references/` contains the workbook and Stitch concept files.
+  - `backend/` contains FastAPI routes for customers, projects, source records, invoices, payments, reports, imports, receipts/OCR review, and backups.
+  - `backend/` contains SQLAlchemy models, Alembic migration setup, accounting services, and backend tests for invoice/payment/source-record rules.
+  - `frontend/` contains a minimal React/Vite placeholder app.
+  - `docs/` contains architecture, discovery, product, and ADR notes.
+  - `references/` contains the workbook and Stitch concept files.
 
 Python dependencies are installed into `.venv`; frontend dependencies are installed with npm.
 Backend and frontend checks have been run successfully.

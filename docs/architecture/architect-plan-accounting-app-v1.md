@@ -2,7 +2,7 @@
 
 > **Engagement mode:** Greenfield
 > **Date:** 2026-05-25
-> **Status:** Draft
+> **Status:** Draft with implementation status notes
 > **Plan file:** plans/architect-plan-accounting-app-v1.md
 
 ## 1. Executive Summary
@@ -10,6 +10,15 @@
 Build **Windsage Ledger**, a local-first accounting operations application for Air Advantage with the tagline **"Simple books I can understand."** The app replaces fragile spreadsheet accounting logic with a structured database, reliable invoice/payment workflows, and automation-ready records. The recommended architecture is a Python/FastAPI backend, React/TypeScript frontend, and SQLite database, designed first as a local browser app and later packageable as a desktop application if needed.
 
 The guiding principle is to preserve the useful mental model of the current workbook while moving accounting truth into explicit records: customers, projects, time entries, expenses, invoices, payments, payment applications, credits, and audit checks.
+
+## Implementation Status Snapshot
+
+The architecture in this document is now partially validated by the checked-in codebase.
+
+  - The FastAPI + SQLite + SQLAlchemy + Alembic backend is implemented and covered by automated tests for customer/project CRUD, source records, invoice creation and send, payment applications, customer balances, AR aging, workbook preview, receipt OCR review, backups, and the health endpoint.
+  - The React + TypeScript frontend is implemented as an app shell with dashboard plus first create/list screens for customers, projects, time entries, expenses, and expense categories.
+  - Invoice, payment, reporting, import, backup, and OCR user experiences are not yet wired into the React app, even where supporting backend endpoints already exist.
+  - Invoice PDF generation, workbook import staging/commit, restore, packaging, and local password/PIN protection remain planned rather than implemented.
 
 ## 2. Context Discovery
 
@@ -39,7 +48,7 @@ The only adjustment for this project is that we already have several decisions f
 ## 3. Technical Stack
 
 | Layer | Technology | Rationale |
-|-------|------------|-----------|
+| ------- | ------------ | ----------- |
 | Frontend | React + TypeScript + Vite | Best fit for a modern, stateful interface with reusable grids, forms, selectors, invoice builders, previews, and validation states. Vite keeps local development simple and fast. |
 | Backend | Python + FastAPI | Matches user familiarity, supports typed API models, works well for spreadsheet import, accounting logic, PDF generation, OCR, parsing, and automation workflows. |
 | Database | SQLite | Local-first, serverless, transactional, easy to back up as a single file, and appropriate for a small-business single-user or low-concurrency workflow. |
@@ -89,12 +98,16 @@ Filesystem Storage
 
 ### ADR-1: Use Python/FastAPI for the Backend
 
+Implementation status: validated in the current repository.
+
   - **Choice:** Python/FastAPI will own APIs, accounting logic, imports, exports, invoice generation, and future OCR.
   - **Rationale:** The hardest parts are data extraction, reconciliation, document generation, and automation. Python is stronger for these than Node in this context, and it matches the user's experience.
   - **Alternatives considered:** Node/Express, Node/NestJS, full-stack React framework.
   - **Trade-offs:** A React frontend plus Python backend means two runtimes and a little more project setup. The trade is worth it because Python reduces risk in the business logic layer.
 
 ### ADR-2: Use React/TypeScript for the Frontend
+
+Implementation status: validated for the app shell and first source-record screens; richer workflow screens remain planned.
 
   - **Choice:** Build the UI in React with TypeScript.
   - **Rationale:** The app needs rich screens: invoice builder, editable grids, filters, receipt review, payment application, and live invoice preview. React is a strong fit for reusable UI components and stateful workflows.
@@ -103,12 +116,16 @@ Filesystem Storage
 
 ### ADR-3: Start with SQLite
 
+Implementation status: validated in the current repository.
+
   - **Choice:** Use SQLite as the primary database for MVP.
   - **Rationale:** The app is local-first, single-user or low-concurrency, and benefits from simple backup/restore. SQLite is transactional and avoids database server administration.
   - **Alternatives considered:** PostgreSQL, DuckDB, flat files.
   - **Trade-offs:** SQLite is not ideal for many simultaneous users over a network share. If multi-user access becomes a requirement, plan a migration path to PostgreSQL.
 
 ### ADR-4: Treat Invoices and Payments as Separate Accounting Records
+
+Implementation status: validated in the current repository.
 
   - **Choice:** Store invoices, payments, and payment applications as separate first-class entities.
   - **Rationale:** Customer advances, partial payments, overpayments, and multi-invoice checks cannot be modeled reliably with one running-balance sheet.
@@ -117,12 +134,16 @@ Filesystem Storage
 
 ### ADR-5: Generate Invoices from Source Records, Not Manual Lines
 
+Implementation status: partially validated. Draft invoice creation and send/finalize from source records are implemented in the backend; preview, grouping controls, and PDF output remain planned.
+
   - **Choice:** Invoice builder should select approved unbilled time and billable expenses, then generate invoice line items.
   - **Rationale:** Manual invoice entry would recreate the spreadsheet's fragility. The app should lock billed source rows and make the invoice reproducible.
   - **Alternatives considered:** Blank invoice editor, direct PDF editing, spreadsheet-style row formulas.
   - **Trade-offs:** Requires a better data model and source-row status tracking, but creates auditability and automation.
 
 ### ADR-6: Design Receipt OCR as a Pipeline, Not a One-Off Feature
+
+Implementation status: partially validated. File capture, OCR job records, suggestion updates, and approval into expenses exist; provider-backed OCR automation and frontend review UX remain planned.
 
   - **Choice:** Receipt OCR should be modeled as upload -> extraction -> suggested expense -> review -> approval.
   - **Rationale:** OCR is probabilistic. The app must store raw extracted data separately from approved accounting fields.
@@ -131,24 +152,24 @@ Filesystem Storage
 
 ## 6. Component Breakdown
 
-| Component | Description | Priority | Dependencies |
-|-----------|-------------|----------|--------------|
-| App Shell / Navigation | Shared layout, navigation, global search, settings access. | P0 | Frontend foundation |
-| Customers | Customer master records, terms, contacts, balance summaries. | P0 | Database, API |
-| Projects | Project records, rates, contract type, status, customer association. | P0 | Customers |
-| Time Entries | Time logging, billing status, project rates, unbilled tracking. | P0 | Projects, Customers |
-| Expenses | Expense entry, categories, billable/reimbursable flags, paid-by, receipt attachment. | P0 | Projects, Customers, Categories |
-| Invoice Builder | Select unbilled time/expenses, group into invoice, preview totals, generate invoice. | P0 | Time, Expenses, Customers, Projects |
-| Invoice Register | One row per invoice with sent/draft/paid/overdue status and open balance. | P0 | Invoice Builder, Payments |
-| Payments | Record deposits, customer advances, checks, payment methods, unapplied amounts. | P0 | Customers |
-| Payment Applications | Apply payments/credits to invoices, support partial and multi-invoice applications. | P0 | Payments, Invoices |
-| Customer Balance | AR, credits, invoice history, payment history, net balance by customer. | P0 | Invoices, Payments |
-| Reports | AR aging, revenue by customer/project, expense category export, tax/accounting export. | P1 | Core accounting records |
-| Workbook Import | Import customers, projects, time, expenses, and income tracking from legacy workbook. | P1 | Data model, validation |
-| PDF Invoice Output | Generate printable invoice PDFs from invoice records. | P1 | Invoice Builder |
-| Receipt OCR | Upload receipt, extract fields, review suggestions, create expense. | P2 | Expenses, file storage |
-| Backup / Restore | Copy/export database and attached files safely. | P1 | Storage layer |
-| Audit Log | Track material changes to invoices, payments, applications, and approved expenses. | P1 | Core services |
+| Component | Description | Priority | Dependencies | Current Status |
+| ----------- | ------------- | ---------- | -------------- | ---------------- |
+| App Shell / Navigation | Shared layout, navigation, global search, settings access. | P0 | Frontend foundation | Implemented in React; later sections still placeholders. |
+| Customers | Customer master records, terms, contacts, balance summaries. | P0 | Database, API | Backend CRUD implemented and tested; frontend has first create/list screen. |
+| Projects | Project records, rates, contract type, status, customer association. | P0 | Customers | Backend CRUD implemented and tested; frontend has first create/list screen. |
+| Time Entries | Time logging, billing status, project rates, unbilled tracking. | P0 | Projects, Customers | Backend implemented and tested; frontend has first create/list screen. |
+| Expenses | Expense entry, categories, billable/reimbursable flags, paid-by, receipt attachment. | P0 | Projects, Customers, Categories | Backend implemented and tested; frontend has first expense and category create/list screens. |
+| Invoice Builder | Select unbilled time/expenses, group into invoice, preview totals, generate invoice. | P0 | Time, Expenses, Customers, Projects | Backend candidate lookup and draft creation implemented; frontend workflow not started. |
+| Invoice Register | One row per invoice with sent/draft/paid/overdue status and open balance. | P0 | Invoice Builder, Payments | Backend list/detail implemented; frontend workflow not started. |
+| Payments | Record deposits, customer advances, checks, payment methods, unapplied amounts. | P0 | Customers | Backend implemented and tested; frontend workflow not started. |
+| Payment Applications | Apply payments/credits to invoices, support partial and multi-invoice applications. | P0 | Payments, Invoices | Backend implemented and tested; frontend workflow not started. |
+| Customer Balance | AR, credits, invoice history, payment history, net balance by customer. | P0 | Invoices, Payments | Backend summary implemented and tested; frontend workflow not started. |
+| Reports | AR aging, revenue by customer/project, expense category export, tax/accounting export. | P1 | Core accounting records | AR aging and CSV exports implemented; broader reporting remains planned. |
+| Workbook Import | Import customers, projects, time, expenses, and income tracking from legacy workbook. | P1 | Data model, validation | Workbook preview implemented; staging and commit remain planned. |
+| PDF Invoice Output | Generate printable invoice PDFs from invoice records. | P1 | Invoice Builder | Not yet implemented. |
+| Receipt OCR | Upload receipt, extract fields, review suggestions, create expense. | P2 | Expenses, file storage | Backend job/review flow implemented; provider integration and frontend review queue remain planned. |
+| Backup / Restore | Copy/export database and attached files safely. | P1 | Storage layer | Backup creation implemented; restore remains planned. |
+| Audit Log | Track material changes to invoices, payments, applications, and approved expenses. | P1 | Core services | Schema exists; feature behavior is not yet surfaced. |
 
 ## 7. Data Architecture
 
@@ -162,7 +183,7 @@ Filesystem Storage
 ### Core Schema
 
 | Entity | Purpose | Key Fields |
-|--------|---------|------------|
+| -------- | --------- | ------------ |
 | `customers` | Customer master data. | id, name, billing_email, phone, default_terms, active, notes |
 | `projects` | Project master data and billing rules. | id, project_no, customer_id, name, description, contract_type, status, rates, fixed_fee_amount |
 | `time_entries` | Billable and nonbillable work. | id, date, project_id, customer_id, description, hours, work_type, rate, billable, billing_status, invoice_id |
@@ -187,7 +208,7 @@ Filesystem Storage
 4. Backend creates a draft invoice and invoice lines in one transaction.
 5. Included source rows are marked `drafted` and linked to the invoice.
 6. When user sends/finalizes the invoice, invoice status becomes `sent`, accrual revenue is recognized, and source rows become `invoiced`.
-7. PDF is generated and stored as a file record.
+7. PDF generation and managed invoice file output remain planned.
 
 #### Payment Application
 
@@ -209,7 +230,7 @@ Filesystem Storage
 ### Migration Strategy
 
   - MVP starts with clean schema migration `0001_initial`.
-  - Legacy workbook import should be repeatable into a staging area before committing records.
+  - Current implementation supports workbook preview; staged import and commit remain planned.
   - Imports should preserve original row references so discrepancies can be traced.
   - Schema changes must be additive where possible.
   - Before destructive schema migrations, create automatic backup of the SQLite database.
@@ -237,25 +258,35 @@ Filesystem Storage
 ### Key Endpoints
 
 | Method | Path | Purpose |
-|--------|------|---------|
-| GET | `/api/customers` | List/search customers with balances. |
+| -------- | ------ | --------- |
+| GET | `/api/customers` | List/search customers. |
 | POST | `/api/customers` | Create customer. |
-| GET | `/api/customers/{id}` | Customer detail with invoices, payments, credits. |
+| GET | `/api/customers/{id}` | Customer detail. |
+| GET | `/api/customers/{id}/balance` | Customer balance summary. |
 | GET | `/api/projects` | List/search projects. |
 | POST | `/api/projects` | Create project and rates. |
 | GET | `/api/time-entries` | List/filter time entries. |
 | POST | `/api/time-entries` | Create time entry. |
 | GET | `/api/expenses` | List/filter expenses. |
 | POST | `/api/expenses` | Create expense. |
+| GET | `/api/expense-categories` | List expense categories. |
+| POST | `/api/expense-categories` | Create expense category. |
 | POST | `/api/receipts` | Upload receipt file and optionally start OCR. |
+| GET | `/api/ocr-jobs/{id}` | Read OCR job state. |
+| PATCH | `/api/ocr-jobs/{id}/suggestions` | Store OCR suggestions for review. |
+| POST | `/api/ocr-jobs/{id}/review` | Approve OCR suggestions into an expense. |
 | GET | `/api/invoice-builder/candidates` | Return unbilled time/expenses for customer/project. |
 | POST | `/api/invoices` | Create draft invoice from selected records. |
+| GET | `/api/invoices` | List invoices. |
+| GET | `/api/invoices/{id}` | Read invoice detail. |
 | POST | `/api/invoices/{id}/send` | Finalize/send invoice and recognize accrual revenue. |
-| GET | `/api/invoices/{id}/pdf` | Retrieve generated invoice PDF. |
 | POST | `/api/payments` | Record payment/advance. |
 | POST | `/api/payments/{id}/applications` | Apply payment to one or more invoices. |
 | GET | `/api/reports/ar-aging` | AR aging report. |
-| POST | `/api/imports/workbook` | Import legacy workbook into staging or database. |
+| GET | `/api/reports/ar-aging.csv` | Download AR aging CSV. |
+| GET | `/api/reports/open-invoices.csv` | Download open invoices CSV. |
+| POST | `/api/imports/workbook/preview` | Preview workbook sheets and mapping hints. |
+| POST | `/api/backups` | Create a local backup zip. |
 
 ## 9. Security Architecture
 
@@ -293,7 +324,7 @@ No formal compliance target for MVP. Treat as sensitive internal financial data.
 ## 10. Error Handling & Resilience
 
 | Failure | Detection | Recovery |
-|---------|-----------|----------|
+| --------- | ----------- | ---------- |
 | Invoice generation fails halfway | Transaction rollback | No source rows are marked drafted/invoiced unless invoice creation succeeds. |
 | Payment application exceeds invoice/payment balance | Service-level validation | Reject transaction with clear message. |
 | Receipt OCR fails | OCR job status becomes `failed` | User can manually enter expense or retry OCR. |
@@ -312,7 +343,7 @@ No formal compliance target for MVP. Treat as sensitive internal financial data.
 ## 11. Testing Strategy
 
 | Level | Scope | Tools | Coverage Target |
-|-------|-------|-------|-----------------|
+| ------- | ------- | ------- | ----------------- |
 | Unit | Accounting calculations, invoice status logic, payment application rules, OCR parsing helpers. | pytest | High coverage on accounting services. |
 | Integration | API endpoints with SQLite test database and filesystem temp directory. | pytest + FastAPI TestClient | Core workflows covered. |
 | Frontend Unit | Component behavior for forms, tables, filters, status displays. | Vitest + React Testing Library | Critical UI components. |
@@ -320,6 +351,8 @@ No formal compliance target for MVP. Treat as sensitive internal financial data.
 | Import Tests | Legacy workbook samples and known invoices such as invoice 662. | pytest fixtures | Deterministic reconciliation tests. |
 
 ### Golden Test Workflow
+
+Current status: the backend test suite covers the invoice creation, send/finalize, payment application, balance, import preview, OCR review, and backup slices. The full invoice 662 PDF validation workflow is still pending because PDF output and import staging are not yet implemented.
 
 The first acceptance test should reproduce a known real workflow:
 
@@ -369,7 +402,7 @@ Receipts/PDFs in app-managed file storage
 ### Environments
 
 | Environment | Purpose | Key Differences |
-|-------------|---------|-----------------|
+| ------------- | --------- | ----------------- |
 | Development | Build and test locally. | Hot reload, test database, verbose logging. |
 | Test | Automated tests. | Temporary SQLite and file directories. |
 | Production Local | Real business use on local machine. | Persistent database/files, backups, network binding disabled. |
@@ -399,6 +432,13 @@ Receipts/PDFs in app-managed file storage
   - [ ] FR-11: App can import relevant records from the existing workbook or a staging export.
   - [ ] FR-12: App can export accountant-friendly reports to Excel/CSV.
 
+Implementation note:
+
+  - FR-1 through FR-9 are largely satisfied in the backend, with partial frontend coverage for FR-1 through FR-4.
+  - FR-10 is still open.
+  - FR-11 is partially satisfied through workbook preview only.
+  - FR-12 is partially satisfied through CSV exports only.
+
 ### Non-Functional Requirements
 
   - [ ] NFR-1: The app must not require internet access for core accounting workflows.
@@ -425,12 +465,16 @@ Receipts/PDFs in app-managed file storage
 4. Implement app shell and navigation.
 5. Add customers and projects CRUD.
 
+Current status: complete for backend and first React create/list screens.
+
 ### Phase 2: Source Records
 
 1. Implement time entry model, API, table, and form.
 2. Implement expense model, API, table, and form.
 3. Add category setup and rate lookup.
 4. Add receipt file attachment storage without OCR.
+
+Current status: source-record APIs and first React screens are in place. Receipt handling has moved past this phase into a basic OCR job/review backend flow.
 
 ### Phase 3: Invoice Workflow
 
@@ -441,6 +485,8 @@ Receipts/PDFs in app-managed file storage
 5. Generate PDF invoice.
 6. Validate against invoice 662.
 
+Current status: steps 1, 2, and 4 are implemented in the backend. UI workflow, PDF output, and invoice 662 validation remain open.
+
 ### Phase 4: Payments and Customer Balances
 
 1. Implement payments and customer advances.
@@ -449,12 +495,16 @@ Receipts/PDFs in app-managed file storage
 4. Implement AR aging and open invoice reports.
 5. Add validation dashboard/checks.
 
+Current status: steps 1 through 4 are implemented in the backend. React screens remain open.
+
 ### Phase 5: Workbook Migration and Reporting
 
 1. Build workbook import staging.
 2. Map existing customers, projects, time, expenses, income tracking.
 3. Produce discrepancy report.
 4. Export accountant reports.
+
+Current status: workbook preview plus AR aging and open invoice CSV exports exist; staging, discrepancy reporting, and broader export coverage remain open.
 
 ### Phase 6: Automation Layer
 
@@ -463,6 +513,8 @@ Receipts/PDFs in app-managed file storage
 3. Add expense suggestions and confidence scoring.
 4. Add batch import or email-forwarded receipts later if useful.
 
+Current status: OCR jobs and approval into expenses are implemented in the backend without provider automation or dedicated frontend review screens.
+
 ### Phase 7: Packaging and Hardening
 
 1. Add backup/restore.
@@ -470,10 +522,12 @@ Receipts/PDFs in app-managed file storage
 3. Add installer/launcher.
 4. Evaluate Tauri/Electron packaging.
 
+Current status: backup creation exists; restore, packaging, and local authentication remain open.
+
 ## 16. Risks & Mitigations
 
 | Risk | Likelihood | Impact | Mitigation |
-|------|------------|--------|------------|
+| ------ | ------------ | -------- | ------------ |
 | Spreadsheet business rules are more nuanced than documented. | High | High | Use real invoice 662 and several edge cases as golden tests before broad migration. |
 | Invoice PDF does not match business expectations. | Medium | High | Build invoice preview/PDF early and validate against current printed invoice. |
 | Payment/credit model mishandles advances. | Medium | High | Implement payments and applications as separate tables with transaction tests. |
@@ -497,7 +551,7 @@ Receipts/PDFs in app-managed file storage
 
 ## 18. Recommended Next Step
 
-The next step is not to build every screen. It is to build a narrow proof-of-architecture:
+The next step is still not to build every screen. It is to finish the narrow proof-of-architecture by wiring the existing backend workflows into the React app and adding invoice PDF output:
 
 ```text
 Customer + Project + Time + Expense

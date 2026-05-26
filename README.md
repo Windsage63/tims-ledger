@@ -6,14 +6,16 @@ Windsage Ledger is a local-first accounting operations app for project-driven co
 
 ## Current Status
 
-This repository is in early architecture and project setup. The source workbook, Stitch screen concepts, and planning documents are included as references so the app can be designed around the actual Air Advantage workflow rather than a generic accounting template.
+This repository now has a working FastAPI backend with tested accounting workflows for customers, projects, time entries, expenses, invoices, payments, customer balances, report exports, workbook preview, receipt OCR review, and backup creation.
 
-## Planned Stack
+The React app has moved beyond the placeholder stage. It includes the app shell, dashboard, and first create/list screens for customers, projects, time entries, expenses, and expense categories. Invoice, payment, report, import, and backup screens are still frontend placeholders backed by existing or partial backend APIs.
 
-- Backend: Python, FastAPI, SQLite, SQLAlchemy 2.x, Alembic
-- Frontend: React, TypeScript, Vite, npm
-- Reports: PDF invoices and Excel/CSV exports
-- Automation: future receipt OCR pipeline through the Python backend
+## Current Stack
+
+  - Backend: Python, FastAPI, SQLite, SQLAlchemy 2.x, Alembic
+  - Frontend: React, TypeScript, Vite, npm
+  - Reports: PDF invoices and Excel/CSV exports
+  - Automation: future receipt OCR pipeline through the Python backend
 
 ## Project Goals
 
@@ -43,7 +45,19 @@ See `docs/roadmap.md` for the current implementation roadmap.
 
 ## First Proof Workflow
 
-The first technical milestone should prove this end-to-end workflow:
+The proof workflow is partially implemented today. The backend covers:
+
+```text
+Customer + Project + Time + Expense
+-> Invoice candidate selection and draft creation
+-> Invoice send/finalize
+-> Payment application
+-> Customer balance and AR aging
+```
+
+The remaining gap is the React workflow for invoices and payments, plus the invoice 662 PDF output needed for document validation.
+
+The full target workflow remains:
 
 ```text
 Customer + Project + Time + Expense

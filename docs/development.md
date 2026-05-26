@@ -2,9 +2,9 @@
 
 ## Runtime Choices
 
-- Backend uses Python in the repo-root `.venv`.
-- Frontend uses Node.js and npm.
-- The frontend package manager is npm. Commit `frontend/package-lock.json` when dependencies change.
+  - Backend uses Python in the repo-root `.venv`.
+  - Frontend uses Node.js and npm.
+  - The frontend package manager is npm. Commit `frontend/package-lock.json` when dependencies change.
 
 ## Backend
 
@@ -54,6 +54,8 @@ npm run build
 npm run test
 ```
 
+`npm run test` currently succeeds with no test files present. Frontend behavior is not yet covered by checked-in Vitest tests.
+
 Start the Vite dev server:
 
 ```powershell
@@ -101,3 +103,15 @@ The first implemented API groups are:
 /api/ocr-jobs/{job_id}
 /api/backups
 ```
+
+The current React app wires these workflow areas directly:
+
+```text
+Dashboard
+Customers
+Projects
+Time
+Expenses
+```
+
+The remaining navigation areas are still placeholder screens while the backend workflows are wired into the UI.
