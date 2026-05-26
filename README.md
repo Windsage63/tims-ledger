@@ -39,6 +39,8 @@ references/          Source workbook and Stitch design references
 
 ## Development
 
+On Windows, run `startup.bat` from the repository root to launch the backend and frontend dev servers in separate windows and open the app in your default browser.
+
 See `docs/development.md` for local setup, check commands, and dev server startup.
 
 See `docs/roadmap.md` for the current implementation roadmap.

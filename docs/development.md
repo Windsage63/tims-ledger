@@ -6,6 +6,23 @@
   - Frontend uses Node.js and npm.
   - The frontend package manager is npm. Commit `frontend/package-lock.json` when dependencies change.
 
+## Windows Quick Start
+
+From the repository root:
+
+```powershell
+.\startup.bat
+```
+
+`startup.bat` launches the backend and frontend in separate windows, waits briefly for the dev servers to come up, and opens `http://127.0.0.1:5173` in your default browser.
+
+The script expects:
+
+  - `./.venv/Scripts/python.exe` to exist
+  - `npm` to be available on `PATH`
+
+Use the manual commands below when you want to run only one service or debug startup issues directly.
+
 ## Backend
 
 From the repository root:
@@ -70,7 +87,9 @@ VITE_API_BASE_URL=http://127.0.0.1:8001
 
 ## Full Local Workflow
 
-Run the backend and frontend in separate terminals:
+On Windows, you can use `startup.bat` from the repository root.
+
+For manual startup, run the backend and frontend in separate terminals:
 
 ```text
 Backend:  http://127.0.0.1:8000
