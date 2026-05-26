@@ -74,3 +74,13 @@ After starting the backend, API docs are available at:
 ```text
 http://127.0.0.1:8000/docs
 ```
+
+The first implemented API groups are:
+
+```text
+/api/customers
+/api/projects
+/api/expense-categories
+/api/time-entries
+/api/expenses
+```

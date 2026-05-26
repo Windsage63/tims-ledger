@@ -62,24 +62,25 @@ If this flow reproduces the existing invoice behavior and fixes customer balance
 
 ## Current Repo State
 
-The repo has initial project scaffolding only:
+The repo has initial project scaffolding plus the first backend accounting foundation:
 
-  - `backend/` contains a minimal FastAPI health-check app.
-  - `frontend/` contains a minimal React/Vite placeholder app.
-  - `docs/` contains architecture, discovery, product, and ADR notes.
-  - `references/` contains the workbook and Stitch concept files.
+- `backend/` contains FastAPI routes for customers, projects, expense categories, time entries, and expenses.
+- `backend/` contains SQLAlchemy models, Alembic migration setup, accounting services, and backend tests for invoice/payment/source-record rules.
+- `frontend/` contains a minimal React/Vite placeholder app.
+- `docs/` contains architecture, discovery, product, and ADR notes.
+- `references/` contains the workbook and Stitch concept files.
 
-Dependencies have not been installed yet. Tests/builds that require installed packages have not been run.
+Python dependencies are installed into `.venv`; frontend dependencies are installed with npm.
+Backend and frontend checks have been run successfully.
 
 ## Suggested Next Steps
 
-1. Commit the current scaffold if it has not already been committed.
-2. Choose `SQLAlchemy` vs `SQLModel`.
-3. Scaffold the backend database layer and first Alembic migration.
-4. Model the P0 entities: customers, projects, time entries, expenses, invoices, invoice lines, payments, and payment applications.
-5. Add the first backend tests for invoice/payment/customer balance rules.
-6. Replace the placeholder frontend with the first real app shell and navigation.
-7. Build the proof workflow around invoice `662`.
+1. Build invoice candidate selection endpoints from unbilled time and expenses.
+2. Add draft invoice creation and send/finalize API routes.
+3. Add payment and payment application API routes.
+4. Add customer balance calculation endpoint.
+5. Replace the placeholder frontend with the first real app shell and navigation.
+6. Build the proof workflow around invoice `662`.
 
 ## Working Style
 

@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.dev.seed import seed_development_data
-from app.models import Customer, Project
+from app.models import Customer, ExpenseCategory, Project
 
 
 def test_development_seed_is_idempotent(session: Session) -> None:
@@ -11,6 +11,8 @@ def test_development_seed_is_idempotent(session: Session) -> None:
 
     customers = list(session.scalars(select(Customer)))
     projects = list(session.scalars(select(Project)))
+    categories = list(session.scalars(select(ExpenseCategory)))
 
     assert [customer.name for customer in customers] == ["Air Advantage"]
     assert [project.project_no for project in projects] == ["AA-001"]
+    assert [category.name for category in categories] == ["Materials"]

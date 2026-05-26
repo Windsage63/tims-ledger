@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal
-from app.models import ContractType, Customer, Project, ProjectStatus
+from app.models import ContractType, Customer, ExpenseCategory, Project, ProjectStatus
 
 
 def seed_development_data(session: Session) -> dict[str, int]:
@@ -39,14 +39,31 @@ def seed_development_data(session: Session) -> dict[str, int]:
         session.add(project)
         session.flush()
 
+    category = session.scalar(select(ExpenseCategory).where(ExpenseCategory.name == "Materials"))
+    if category is None:
+        category = ExpenseCategory(
+            name="Materials",
+            default_billable=True,
+            default_reimbursable=True,
+            expense_category="Materials",
+            revenue_category="Reimbursed materials",
+        )
+        session.add(category)
+        session.flush()
+
     session.commit()
-    return {"customers": 1, "projects": 1}
+    return {"customers": 1, "projects": 1, "expense_categories": 1}
 
 
 def main() -> None:
     with SessionLocal() as session:
         counts = seed_development_data(session)
-    print(f"Seeded {counts['customers']} customer and {counts['projects']} project.")
+    print(
+        "Seeded "
+        f"{counts['customers']} customer, "
+        f"{counts['projects']} project, and "
+        f"{counts['expense_categories']} expense category."
+    )
 
 
 if __name__ == "__main__":
