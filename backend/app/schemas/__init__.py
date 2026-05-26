@@ -5,6 +5,7 @@ from app.schemas.expense_categories import (
     ExpenseCategoryUpdate,
 )
 from app.schemas.expenses import ExpenseCreate, ExpenseRead, ExpenseUpdate
+from app.schemas.imports import WorkbookPreviewRead, WorkbookPreviewRequest, WorkbookSheetPreview
 from app.schemas.invoices import (
     InvoiceCandidatesRead,
     InvoiceCreate,
@@ -42,6 +43,9 @@ __all__ = [
     "InvoiceLineRead",
     "InvoiceRead",
     "InvoiceSend",
+    "WorkbookPreviewRead",
+    "WorkbookPreviewRequest",
+    "WorkbookSheetPreview",
     "PaymentApplicationCreate",
     "PaymentApplicationRead",
     "PaymentApplicationsCreate",

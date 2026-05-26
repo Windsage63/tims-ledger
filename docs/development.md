@@ -88,4 +88,7 @@ The first implemented API groups are:
 /api/payments
 /api/customers/{customer_id}/balance
 /api/reports/ar-aging
+/api/reports/ar-aging.csv
+/api/reports/open-invoices.csv
+/api/imports/workbook/preview
 ```
