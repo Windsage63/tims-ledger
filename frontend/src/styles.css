@@ -305,6 +305,12 @@ code {
   gap: 14px;
 }
 
+.form-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 label {
   display: grid;
   gap: 6px;
@@ -355,7 +361,6 @@ select {
 .data-row {
   display: grid;
   gap: 14px;
-  grid-template-columns: repeat(4, minmax(130px, 1fr));
   min-width: 620px;
   padding: 12px 14px;
 }
@@ -380,6 +385,11 @@ select {
 
 .empty-state {
   max-width: 720px;
+}
+
+.stacked-panels {
+  display: grid;
+  gap: 18px;
 }
 
 @media (max-width: 960px) {
@@ -424,5 +434,9 @@ select {
     align-items: start;
     grid-template-columns: 1fr;
     padding: 12px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
   }
 }

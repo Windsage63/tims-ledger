@@ -14,8 +14,8 @@ The backend now covers the core local-first accounting workflows. The next work 
 ## Phase B: Frontend CRUD Workflows
 
 - [x] Build first customer and project screens.
-- [ ] Build time entry and expense screens.
-- Add expense category management.
+- [x] Build first time entry and expense screens.
+- [x] Add expense category management.
 - Preserve dense, work-focused layouts suitable for repeated accounting work.
 
 ## Phase C: Invoice Workflow UI

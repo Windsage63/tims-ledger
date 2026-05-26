@@ -25,6 +25,44 @@ export type Project = {
   fixed_fee_amount: string | null;
 };
 
+export type ExpenseCategory = {
+  id: number;
+  name: string;
+  default_billable: boolean;
+  default_reimbursable: boolean;
+};
+
+export type TimeEntry = {
+  id: number;
+  date: string;
+  project_id: number;
+  customer_id: number;
+  description: string;
+  hours: string;
+  work_type: string | null;
+  rate: string;
+  billable: boolean;
+  billing_status: "unbilled" | "drafted" | "invoiced" | "voided" | "non_billable";
+  invoice_id: number | null;
+};
+
+export type Expense = {
+  id: number;
+  date: string;
+  project_id: number;
+  customer_id: number;
+  vendor: string | null;
+  description: string;
+  qty: string;
+  unit_cost: string;
+  total: string;
+  category_id: number | null;
+  billable: boolean;
+  reimbursable: boolean;
+  reimbursement_status: "unbilled" | "drafted" | "invoiced" | "voided" | "non_billable";
+  invoice_id: number | null;
+};
+
 export type CustomerCreate = {
   name: string;
   billing_email?: string | null;
@@ -42,6 +80,33 @@ export type ProjectCreate = {
   status?: Project["status"];
   default_hourly_rate?: string | null;
   fixed_fee_amount?: string | null;
+};
+
+export type TimeEntryCreate = {
+  date: string;
+  project_id: number;
+  description: string;
+  hours: string;
+  rate?: string | null;
+  billable?: boolean;
+};
+
+export type ExpenseCategoryCreate = {
+  name: string;
+  default_billable?: boolean;
+  default_reimbursable?: boolean;
+};
+
+export type ExpenseCreate = {
+  date: string;
+  project_id: number;
+  vendor?: string | null;
+  description: string;
+  qty: string;
+  unit_cost: string;
+  category_id?: number | null;
+  billable?: boolean;
+  reimbursable?: boolean;
 };
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
@@ -67,6 +132,41 @@ export async function listProjects(): Promise<Project[]> {
 
 export async function createProject(payload: ProjectCreate): Promise<Project> {
   return apiRequest<Project>("/api/projects", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function listTimeEntries(): Promise<TimeEntry[]> {
+  return apiRequest<TimeEntry[]>("/api/time-entries");
+}
+
+export async function createTimeEntry(payload: TimeEntryCreate): Promise<TimeEntry> {
+  return apiRequest<TimeEntry>("/api/time-entries", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function listExpenseCategories(): Promise<ExpenseCategory[]> {
+  return apiRequest<ExpenseCategory[]>("/api/expense-categories");
+}
+
+export async function createExpenseCategory(
+  payload: ExpenseCategoryCreate,
+): Promise<ExpenseCategory> {
+  return apiRequest<ExpenseCategory>("/api/expense-categories", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function listExpenses(): Promise<Expense[]> {
+  return apiRequest<Expense[]>("/api/expenses");
+}
+
+export async function createExpense(payload: ExpenseCreate): Promise<Expense> {
+  return apiRequest<Expense>("/api/expenses", {
     method: "POST",
     body: JSON.stringify(payload),
   });

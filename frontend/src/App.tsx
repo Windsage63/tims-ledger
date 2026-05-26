@@ -18,13 +18,22 @@ import { type FormEvent, useEffect, useMemo, useState } from "react";
 
 import {
   createCustomer,
+  createExpense,
+  createExpenseCategory,
   createProject,
+  createTimeEntry,
   getHealth,
+  listExpenseCategories,
+  listExpenses,
   listCustomers,
   listProjects,
+  listTimeEntries,
   type ApiHealth,
   type Customer,
+  type Expense,
+  type ExpenseCategory,
   type Project,
+  type TimeEntry,
 } from "./api";
 
 const navItems = [
@@ -94,12 +103,27 @@ export default function App() {
   const [healthError, setHealthError] = useState<string | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
+  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [dataError, setDataError] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [projectName, setProjectName] = useState("");
   const [projectCustomerId, setProjectCustomerId] = useState("");
   const [projectRate, setProjectRate] = useState("125.00");
+  const [timeProjectId, setTimeProjectId] = useState("");
+  const [timeDate, setTimeDate] = useState(new Date().toISOString().slice(0, 10));
+  const [timeDescription, setTimeDescription] = useState("");
+  const [timeHours, setTimeHours] = useState("1.00");
+  const [categoryName, setCategoryName] = useState("");
+  const [expenseProjectId, setExpenseProjectId] = useState("");
+  const [expenseCategoryId, setExpenseCategoryId] = useState("");
+  const [expenseDate, setExpenseDate] = useState(new Date().toISOString().slice(0, 10));
+  const [expenseDescription, setExpenseDescription] = useState("");
+  const [expenseVendor, setExpenseVendor] = useState("");
+  const [expenseQty, setExpenseQty] = useState("1.00");
+  const [expenseUnitCost, setExpenseUnitCost] = useState("0.00");
 
   useEffect(() => {
     let alive = true;
@@ -125,12 +149,30 @@ export default function App() {
 
   const refreshData = async () => {
     try {
-      const [customerRows, projectRows] = await Promise.all([listCustomers(), listProjects()]);
+      const [customerRows, projectRows, timeRows, categoryRows, expenseRows] = await Promise.all([
+        listCustomers(),
+        listProjects(),
+        listTimeEntries(),
+        listExpenseCategories(),
+        listExpenses(),
+      ]);
       setCustomers(customerRows);
       setProjects(projectRows);
+      setTimeEntries(timeRows);
+      setExpenseCategories(categoryRows);
+      setExpenses(expenseRows);
       setDataError(null);
       if (!projectCustomerId && customerRows[0]) {
         setProjectCustomerId(String(customerRows[0].id));
+      }
+      if (!timeProjectId && projectRows[0]) {
+        setTimeProjectId(String(projectRows[0].id));
+      }
+      if (!expenseProjectId && projectRows[0]) {
+        setExpenseProjectId(String(projectRows[0].id));
+      }
+      if (!expenseCategoryId && categoryRows[0]) {
+        setExpenseCategoryId(String(categoryRows[0].id));
       }
     } catch (error) {
       setDataError(error instanceof Error ? error.message : "Unable to load records");
@@ -155,11 +197,15 @@ export default function App() {
   const summaryCards = [
     { label: "Customers", value: String(customers.length), detail: "Active master records" },
     { label: "Projects", value: String(projects.length), detail: "Project billing contexts" },
-    { label: "Backend tests", value: "30", detail: "Passing workflow checks" },
-    { label: "Proof target", value: "662", detail: "Invoice validation path" },
+    { label: "Unbilled time", value: String(timeEntries.length), detail: "Source labor rows" },
+    { label: "Expenses", value: String(expenses.length), detail: "Reimbursable source rows" },
   ];
 
   const customerNameById = new Map(customers.map((customer) => [customer.id, customer.name]));
+  const projectNameById = new Map(projects.map((project) => [project.id, project.name]));
+  const categoryNameById = new Map(
+    expenseCategories.map((category) => [category.id, category.name]),
+  );
 
   const submitCustomer = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -194,6 +240,66 @@ export default function App() {
       await refreshData();
     } catch (error) {
       setDataError(error instanceof Error ? error.message : "Unable to create project");
+    }
+  };
+
+  const submitTimeEntry = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!timeProjectId || !timeDescription.trim()) {
+      return;
+    }
+    try {
+      await createTimeEntry({
+        date: timeDate,
+        project_id: Number(timeProjectId),
+        description: timeDescription.trim(),
+        hours: timeHours,
+        billable: true,
+      });
+      setTimeDescription("");
+      await refreshData();
+    } catch (error) {
+      setDataError(error instanceof Error ? error.message : "Unable to create time entry");
+    }
+  };
+
+  const submitExpenseCategory = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!categoryName.trim()) {
+      return;
+    }
+    try {
+      await createExpenseCategory({ name: categoryName.trim() });
+      setCategoryName("");
+      await refreshData();
+    } catch (error) {
+      setDataError(error instanceof Error ? error.message : "Unable to create expense category");
+    }
+  };
+
+  const submitExpense = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!expenseProjectId || !expenseDescription.trim()) {
+      return;
+    }
+    try {
+      await createExpense({
+        date: expenseDate,
+        project_id: Number(expenseProjectId),
+        vendor: expenseVendor.trim() || null,
+        description: expenseDescription.trim(),
+        qty: expenseQty,
+        unit_cost: expenseUnitCost,
+        category_id: expenseCategoryId ? Number(expenseCategoryId) : null,
+        billable: true,
+        reimbursable: true,
+      });
+      setExpenseDescription("");
+      setExpenseVendor("");
+      setExpenseUnitCost("0.00");
+      await refreshData();
+    } catch (error) {
+      setDataError(error instanceof Error ? error.message : "Unable to create expense");
     }
   };
 
@@ -276,7 +382,52 @@ export default function App() {
           />
         ) : null}
 
-        {!["dashboard", "customers", "projects"].includes(activeSection) ? (
+        {activeSection === "time" ? (
+          <TimeEntriesView
+            onDateChange={setTimeDate}
+            onDescriptionChange={setTimeDescription}
+            onHoursChange={setTimeHours}
+            onProjectChange={setTimeProjectId}
+            onSubmit={submitTimeEntry}
+            projectNameById={projectNameById}
+            projects={projects}
+            timeDate={timeDate}
+            timeDescription={timeDescription}
+            timeEntries={timeEntries}
+            timeHours={timeHours}
+            timeProjectId={timeProjectId}
+          />
+        ) : null}
+
+        {activeSection === "expenses" ? (
+          <ExpensesView
+            categoryName={categoryName}
+            categoryNameById={categoryNameById}
+            expenseCategories={expenseCategories}
+            expenseCategoryId={expenseCategoryId}
+            expenseDate={expenseDate}
+            expenseDescription={expenseDescription}
+            expenseProjectId={expenseProjectId}
+            expenseQty={expenseQty}
+            expenseUnitCost={expenseUnitCost}
+            expenseVendor={expenseVendor}
+            expenses={expenses}
+            onCategoryChange={setExpenseCategoryId}
+            onCategoryNameChange={setCategoryName}
+            onCategorySubmit={submitExpenseCategory}
+            onDateChange={setExpenseDate}
+            onDescriptionChange={setExpenseDescription}
+            onProjectChange={setExpenseProjectId}
+            onQtyChange={setExpenseQty}
+            onSubmit={submitExpense}
+            onUnitCostChange={setExpenseUnitCost}
+            onVendorChange={setExpenseVendor}
+            projectNameById={projectNameById}
+            projects={projects}
+          />
+        ) : null}
+
+        {!["dashboard", "customers", "projects", "time", "expenses"].includes(activeSection) ? (
           <section className="panel empty-state">
             <p className="eyebrow">Roadmap area</p>
             <h2>{sectionTitles[activeSection]} workflow</h2>
@@ -446,7 +597,225 @@ function ProjectsView(props: {
   );
 }
 
+function TimeEntriesView(props: {
+  onDateChange: (value: string) => void;
+  onDescriptionChange: (value: string) => void;
+  onHoursChange: (value: string) => void;
+  onProjectChange: (value: string) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  projectNameById: Map<number, string>;
+  projects: Project[];
+  timeDate: string;
+  timeDescription: string;
+  timeEntries: TimeEntry[];
+  timeHours: string;
+  timeProjectId: string;
+}) {
+  return (
+    <section className="record-layout">
+      <form className="panel form-panel" onSubmit={props.onSubmit}>
+        <p className="eyebrow">New time entry</p>
+        <label>
+          <span>Project</span>
+          <select
+            onChange={(event) => props.onProjectChange(event.target.value)}
+            value={props.timeProjectId}
+          >
+            <option value="">Select project</option>
+            {props.projects.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>Date</span>
+          <input
+            onChange={(event) => props.onDateChange(event.target.value)}
+            type="date"
+            value={props.timeDate}
+          />
+        </label>
+        <label>
+          <span>Description</span>
+          <input
+            onChange={(event) => props.onDescriptionChange(event.target.value)}
+            placeholder="Field labor"
+            value={props.timeDescription}
+          />
+        </label>
+        <label>
+          <span>Hours</span>
+          <input
+            onChange={(event) => props.onHoursChange(event.target.value)}
+            placeholder="1.00"
+            value={props.timeHours}
+          />
+        </label>
+        <button className="primary-button" type="submit">
+          <Plus aria-hidden="true" size={17} />
+          <span>Add Time</span>
+        </button>
+      </form>
+
+      <RecordTable
+        columns={["Date", "Project", "Description", "Hours", "Status"]}
+        rows={props.timeEntries.map((entry) => [
+          entry.date,
+          props.projectNameById.get(entry.project_id) ?? `Project ${entry.project_id}`,
+          entry.description,
+          entry.hours,
+          entry.billing_status,
+        ])}
+        title="Time Entries"
+      />
+    </section>
+  );
+}
+
+function ExpensesView(props: {
+  categoryName: string;
+  categoryNameById: Map<number, string>;
+  expenseCategories: ExpenseCategory[];
+  expenseCategoryId: string;
+  expenseDate: string;
+  expenseDescription: string;
+  expenseProjectId: string;
+  expenseQty: string;
+  expenseUnitCost: string;
+  expenseVendor: string;
+  expenses: Expense[];
+  onCategoryChange: (value: string) => void;
+  onCategoryNameChange: (value: string) => void;
+  onCategorySubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onDateChange: (value: string) => void;
+  onDescriptionChange: (value: string) => void;
+  onProjectChange: (value: string) => void;
+  onQtyChange: (value: string) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onUnitCostChange: (value: string) => void;
+  onVendorChange: (value: string) => void;
+  projectNameById: Map<number, string>;
+  projects: Project[];
+}) {
+  return (
+    <section className="stacked-panels">
+      <section className="record-layout">
+        <form className="panel form-panel" onSubmit={props.onCategorySubmit}>
+          <p className="eyebrow">Expense category</p>
+          <label>
+            <span>Name</span>
+            <input
+              onChange={(event) => props.onCategoryNameChange(event.target.value)}
+              placeholder="Materials"
+              value={props.categoryName}
+            />
+          </label>
+          <button className="primary-button" type="submit">
+            <Plus aria-hidden="true" size={17} />
+            <span>Add Category</span>
+          </button>
+        </form>
+
+        <form className="panel form-panel" onSubmit={props.onSubmit}>
+          <p className="eyebrow">New expense</p>
+          <label>
+            <span>Project</span>
+            <select
+              onChange={(event) => props.onProjectChange(event.target.value)}
+              value={props.expenseProjectId}
+            >
+              <option value="">Select project</option>
+              {props.projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="form-grid">
+            <label>
+              <span>Date</span>
+              <input
+                onChange={(event) => props.onDateChange(event.target.value)}
+                type="date"
+                value={props.expenseDate}
+              />
+            </label>
+            <label>
+              <span>Category</span>
+              <select
+                onChange={(event) => props.onCategoryChange(event.target.value)}
+                value={props.expenseCategoryId}
+              >
+                <option value="">None</option>
+                {props.expenseCategories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label>
+            <span>Vendor</span>
+            <input
+              onChange={(event) => props.onVendorChange(event.target.value)}
+              placeholder="Supply House"
+              value={props.expenseVendor}
+            />
+          </label>
+          <label>
+            <span>Description</span>
+            <input
+              onChange={(event) => props.onDescriptionChange(event.target.value)}
+              placeholder="Cable"
+              value={props.expenseDescription}
+            />
+          </label>
+          <div className="form-grid">
+            <label>
+              <span>Qty</span>
+              <input
+                onChange={(event) => props.onQtyChange(event.target.value)}
+                value={props.expenseQty}
+              />
+            </label>
+            <label>
+              <span>Unit cost</span>
+              <input
+                onChange={(event) => props.onUnitCostChange(event.target.value)}
+                value={props.expenseUnitCost}
+              />
+            </label>
+          </div>
+          <button className="primary-button" type="submit">
+            <Plus aria-hidden="true" size={17} />
+            <span>Add Expense</span>
+          </button>
+        </form>
+      </section>
+
+      <RecordTable
+        columns={["Date", "Project", "Category", "Description", "Total", "Status"]}
+        rows={props.expenses.map((expense) => [
+          expense.date,
+          props.projectNameById.get(expense.project_id) ?? `Project ${expense.project_id}`,
+          expense.category_id ? props.categoryNameById.get(expense.category_id) ?? "" : "",
+          expense.description,
+          expense.total,
+          expense.reimbursement_status,
+        ])}
+        title="Expenses"
+      />
+    </section>
+  );
+}
+
 function RecordTable(props: { columns: string[]; rows: string[][]; title: string }) {
+  const gridTemplateColumns = `repeat(${props.columns.length}, minmax(130px, 1fr))`;
+
   return (
     <section className="panel table-panel">
       <div className="panel-header">
@@ -457,13 +826,13 @@ function RecordTable(props: { columns: string[]; rows: string[][]; title: string
         <span className="panel-note">{props.rows.length} rows</span>
       </div>
       <div className="data-table">
-        <div className="data-row header">
+        <div className="data-row header" style={{ gridTemplateColumns }}>
           {props.columns.map((column) => (
             <span key={column}>{column}</span>
           ))}
         </div>
         {props.rows.map((row) => (
-          <div className="data-row" key={row.join("|")}>
+          <div className="data-row" key={row.join("|")} style={{ gridTemplateColumns }}>
             {row.map((cell, index) => (
               <span key={`${cell}-${index}`}>{cell || "—"}</span>
             ))}
