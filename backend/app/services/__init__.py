@@ -6,6 +6,7 @@ from app.services.accounting import (
     money,
     send_invoice,
 )
+from app.services.backups import create_backup
 from app.services.balances import ar_aging, customer_balance
 from app.services.files import store_local_file
 from app.services.imports import preview_workbook
@@ -18,6 +19,7 @@ __all__ = [
     "ar_aging",
     "create_draft_invoice_from_sources",
     "customer_balance",
+    "create_backup",
     "money",
     "preview_workbook",
     "ar_aging_csv",

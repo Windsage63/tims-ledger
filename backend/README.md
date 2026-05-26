@@ -22,4 +22,5 @@ The first accounting foundation is scaffolded:
 - Payment recording, payment application, customer balance, and AR aging routes.
 - Workbook preview and CSV report export routes.
 - Receipt file registration, OCR job suggestion, and OCR review-to-expense routes.
+- Local backup zip creation route.
 - Idempotent development seed data for the first proof customer/project.

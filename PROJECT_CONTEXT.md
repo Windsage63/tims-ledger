@@ -64,7 +64,7 @@ If this flow reproduces the existing invoice behavior and fixes customer balance
 
 The repo has initial project scaffolding plus the first backend accounting foundation:
 
-- `backend/` contains FastAPI routes for customers, projects, expense categories, time entries, and expenses.
+- `backend/` contains FastAPI routes for customers, projects, source records, invoices, payments, reports, imports, receipts/OCR review, and backups.
 - `backend/` contains SQLAlchemy models, Alembic migration setup, accounting services, and backend tests for invoice/payment/source-record rules.
 - `frontend/` contains a minimal React/Vite placeholder app.
 - `docs/` contains architecture, discovery, product, and ADR notes.
@@ -75,12 +75,11 @@ Backend and frontend checks have been run successfully.
 
 ## Suggested Next Steps
 
-1. Build invoice candidate selection endpoints from unbilled time and expenses.
-2. Add draft invoice creation and send/finalize API routes.
-3. Add payment and payment application API routes.
-4. Add customer balance calculation endpoint.
-5. Replace the placeholder frontend with the first real app shell and navigation.
-6. Build the proof workflow around invoice `662`.
+1. Replace the placeholder frontend with the first real app shell and navigation.
+2. Build the proof workflow around invoice `662` in the UI.
+3. Add PDF invoice rendering.
+4. Add richer workbook import staging and reconciliation.
+5. Add restore, packaging, and optional local password/PIN hardening.
 
 ## Working Style
 

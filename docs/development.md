@@ -93,4 +93,5 @@ The first implemented API groups are:
 /api/imports/workbook/preview
 /api/receipts
 /api/ocr-jobs/{job_id}
+/api/backups
 ```
