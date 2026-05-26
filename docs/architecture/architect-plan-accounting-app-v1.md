@@ -1,4 +1,4 @@
-# Air Advantage Accounting App - Architectural Blueprint
+# Windsage Ledger - Architectural Blueprint
 
 > **Engagement mode:** Greenfield
 > **Date:** 2026-05-25
@@ -7,7 +7,7 @@
 
 ## 1. Executive Summary
 
-Build a local-first accounting operations application for Air Advantage that replaces fragile spreadsheet accounting logic with a structured database, reliable invoice/payment workflows, and automation-ready records. The recommended architecture is a Python/FastAPI backend, React/TypeScript frontend, and SQLite database, designed first as a local browser app and later packageable as a desktop application if needed.
+Build **Windsage Ledger**, a local-first accounting operations application for Air Advantage with the tagline **"Simple books I can understand."** The app replaces fragile spreadsheet accounting logic with a structured database, reliable invoice/payment workflows, and automation-ready records. The recommended architecture is a Python/FastAPI backend, React/TypeScript frontend, and SQLite database, designed first as a local browser app and later packageable as a desktop application if needed.
 
 The guiding principle is to preserve the useful mental model of the current workbook while moving accounting truth into explicit records: customers, projects, time entries, expenses, invoices, payments, payment applications, credits, and audit checks.
 
@@ -15,11 +15,11 @@ The guiding principle is to preserve the useful mental model of the current work
 
 ### Existing Materials Reviewed
 
-- `Accounting Workbook Improvement Plan.md`
-- `Accounting Workbook Refined Requirements.md`
-- Original workbook analysis from `Timesheet Log and Project Tracking 2025.xlsx`
-- Google Stitch screen concepts for customers, projects, time tracking, invoice tracking, and invoice creation
-- User-provided `architect` skill package with blueprint template and discovery guidance
+  - `Accounting Workbook Improvement Plan.md`
+  - `Accounting Workbook Refined Requirements.md`
+  - Original workbook analysis from `Timesheet Log and Project Tracking 2025.xlsx`
+  - Google Stitch screen concepts for customers, projects, time tracking, invoice tracking, and invoice creation
+  - User-provided `architect` skill package with blueprint template and discovery guidance
 
 ### Engagement Mode
 
@@ -29,10 +29,10 @@ This is a **greenfield** application. The workbook is not the target platform; i
 
 The provided architect skill aligns well with best practice for this effort. Its strengths are:
 
-- It separates architecture planning from implementation.
-- It requires ADR-style decisions and trade-off documentation.
-- It forces security, error handling, testing, deployment, and risks into the plan.
-- It keeps open questions visible instead of burying assumptions.
+  - It separates architecture planning from implementation.
+  - It requires ADR-style decisions and trade-off documentation.
+  - It forces security, error handling, testing, deployment, and risks into the plan.
+  - It keeps open questions visible instead of burying assumptions.
 
 The only adjustment for this project is that we already have several decisions from prior discussion, so this blueprint starts with a recommended draft rather than a blank discovery questionnaire.
 
@@ -79,55 +79,55 @@ Filesystem Storage
 
 ### Key Architectural Patterns
 
-- **Layered monolith:** One deployable app with clear internal layers. This is simpler and more maintainable than microservices for a small-business accounting tool.
-- **Workflow-oriented services:** Important operations such as invoice generation and payment application should be explicit service methods, not scattered CRUD updates.
-- **Audit-aware data model:** Records should preserve source, status changes, generated documents, and user approvals.
-- **Local-first storage:** The app should remain useful without cloud infrastructure.
-- **Automation-ready pipelines:** OCR, import, and report generation should be modeled as jobs even if the first implementation runs them synchronously.
+  - **Layered monolith:** One deployable app with clear internal layers. This is simpler and more maintainable than microservices for a small-business accounting tool.
+  - **Workflow-oriented services:** Important operations such as invoice generation and payment application should be explicit service methods, not scattered CRUD updates.
+  - **Audit-aware data model:** Records should preserve source, status changes, generated documents, and user approvals.
+  - **Local-first storage:** The app should remain useful without cloud infrastructure.
+  - **Automation-ready pipelines:** OCR, import, and report generation should be modeled as jobs even if the first implementation runs them synchronously.
 
 ## 5. Core Architectural Decisions
 
 ### ADR-1: Use Python/FastAPI for the Backend
 
-- **Choice:** Python/FastAPI will own APIs, accounting logic, imports, exports, invoice generation, and future OCR.
-- **Rationale:** The hardest parts are data extraction, reconciliation, document generation, and automation. Python is stronger for these than Node in this context, and it matches the user's experience.
-- **Alternatives considered:** Node/Express, Node/NestJS, full-stack React framework.
-- **Trade-offs:** A React frontend plus Python backend means two runtimes and a little more project setup. The trade is worth it because Python reduces risk in the business logic layer.
+  - **Choice:** Python/FastAPI will own APIs, accounting logic, imports, exports, invoice generation, and future OCR.
+  - **Rationale:** The hardest parts are data extraction, reconciliation, document generation, and automation. Python is stronger for these than Node in this context, and it matches the user's experience.
+  - **Alternatives considered:** Node/Express, Node/NestJS, full-stack React framework.
+  - **Trade-offs:** A React frontend plus Python backend means two runtimes and a little more project setup. The trade is worth it because Python reduces risk in the business logic layer.
 
 ### ADR-2: Use React/TypeScript for the Frontend
 
-- **Choice:** Build the UI in React with TypeScript.
-- **Rationale:** The app needs rich screens: invoice builder, editable grids, filters, receipt review, payment application, and live invoice preview. React is a strong fit for reusable UI components and stateful workflows.
-- **Alternatives considered:** Plain HTML/JS, server-rendered Jinja/HTMX, desktop-native UI.
-- **Trade-offs:** React adds build tooling and frontend complexity. In return, it gives a more maintainable interface for the level of interactivity required.
+  - **Choice:** Build the UI in React with TypeScript.
+  - **Rationale:** The app needs rich screens: invoice builder, editable grids, filters, receipt review, payment application, and live invoice preview. React is a strong fit for reusable UI components and stateful workflows.
+  - **Alternatives considered:** Plain HTML/JS, server-rendered Jinja/HTMX, desktop-native UI.
+  - **Trade-offs:** React adds build tooling and frontend complexity. In return, it gives a more maintainable interface for the level of interactivity required.
 
 ### ADR-3: Start with SQLite
 
-- **Choice:** Use SQLite as the primary database for MVP.
-- **Rationale:** The app is local-first, single-user or low-concurrency, and benefits from simple backup/restore. SQLite is transactional and avoids database server administration.
-- **Alternatives considered:** PostgreSQL, DuckDB, flat files.
-- **Trade-offs:** SQLite is not ideal for many simultaneous users over a network share. If multi-user access becomes a requirement, plan a migration path to PostgreSQL.
+  - **Choice:** Use SQLite as the primary database for MVP.
+  - **Rationale:** The app is local-first, single-user or low-concurrency, and benefits from simple backup/restore. SQLite is transactional and avoids database server administration.
+  - **Alternatives considered:** PostgreSQL, DuckDB, flat files.
+  - **Trade-offs:** SQLite is not ideal for many simultaneous users over a network share. If multi-user access becomes a requirement, plan a migration path to PostgreSQL.
 
 ### ADR-4: Treat Invoices and Payments as Separate Accounting Records
 
-- **Choice:** Store invoices, payments, and payment applications as separate first-class entities.
-- **Rationale:** Customer advances, partial payments, overpayments, and multi-invoice checks cannot be modeled reliably with one running-balance sheet.
-- **Alternatives considered:** Single ledger table only, invoice table with embedded payment fields.
-- **Trade-offs:** More tables and workflows, but this is the core structure needed for reliable customer balances.
+  - **Choice:** Store invoices, payments, and payment applications as separate first-class entities.
+  - **Rationale:** Customer advances, partial payments, overpayments, and multi-invoice checks cannot be modeled reliably with one running-balance sheet.
+  - **Alternatives considered:** Single ledger table only, invoice table with embedded payment fields.
+  - **Trade-offs:** More tables and workflows, but this is the core structure needed for reliable customer balances.
 
 ### ADR-5: Generate Invoices from Source Records, Not Manual Lines
 
-- **Choice:** Invoice builder should select approved unbilled time and billable expenses, then generate invoice line items.
-- **Rationale:** Manual invoice entry would recreate the spreadsheet's fragility. The app should lock billed source rows and make the invoice reproducible.
-- **Alternatives considered:** Blank invoice editor, direct PDF editing, spreadsheet-style row formulas.
-- **Trade-offs:** Requires a better data model and source-row status tracking, but creates auditability and automation.
+  - **Choice:** Invoice builder should select approved unbilled time and billable expenses, then generate invoice line items.
+  - **Rationale:** Manual invoice entry would recreate the spreadsheet's fragility. The app should lock billed source rows and make the invoice reproducible.
+  - **Alternatives considered:** Blank invoice editor, direct PDF editing, spreadsheet-style row formulas.
+  - **Trade-offs:** Requires a better data model and source-row status tracking, but creates auditability and automation.
 
 ### ADR-6: Design Receipt OCR as a Pipeline, Not a One-Off Feature
 
-- **Choice:** Receipt OCR should be modeled as upload -> extraction -> suggested expense -> review -> approval.
-- **Rationale:** OCR is probabilistic. The app must store raw extracted data separately from approved accounting fields.
-- **Alternatives considered:** Directly create expenses from OCR output.
-- **Trade-offs:** Review workflow adds steps, but it protects accounting data quality.
+  - **Choice:** Receipt OCR should be modeled as upload -> extraction -> suggested expense -> review -> approval.
+  - **Rationale:** OCR is probabilistic. The app must store raw extracted data separately from approved accounting fields.
+  - **Alternatives considered:** Directly create expenses from OCR output.
+  - **Trade-offs:** Review workflow adds steps, but it protects accounting data quality.
 
 ## 6. Component Breakdown
 
@@ -154,10 +154,10 @@ Filesystem Storage
 
 ### Storage Model
 
-- SQLite database stores structured records.
-- Filesystem stores receipts, imported workbooks, generated invoices, and exported reports.
-- Database stores file metadata and relative paths, not large binary blobs for MVP.
-- Migrations are versioned through Alembic.
+  - SQLite database stores structured records.
+  - Filesystem stores receipts, imported workbooks, generated invoices, and exported reports.
+  - Database stores file metadata and relative paths, not large binary blobs for MVP.
+  - Migrations are versioned through Alembic.
 
 ### Core Schema
 
@@ -208,21 +208,21 @@ Filesystem Storage
 
 ### Migration Strategy
 
-- MVP starts with clean schema migration `0001_initial`.
-- Legacy workbook import should be repeatable into a staging area before committing records.
-- Imports should preserve original row references so discrepancies can be traced.
-- Schema changes must be additive where possible.
-- Before destructive schema migrations, create automatic backup of the SQLite database.
+  - MVP starts with clean schema migration `0001_initial`.
+  - Legacy workbook import should be repeatable into a staging area before committing records.
+  - Imports should preserve original row references so discrepancies can be traced.
+  - Schema changes must be additive where possible.
+  - Before destructive schema migrations, create automatic backup of the SQLite database.
 
 ## 8. API Design
 
 ### Conventions
 
-- REST JSON endpoints under `/api`.
-- Use plural resources: `/api/customers`, `/api/projects`.
-- Workflow actions are explicit subroutes: `/api/invoices/{id}/send`, `/api/payments/{id}/apply`.
-- Responses include stable IDs and calculated display fields where useful.
-- Errors use a consistent shape:
+  - REST JSON endpoints under `/api`.
+  - Use plural resources: `/api/customers`, `/api/projects`.
+  - Workflow actions are explicit subroutes: `/api/invoices/{id}/send`, `/api/payments/{id}/apply`.
+  - Responses include stable IDs and calculated display fields where useful.
+  - Errors use a consistent shape:
 
 ```json
 {
@@ -263,28 +263,28 @@ Filesystem Storage
 
 This is initially a local app handling business financial data, customer contact information, receipts, and possibly tax-relevant records. Trust boundaries are:
 
-- Browser to local API.
-- API to SQLite database.
-- API to local filesystem.
-- Optional future OCR provider boundary if cloud OCR is used.
+  - Browser to local API.
+  - API to SQLite database.
+  - API to local filesystem.
+  - Optional future OCR provider boundary if cloud OCR is used.
 
 ### Authentication and Authorization
 
 For MVP, use local-only authentication mode:
 
-- App binds to `127.0.0.1` by default.
-- Optional local password/PIN can be added before real financial use.
-- Roles are not needed for single-user MVP, but model future roles as `owner/admin`, `bookkeeper`, and `viewer`.
+  - App binds to `127.0.0.1` by default.
+  - Optional local password/PIN can be added before real financial use.
+  - Roles are not needed for single-user MVP, but model future roles as `owner/admin`, `bookkeeper`, and `viewer`.
 
 ### Data Protection
 
-- Store database and files in a known application data directory.
-- Provide backup/export function early.
-- Never expose the FastAPI server on the network by default.
-- Validate all inputs through Pydantic.
-- Sanitize uploaded filenames and store files under generated names.
-- Use file hashes to detect duplicate receipt uploads.
-- If cloud OCR is later used, surface that data leaves the local machine.
+  - Store database and files in a known application data directory.
+  - Provide backup/export function early.
+  - Never expose the FastAPI server on the network by default.
+  - Validate all inputs through Pydantic.
+  - Sanitize uploaded filenames and store files under generated names.
+  - Use file hashes to detect duplicate receipt uploads.
+  - If cloud OCR is later used, surface that data leaves the local machine.
 
 ### Compliance
 
@@ -304,10 +304,10 @@ No formal compliance target for MVP. Treat as sensitive internal financial data.
 
 ### Resilience Patterns
 
-- Use database transactions for invoice creation and payment application.
-- Use idempotency keys or duplicate detection for import and file upload later.
-- Store generated documents as reproducible outputs tied to source invoice data.
-- Maintain validation checks as first-class backend routines, not only UI warnings.
+  - Use database transactions for invoice creation and payment application.
+  - Use idempotency keys or duplicate detection for import and file upload later.
+  - Store generated documents as reproducible outputs tied to source invoice data.
+  - Maintain validation checks as first-class backend routines, not only UI warnings.
 
 ## 11. Testing Strategy
 
@@ -336,22 +336,22 @@ Import customer/project/time/expenses for invoice 662
 
 ### Expected Load
 
-- Initial users: 1 primary user, possibly one bookkeeper/accountant later.
-- Data volume: thousands to tens of thousands of time/expense/payment records, not millions.
-- Attachments: receipts and PDFs may become the largest storage component.
+  - Initial users: 1 primary user, possibly one bookkeeper/accountant later.
+  - Data volume: thousands to tens of thousands of time/expense/payment records, not millions.
+  - Attachments: receipts and PDFs may become the largest storage component.
 
 ### Optimization Strategy
 
-- Add indexes on invoice number, customer id, project id, dates, status, and foreign keys.
-- Paginate tables by default.
-- Use backend filters rather than loading all records into the browser.
-- Keep OCR and import operations as jobs if they become slow.
+  - Add indexes on invoice number, customer id, project id, dates, status, and foreign keys.
+  - Paginate tables by default.
+  - Use backend filters rather than loading all records into the browser.
+  - Keep OCR and import operations as jobs if they become slow.
 
 ### Known Bottlenecks
 
-- Workbook import and OCR may be slower than standard CRUD.
-- PDF generation can be slow if rendering many invoices at once.
-- Large receipt directories require file cleanup and backup planning.
+  - Workbook import and OCR may be slower than standard CRUD.
+  - PDF generation can be slow if rendering many invoices at once.
+  - Large receipt directories require file cleanup and backup planning.
 
 ## 13. Deployment & Infrastructure
 
@@ -386,27 +386,27 @@ Receipts/PDFs in app-managed file storage
 
 ### Functional Requirements
 
-- [ ] FR-1: Users can create and manage customers.
-- [ ] FR-2: Users can create and manage projects with customer, status, contract type, and rates.
-- [ ] FR-3: Users can enter time against projects and classify it as billable or nonbillable.
-- [ ] FR-4: Users can enter expenses with category, billable/reimbursable flags, paid-by, payment method, and receipt attachment.
-- [ ] FR-5: Users can build invoices from selected unbilled time and expenses.
-- [ ] FR-6: Sending/finalizing an invoice locks the included source records as invoiced.
-- [ ] FR-7: Users can record payments and customer advances independent of invoices.
-- [ ] FR-8: Users can apply one payment to multiple invoices and multiple payments to one invoice.
-- [ ] FR-9: Customer balances show open AR, unapplied credits, net balance, invoice history, and payment history.
-- [ ] FR-10: App can generate printable invoice PDFs.
-- [ ] FR-11: App can import relevant records from the existing workbook or a staging export.
-- [ ] FR-12: App can export accountant-friendly reports to Excel/CSV.
+  - [ ] FR-1: Users can create and manage customers.
+  - [ ] FR-2: Users can create and manage projects with customer, status, contract type, and rates.
+  - [ ] FR-3: Users can enter time against projects and classify it as billable or nonbillable.
+  - [ ] FR-4: Users can enter expenses with category, billable/reimbursable flags, paid-by, payment method, and receipt attachment.
+  - [ ] FR-5: Users can build invoices from selected unbilled time and expenses.
+  - [ ] FR-6: Sending/finalizing an invoice locks the included source records as invoiced.
+  - [ ] FR-7: Users can record payments and customer advances independent of invoices.
+  - [ ] FR-8: Users can apply one payment to multiple invoices and multiple payments to one invoice.
+  - [ ] FR-9: Customer balances show open AR, unapplied credits, net balance, invoice history, and payment history.
+  - [ ] FR-10: App can generate printable invoice PDFs.
+  - [ ] FR-11: App can import relevant records from the existing workbook or a staging export.
+  - [ ] FR-12: App can export accountant-friendly reports to Excel/CSV.
 
 ### Non-Functional Requirements
 
-- [ ] NFR-1: The app must not require internet access for core accounting workflows.
-- [ ] NFR-2: Core accounting operations must be transactionally safe.
-- [ ] NFR-3: The database and attachments must be easy to back up.
-- [ ] NFR-4: The UI must support dense data review without feeling like a marketing dashboard.
-- [ ] NFR-5: Accounting validation errors must be visible before records are finalized.
-- [ ] NFR-6: OCR output must require review before becoming approved accounting data.
+  - [ ] NFR-1: The app must not require internet access for core accounting workflows.
+  - [ ] NFR-2: Core accounting operations must be transactionally safe.
+  - [ ] NFR-3: The database and attachments must be easy to back up.
+  - [ ] NFR-4: The UI must support dense data review without feeling like a marketing dashboard.
+  - [ ] NFR-5: Accounting validation errors must be visible before records are finalized.
+  - [ ] NFR-6: OCR output must require review before becoming approved accounting data.
 
 ## 15. Implementation Roadmap
 
@@ -485,15 +485,15 @@ Receipts/PDFs in app-managed file storage
 
 ## 17. Open Questions
 
-- [ ] Should advance payments be tracked only at the customer level, or optionally reserved for a specific project before invoicing?
-- [ ] Should one invoice be allowed to include multiple projects, or should invoice-to-project remain one-to-one?
-- [ ] Should fixed-fee project costs appear on invoices, internal project profitability only, or both depending on category?
-- [ ] Should owner/employee expense reports be first-class records in this app or summarized from separate expense reports?
-- [ ] Should the MVP include local password protection, or is local machine access control enough for the first version?
-- [ ] Which invoice PDF approach should be selected after a rendering spike?
-- [ ] Should generated invoice numbers continue as simple sequential numbers only, or include a display/reference field such as `250507-0662`?
-- [ ] What is the desired backup location and backup frequency?
-- [ ] Should OCR be local-only, cloud-assisted, or provider-pluggable with user choice?
+  - [ ] Should advance payments be tracked only at the customer level, or optionally reserved for a specific project before invoicing?
+  - [ ] Should one invoice be allowed to include multiple projects, or should invoice-to-project remain one-to-one?
+  - [ ] Should fixed-fee project costs appear on invoices, internal project profitability only, or both depending on category?
+  - [ ] Should owner/employee expense reports be first-class records in this app or summarized from separate expense reports?
+  - [ ] Should the MVP include local password protection, or is local machine access control enough for the first version?
+  - [ ] Which invoice PDF approach should be selected after a rendering spike?
+  - [ ] Should generated invoice numbers continue as simple sequential numbers only, or include a display/reference field such as `250507-0662`?
+  - [ ] What is the desired backup location and backup frequency?
+  - [ ] Should OCR be local-only, cloud-assisted, or provider-pluggable with user choice?
 
 ## 18. Recommended Next Step
 
