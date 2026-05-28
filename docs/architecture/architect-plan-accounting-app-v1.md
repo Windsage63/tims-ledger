@@ -136,10 +136,10 @@ Implementation status: validated in the current repository.
 
 Implementation status: partially validated. Draft invoice creation and send/finalize from source records are implemented in the backend; preview, grouping controls, and PDF output remain planned.
 
-  - **Choice:** Invoice builder should select approved unbilled time and billable expenses, then generate invoice line items.
-  - **Rationale:** Manual invoice entry would recreate the spreadsheet's fragility. The app should lock billed source rows and make the invoice reproducible.
+  - **Choice:** Invoice builder should select approved unbilled time, eligible billable expenses, and approved non-hourly or fixed-fee billing lines, then generate invoice line items.
+  - **Rationale:** Manual invoice entry would be a regression from the automated invoicing currently in place in the spreadsheet. The app should support editable invoices that can be issued, recalled to draft, revised, and reissued without introducing bookkeeping steps that do not add value in a single-user workflow.
   - **Alternatives considered:** Blank invoice editor, direct PDF editing, spreadsheet-style row formulas.
-  - **Trade-offs:** Requires a better data model and source-row status tracking, but creates auditability and automation.
+  - **Trade-offs:** This approach is less intentionally less audit-rigid than typical enterprise accounting controls. Since there is noone to read the audit trail, it would simply be a waste of code.
 
 ### ADR-6: Design Receipt OCR as a Pipeline, Not a One-Off Feature
 
@@ -156,10 +156,10 @@ Implementation status: partially validated. File capture, OCR job records, sugge
 | ----------- | ------------- | ---------- | -------------- | ---------------- |
 | App Shell / Navigation | Shared layout, navigation, global search, settings access. | P0 | Frontend foundation | Implemented in React; later sections still placeholders. |
 | Customers | Customer master records, terms, contacts, balance summaries. | P0 | Database, API | Backend CRUD implemented and tested; frontend has first create/list screen. |
-| Projects | Project records, rates, contract type, status, customer association. | P0 | Customers | Backend CRUD implemented and tested; frontend has first create/list screen. |
+| Projects | Project records, rates, contract type, fixed-fee settings, and customer association. | P0 | Customers | Backend CRUD implemented and tested; frontend has first create/list screen. |
 | Time Entries | Time logging, billing status, project rates, unbilled tracking. | P0 | Projects, Customers | Backend implemented and tested; frontend has first create/list screen. |
 | Expenses | Expense entry, categories, billable/reimbursable flags, paid-by, receipt attachment. | P0 | Projects, Customers, Categories | Backend implemented and tested; frontend has first expense and category create/list screens. |
-| Invoice Builder | Select unbilled time/expenses, group into invoice, preview totals, generate invoice. | P0 | Time, Expenses, Customers, Projects | Backend candidate lookup and draft creation implemented; frontend workflow not started. |
+| Invoice Builder | Select eligible source records and approved non-hourly lines, build an editable draft, preview totals, and issue the invoice. | P0 | Time, Expenses, Customers, Projects | Backend candidate lookup and draft creation implemented; frontend workflow not started. |
 | Invoice Register | One row per invoice with sent/draft/paid/overdue status and open balance. | P0 | Invoice Builder, Payments | Backend list/detail implemented; frontend workflow not started. |
 | Payments | Record deposits, customer advances, checks, payment methods, unapplied amounts. | P0 | Customers | Backend implemented and tested; frontend workflow not started. |
 | Payment Applications | Apply payments/credits to invoices, support partial and multi-invoice applications. | P0 | Payments, Invoices | Backend implemented and tested; frontend workflow not started. |
@@ -167,7 +167,7 @@ Implementation status: partially validated. File capture, OCR job records, sugge
 | Reports | AR aging, revenue by customer/project, expense category export, tax/accounting export. | P1 | Core accounting records | AR aging and CSV exports implemented; broader reporting remains planned. |
 | Workbook Import | Import customers, projects, time, expenses, and income tracking from legacy workbook. | P1 | Data model, validation | Workbook preview implemented; staging and commit remain planned. |
 | PDF Invoice Output | Generate printable invoice PDFs from invoice records. | P1 | Invoice Builder | Not yet implemented. |
-| Receipt OCR | Upload receipt, extract fields, review suggestions, create expense. | P2 | Expenses, file storage | Backend job/review flow implemented; provider integration and frontend review queue remain planned. |
+| Receipt OCR | Upload receipt, extract fields, review suggestions, create expense, and preserve receipt images for later invoice attachment. | P2 | Expenses, file storage | Backend job/review flow implemented; provider integration and frontend review queue remain planned. |
 | Backup / Restore | Copy/export database and attached files safely. | P1 | Storage layer | Backup creation implemented; restore remains planned. |
 | Audit Log | Track material changes to invoices, payments, applications, and approved expenses. | P1 | Core services | Schema exists; feature behavior is not yet surfaced. |
 
@@ -185,12 +185,12 @@ Implementation status: partially validated. File capture, OCR job records, sugge
 | Entity | Purpose | Key Fields |
 | -------- | --------- | ------------ |
 | `customers` | Customer master data. | id, name, billing_email, phone, default_terms, active, notes |
-| `projects` | Project master data and billing rules. | id, project_no, customer_id, name, description, contract_type, status, rates, fixed_fee_amount |
+| `projects` | Project master data and billing rules. | id, project_no, customer_id, name, description, contract_type, status, default_rate, rates, fixed_fee_amount |
 | `time_entries` | Billable and nonbillable work. | id, date, project_id, customer_id, description, hours, work_type, rate, billable, billing_status, invoice_id |
 | `expense_categories` | Operational and accounting category mapping. | id, name, default_billable, default_reimbursable, tax_category, revenue_category, expense_category |
 | `expenses` | Expense records and reimbursement metadata. | id, date, project_id, customer_id, vendor, description, qty, unit_cost, total, category_id, billable, reimbursable, paid_by, payment_method, reimbursement_status, invoice_id, receipt_file_id |
 | `invoices` | Accrual revenue record. | id, invoice_no, customer_id, invoice_date, sent_date, due_date, status, terms, subtotal_labor, subtotal_expenses, freight, per_diem, other, sales_tax, total, open_balance |
-| `invoice_lines` | Printable/detail lines for invoices. | id, invoice_id, source_type, source_id, description, qty, unit_price, amount, line_group, sort_order |
+| `invoice_lines` | Printable/detail lines for invoices, including linked source rows and approved non-hourly billing lines. | id, invoice_id, source_type, source_id, description, qty, unit_price, amount, line_group, sort_order |
 | `payments` | Cash receipts and customer credits. | id, customer_id, payment_date, deposit_date, payment_type, reference_no, amount_received, unapplied_amount, bank_account, notes |
 | `payment_applications` | Application of payments/credits to invoices. | id, payment_id, invoice_id, application_date, amount_applied, notes |
 | `files` | Attached/imported/generated files. | id, file_type, original_name, storage_path, mime_type, sha256, created_at |
@@ -203,12 +203,15 @@ Implementation status: partially validated. File capture, OCR job records, sugge
 #### Invoice Generation
 
 1. User opens Invoice Builder for a customer/project.
-2. Backend returns unbilled billable time and reimbursable expenses.
-3. User includes/excludes rows and chooses grouping/detail level.
+2. Backend returns eligible unbilled billable time, eligible expenses, and any approved non-hourly billing candidates for the selected project.
+3. User includes or excludes rows, reviews draft totals, and sees prior balance and unapplied credits separately from the new invoice charges.
 4. Backend creates a draft invoice and invoice lines in one transaction.
-5. Included source rows are marked `drafted` and linked to the invoice.
-6. When user sends/finalizes the invoice, invoice status becomes `sent`, accrual revenue is recognized, and source rows become `invoiced`.
-7. PDF generation and managed invoice file output remain planned.
+5. While the invoice remains in draft, the user may revise the selected rows before issuance.
+6. When the user sends or finalizes the invoice, invoice status becomes `issued`, accrual revenue is recognized, and the included source rows are marked with that invoice number.
+7. Issued invoices are viewable and printable, and may be recalled to draft mode through an edit control for correction and reissue.
+8. Recalling an invoice removes its current invoice lines from the invoice record and clears that invoice number from the previously assigned time and expense rows.
+9. A recalled invoice then behaves like a normal draft again, so reissue rebuilds the invoice from the newly selected source rows.
+10. Previously generated PDF output may remain stored for reference, and newly generated PDF output replaces the working invoice document on reissue.
 
 #### Payment Application
 
@@ -216,7 +219,8 @@ Implementation status: partially validated. File capture, OCR job records, sugge
 2. Payment starts with full `unapplied_amount`.
 3. User applies all or part of payment to one or more open invoices.
 4. Backend creates `payment_applications` and recalculates invoice open balances and payment unapplied balance in one transaction.
-5. Invoice statuses update to paid, partially paid, overdue, or sent as appropriate.
+5. Unapplied credits remain separate from invoice line items and affect balances only through payment application logic.
+6. Invoice statuses update to paid, partially paid, overdue, or sent as appropriate.
 
 #### Receipt OCR
 
@@ -226,6 +230,7 @@ Implementation status: partially validated. File capture, OCR job records, sugge
 4. Extracted data is displayed as suggestions, not final accounting data.
 5. User approves or edits suggestions.
 6. Approved result creates or updates an expense record and attaches the receipt file.
+7. If that expense is later billed, the receipt image may be appended to the generated invoice PDF.
 
 ### Migration Strategy
 
@@ -280,6 +285,7 @@ Implementation status: partially validated. File capture, OCR job records, sugge
 | GET | `/api/invoices` | List invoices. |
 | GET | `/api/invoices/{id}` | Read invoice detail. |
 | POST | `/api/invoices/{id}/send` | Finalize/send invoice and recognize accrual revenue. |
+| POST | `/api/invoices/{id}/recall` | Return an issued invoice to draft mode, remove current invoice lines, and clear source-record invoice assignments for reissue. |
 | POST | `/api/payments` | Record payment/advance. |
 | POST | `/api/payments/{id}/applications` | Apply payment to one or more invoices. |
 | GET | `/api/reports/ar-aging` | AR aging report. |
@@ -325,7 +331,7 @@ No formal compliance target for MVP. Treat as sensitive internal financial data.
 
 | Failure | Detection | Recovery |
 | --------- | ----------- | ---------- |
-| Invoice generation fails halfway | Transaction rollback | No source rows are marked drafted/invoiced unless invoice creation succeeds. |
+| Invoice generation fails halfway | Transaction rollback | No invoice issuance or source-row invoice assignment is persisted unless the relevant transaction succeeds. |
 | Payment application exceeds invoice/payment balance | Service-level validation | Reject transaction with clear message. |
 | Receipt OCR fails | OCR job status becomes `failed` | User can manually enter expense or retry OCR. |
 | Imported workbook has inconsistent data | Import validation report | Import into staging and require user review before commit. |
@@ -423,8 +429,8 @@ Receipts/PDFs in app-managed file storage
   - [ ] FR-2: Users can create and manage projects with customer, status, contract type, and rates.
   - [ ] FR-3: Users can enter time against projects and classify it as billable or nonbillable.
   - [ ] FR-4: Users can enter expenses with category, billable/reimbursable flags, paid-by, payment method, and receipt attachment.
-  - [ ] FR-5: Users can build invoices from selected unbilled time and expenses.
-  - [ ] FR-6: Sending/finalizing an invoice locks the included source records as invoiced.
+  - [ ] FR-5: Users can build editable draft invoices from selected unbilled time, eligible expenses, and approved non-hourly billing lines.
+  - [ ] FR-6: Issuing/finalizing an invoice marks the included source records with that invoice number, and an edit button can recall the invoice to draft mode, remove its current invoice lines, clear those source-record invoice assignments, and allow normal reissue.
   - [ ] FR-7: Users can record payments and customer advances independent of invoices.
   - [ ] FR-8: Users can apply one payment to multiple invoices and multiple payments to one invoice.
   - [ ] FR-9: Customer balances show open AR, unapplied credits, net balance, invoice history, and payment history.
@@ -481,11 +487,11 @@ Current status: source-record APIs and first React screens are in place. Receipt
 1. Implement invoice candidate selection.
 2. Implement draft invoice creation from selected source rows.
 3. Implement invoice preview and line grouping.
-4. Implement send/finalize workflow.
+4. Implement send/finalize and recall-to-draft workflow.
 5. Generate PDF invoice.
 6. Validate against invoice 662.
 
-Current status: steps 1, 2, and 4 are implemented in the backend. UI workflow, PDF output, and invoice 662 validation remain open.
+Current status: steps 1, 2, and issue/finalize are implemented in the backend. Recall and reissue behavior, UI workflow, PDF output, and invoice 662 validation remain open.
 
 ### Phase 4: Payments and Customer Balances
 
@@ -542,12 +548,16 @@ Current status: backup creation exists; restore, packaging, and local authentica
   - [ ] Should advance payments be tracked only at the customer level, or optionally reserved for a specific project before invoicing?
   - [ ] Should one invoice be allowed to include multiple projects, or should invoice-to-project remain one-to-one?
   - [ ] Should fixed-fee project costs appear on invoices, internal project profitability only, or both depending on category?
+  - [ ] Should fixed-fee or HD billing lines be modeled as a dedicated source-record type, or only as controlled invoice-draft lines?
+  - [ ] While an invoice is in draft, should selected source rows be reserved from other drafts, or remain generally eligible until issuance?
+  - [ ] Should unapplied credits be applied during the invoice issue workflow, or only through a separate payment-application step after the invoice exists?
   - [ ] Should owner/employee expense reports be first-class records in this app or summarized from separate expense reports?
   - [ ] Should the MVP include local password protection, or is local machine access control enough for the first version?
   - [ ] Which invoice PDF approach should be selected after a rendering spike?
   - [ ] Should generated invoice numbers continue as simple sequential numbers only, or include a display/reference field such as `250507-0662`?
   - [ ] What is the desired backup location and backup frequency?
   - [ ] Should OCR be local-only, cloud-assisted, or provider-pluggable with user choice?
+  - [ ] When billed receipts are appended to an invoice PDF, which expense categories require attachment and in what order should attachments appear?
 
 ## 18. Recommended Next Step
 

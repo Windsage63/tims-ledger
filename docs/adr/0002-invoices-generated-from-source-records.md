@@ -14,9 +14,15 @@ Invoices should be generated from approved source records:
 
   - billable time entries
   - reimbursable expenses
-  - controlled manual adjustments when needed
+  - approved non-hourly or fixed-fee billing lines when needed
 
-When an invoice is finalized, the included source records are linked to that invoice and locked as invoiced.
+The invoice workflow should distinguish between draft and issued states:
+
+  - A draft invoice may be reviewed and revised before issuance.
+  - Prior customer balance and unapplied credits are displayed separately from the new invoice charges.
+  - When an invoice is finalized, the included source records are marked with that invoice number.
+  - Issued invoices may be recalled to draft mode, edited, and reissued when corrections are needed.
+  - Recalling an invoice removes its current invoice lines and clears its invoice number from the previously assigned time and expense records so reissue can follow the normal workflow.
 
 ## Alternatives Considered
 
@@ -26,4 +32,4 @@ When an invoice is finalized, the included source records are linked to that inv
 
 ## Consequences
 
-This creates a stronger audit trail and makes customer balances more reliable. It requires more careful modeling of billing statuses, draft invoices, voids, and corrections, but that complexity belongs in the application rather than in spreadsheet formulas.
+This matches the intended single-user spreadsheet-replacement workflow and avoids bookkeeping steps that add complexity without practical value in this context. Recalling an invoice deliberately unwinds its current issue state by removing its invoice lines and clearing invoice-number assignments from the previously linked source records, while allowing the prior PDF output to remain stored if desired. This lets reissue follow the same normal workflow as the original issuance and prevents the user from needing to edit the database directly to correct invoices.
