@@ -42,8 +42,8 @@
 2. User selects the project by project number. The system derives the customer and available rates from the project record.
 3. User enters the work description, number of hours, and selects the rate.
 4. System stores the time entry as a source record.
-5. Invoice linkage is empty until the time entry is included on an issued invoice.
-6. Unbilled billable time (time with no invoice linkage and a billable rate) is eligible for invoice building, while non-billable or fixed-fee-supporting hours remain available for project tracking without being treated as labor revenue.
+5. Invoice linkage is empty until the time entry checkbox is selected into an invoice.
+6. Unbilled billable time (time with no invoice linkage and a billable rate) is eligible for invoice building. When selected into an invoice, the time entry is stamped to that invoice immediately. When unselected, that invoice linkage is removed immediately. Non-billable or fixed-fee-supporting hours remain available for project tracking without being treated as labor revenue.
 
 ## 4. User Enters Expense
 
@@ -51,8 +51,8 @@
 2. User selects the project by project number. The system derives the customer from the project record.
 3. User enters expense vendor, description, quantity, unit cost, and selects the expense category, and billable flag.
 4. System stores the expense as a source record.
-5. Invoice linkage is empty until the expense is included on an issued invoice.
-6. Unbilled billable expenses (expenses with no invoice linkage that are flagged as billable) are eligible for invoice building, while non-billable or fixed-fee-supporting expenses remain available for internal cost tracking.
+5. Invoice linkage is empty until the expense is selected into an invoice.
+6. Unbilled billable expenses (expenses with no invoice linkage that are flagged as billable) are eligible for invoice building. When selected into an invoice, the expense is stamped to that invoice immediately. When unselected, that invoice linkage is removed immediately. Non-billable or fixed-fee-supporting expenses remain available for internal cost tracking.
 
 ## 5. User Creates an Invoice
 
@@ -62,13 +62,12 @@
 4. System creates a listing of all eligible unbilled expenses assigned to the project, showing the date, description, expense category, unit cost, and total cost for each line, plus a checkbox labeled `invoice?`.
 5. If the project uses fixed-fee or non-hourly billing, the draft may also include approved HD or other controlled manual billing lines.
 6. User selects the time, expense, and approved non-hourly lines to be assigned to the invoice.
-7. System creates a draft invoice from the selected source records and calculates invoice totals.
+7. As each line is selected, the system stamps that source record to the invoice immediately and calculates updated invoice totals.
 8. Prior customer balance is shown separately from the current invoice charges. Unapplied credits may be displayed and optionally applied through payment application logic, not by rewriting invoice lines.
-9. While the invoice remains in draft, the user may review, add, or remove eligible source records before issuance.
-10. When the user issues the invoice, the system finalizes the invoice, assigns that invoice number to the included source records, generates the PDF, and stores it in the invoice ledger.
-11. Existing issued invoices may be viewed and printed by invoice number. An edit control may recall an issued invoice back to draft mode.
-12. When an invoice is recalled, the system removes the current invoice lines from the invoice record and clears that invoice number from the previously assigned time and expense records. The previously generated PDF may remain stored for reference.
-13. After recall, the invoice follows the normal draft workflow again so the user can reselect source records, regenerate invoice lines, and reissue the corrected invoice.
+9. The user may review, add, or remove eligible source records. Removing a selected line clears that source record from the invoice immediately and returns it to the unbilled pool.
+10. When the user issues the invoice, the system adds or updates that invoice in the invoice listing, generates the PDF, and stores or overwrites the current invoice PDF.
+11. Existing issued invoices may be viewed and printed by invoice number, and they remain editable.
+12. If the user edits an issued invoice, the same line-by-line checkbox workflow applies: added lines are stamped immediately, removed lines are unstamped immediately, and reissuing updates the invoice listing entry and overwrites the current PDF.
 
 ## 6. User Records and Applies a Payment
 

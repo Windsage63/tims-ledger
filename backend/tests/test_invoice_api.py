@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
 
-def test_invoice_builder_candidates_and_invoice_send_flow(api_client: TestClient) -> None:
+def test_invoice_builder_candidates_and_invoice_issue_flow(api_client: TestClient) -> None:
     customer_id, project_id = _create_customer_project_sources(api_client)
 
     candidates_response = api_client.get(
@@ -42,20 +42,20 @@ def test_invoice_builder_candidates_and_invoice_send_flow(api_client: TestClient
     assert empty_candidates_response.json()["time_entries"] == []
     assert empty_candidates_response.json()["expenses"] == []
 
-    send_response = api_client.post(
-        f"/api/invoices/{invoice['id']}/send",
+    issue_response = api_client.post(
+        f"/api/invoices/{invoice['id']}/issue",
         json={"sent_date": "2026-05-08"},
     )
 
-    assert send_response.status_code == 200
-    sent_invoice = send_response.json()
-    assert sent_invoice["status"] == "sent"
-    assert sent_invoice["sent_date"] == "2026-05-08"
+    assert issue_response.status_code == 200
+    issued_invoice = issue_response.json()
+    assert issued_invoice["status"] == "issued"
+    assert issued_invoice["sent_date"] == "2026-05-08"
 
     time_entry = api_client.get(f"/api/time-entries/{candidates['time_entries'][0]['id']}").json()
     expense = api_client.get(f"/api/expenses/{candidates['expenses'][0]['id']}").json()
-    assert time_entry["billing_status"] == "invoiced"
-    assert expense["reimbursement_status"] == "invoiced"
+    assert time_entry["billing_status"] == "assigned"
+    assert expense["reimbursement_status"] == "assigned"
 
 
 def test_invoice_register_filters_by_customer_and_status(api_client: TestClient) -> None:
@@ -131,6 +131,7 @@ def _create_customer_project_sources(
     project = api_client.post(
         "/api/projects",
         json={
+            "project_no": "AA-001",
             "customer_id": customer["id"],
             "name": "Tower Upgrade",
             "default_hourly_rate": "125.00",

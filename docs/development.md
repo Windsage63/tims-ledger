@@ -51,7 +51,7 @@ Start the API:
 
 ```powershell
 cd backend
-..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8004
 ```
 
 ## Frontend
@@ -92,14 +92,14 @@ On Windows, you can use `startup.bat` from the repository root.
 For manual startup, run the backend and frontend in separate terminals:
 
 ```text
-Backend:  http://127.0.0.1:8000
+Backend:  http://127.0.0.1:8004
 Frontend: http://127.0.0.1:5173
 ```
 
 After starting the backend, API docs are available at:
 
 ```text
-http://127.0.0.1:8000/docs
+http://127.0.0.1:8004/docs
 ```
 
 The first implemented API groups are:

@@ -7,7 +7,7 @@ from app.models import ContractType, ProjectStatus
 
 
 class ProjectBase(BaseModel):
-    project_no: str | None = Field(default=None, max_length=80)
+    project_no: str = Field(min_length=1, max_length=80)
     customer_id: int = Field(gt=0)
     name: str = Field(min_length=1, max_length=200)
     description: str | None = None

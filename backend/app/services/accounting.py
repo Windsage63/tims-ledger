@@ -98,7 +98,7 @@ def create_draft_invoice_from_sources(
             )
         )
         entry.invoice_id = invoice.id
-        entry.billing_status = BillingStatus.DRAFTED.value
+        entry.billing_status = BillingStatus.ASSIGNED.value
         sort_order += 1
 
     for expense in expenses:
@@ -117,7 +117,7 @@ def create_draft_invoice_from_sources(
             )
         )
         expense.invoice_id = invoice.id
-        expense.reimbursement_status = BillingStatus.DRAFTED.value
+        expense.reimbursement_status = BillingStatus.ASSIGNED.value
         sort_order += 1
 
     invoice.subtotal_labor = money(subtotal_labor)
@@ -135,25 +135,24 @@ def create_draft_invoice_from_sources(
     return invoice
 
 
-def send_invoice(session: Session, invoice_id: int, *, sent_date: date) -> Invoice:
+def issue_invoice(session: Session, invoice_id: int, *, issued_date: date) -> Invoice:
     invoice = session.get(Invoice, invoice_id)
     if invoice is None:
         raise AccountingError("Invoice was not found.")
     if invoice.status != InvoiceStatus.DRAFT.value:
-        raise AccountingError("Only draft invoices can be sent.")
+        raise AccountingError("Only draft invoices can be issued.")
     if not invoice.lines:
-        raise AccountingError("Invoice cannot be sent with no line items.")
+        raise AccountingError("Invoice cannot be issued with no line items.")
 
-    invoice.status = InvoiceStatus.SENT.value
-    invoice.sent_date = sent_date
-
-    for entry in invoice.time_entries:
-        entry.billing_status = BillingStatus.INVOICED.value
-    for expense in invoice.expenses:
-        expense.reimbursement_status = BillingStatus.INVOICED.value
+    invoice.status = InvoiceStatus.ISSUED.value
+    invoice.sent_date = issued_date
 
     session.flush()
     return invoice
+
+
+def send_invoice(session: Session, invoice_id: int, *, sent_date: date) -> Invoice:
+    return issue_invoice(session, invoice_id, issued_date=sent_date)
 
 
 def apply_payment(
@@ -190,8 +189,12 @@ def apply_payment(
             raise AccountingError("Invoice was not found.")
         if invoice.customer_id != payment.customer_id:
             raise AccountingError("Payment cannot be applied to another customer's invoice.")
-        if invoice.status not in {InvoiceStatus.SENT.value, InvoiceStatus.PARTIALLY_PAID.value}:
-            raise AccountingError("Payment can only be applied to sent or partially paid invoices.")
+        if invoice.status not in {
+            InvoiceStatus.ISSUED.value,
+            InvoiceStatus.SENT.value,
+            InvoiceStatus.PARTIALLY_PAID.value,
+        }:
+            raise AccountingError("Payment can only be applied to issued or partially paid invoices.")
         if amount <= 0:
             raise AccountingError("Payment application amount must be positive.")
         if amount > money(invoice.open_balance):

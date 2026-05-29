@@ -24,7 +24,12 @@ from app.services import (
 
 def test_invoice_draft_links_source_records_and_totals(session) -> None:
     customer = Customer(name="Air Advantage")
-    project = Project(customer=customer, name="Tower work", default_hourly_rate=Decimal("125.00"))
+    project = Project(
+        customer=customer,
+        project_no="AA-001",
+        name="Tower work",
+        default_hourly_rate=Decimal("125.00"),
+    )
     time_entry = TimeEntry(
         customer_id=1,
         project=project,
@@ -61,14 +66,14 @@ def test_invoice_draft_links_source_records_and_totals(session) -> None:
     assert invoice.open_balance == Decimal("354.60")
     assert len(invoice.lines) == 2
     assert time_entry.invoice_id == invoice.id
-    assert time_entry.billing_status == BillingStatus.DRAFTED.value
+    assert time_entry.billing_status == BillingStatus.ASSIGNED.value
     assert expense.invoice_id == invoice.id
-    assert expense.reimbursement_status == BillingStatus.DRAFTED.value
+    assert expense.reimbursement_status == BillingStatus.ASSIGNED.value
 
 
-def test_send_invoice_locks_source_records_as_invoiced(session) -> None:
+def test_send_invoice_publishes_invoice_without_restamping_source_records(session) -> None:
     customer = Customer(name="Air Advantage")
-    project = Project(customer=customer, name="Tower work")
+    project = Project(customer=customer, project_no="AA-001", name="Tower work")
     time_entry = TimeEntry(
         customer=customer,
         project=project,
@@ -89,9 +94,9 @@ def test_send_invoice_locks_source_records_as_invoiced(session) -> None:
 
     send_invoice(session, invoice.id, sent_date=date(2026, 5, 8))
 
-    assert invoice.status == InvoiceStatus.SENT.value
+    assert invoice.status == InvoiceStatus.ISSUED.value
     assert invoice.sent_date == date(2026, 5, 8)
-    assert time_entry.billing_status == BillingStatus.INVOICED.value
+    assert time_entry.billing_status == BillingStatus.ASSIGNED.value
 
 
 def test_payment_application_updates_invoice_and_unapplied_amount(session) -> None:
@@ -137,7 +142,7 @@ def test_payment_application_rejects_overapplication(session) -> None:
 
 def _sent_invoice_with_payment(session, payment_amount: Decimal = Decimal("100.00")):
     customer = Customer(name="Air Advantage")
-    project = Project(customer=customer, name="Tower work")
+    project = Project(customer=customer, project_no="AA-001", name="Tower work")
     time_entry = TimeEntry(
         customer=customer,
         project=project,

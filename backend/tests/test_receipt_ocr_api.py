@@ -9,7 +9,7 @@ def test_receipt_ocr_review_creates_expense(api_client: TestClient) -> None:
     customer = api_client.post("/api/customers", json={"name": "Air Advantage"}).json()
     project = api_client.post(
         "/api/projects",
-        json={"customer_id": customer["id"], "name": "Tower Upgrade"},
+        json={"project_no": "AA-001", "customer_id": customer["id"], "name": "Tower Upgrade"},
     ).json()
 
     receipt_response = api_client.post(

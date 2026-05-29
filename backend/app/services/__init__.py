@@ -3,6 +3,7 @@ from app.services.accounting import (
     PaymentApplicationInput,
     apply_payment,
     create_draft_invoice_from_sources,
+    issue_invoice,
     money,
     send_invoice,
 )
@@ -20,6 +21,7 @@ __all__ = [
     "create_draft_invoice_from_sources",
     "customer_balance",
     "create_backup",
+    "issue_invoice",
     "money",
     "preview_workbook",
     "ar_aging_csv",

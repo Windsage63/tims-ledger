@@ -25,4 +25,4 @@ Use:
 
 ## Consequences
 
-This keeps business logic and automation in Python, where spreadsheet import, document generation, OCR work, and invoice or payment workflows are strongest. React adds frontend build complexity, but it is the better fit for invoice building, editable tables, draft review workflows, filters, and approval screens. SQLite keeps setup and backup simple for the first version, and the local-first model extends to app-managed receipts and generated PDFs, but the data layer should avoid assumptions that would make a later PostgreSQL migration painful.
+This keeps business logic and automation in Python, where spreadsheet import, document generation, OCR work, and invoice or payment workflows are strongest. React adds frontend build complexity, but it is the better fit for invoice building, editable tables, invoice editing workflows, filters, and approval screens. SQLite keeps setup and backup simple for the first version, and the local-first model extends to app-managed receipts and generated PDFs, but the data layer should avoid assumptions that would make a later PostgreSQL migration painful.

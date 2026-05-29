@@ -134,6 +134,7 @@ def _resolve_reimbursement_status(billable: bool, reimbursable: bool) -> str:
 
 def _ensure_expense_editable(expense: Expense) -> None:
     if expense.invoice_id is not None or expense.reimbursement_status in {
+        BillingStatus.ASSIGNED.value,
         BillingStatus.DRAFTED.value,
         BillingStatus.INVOICED.value,
     }:

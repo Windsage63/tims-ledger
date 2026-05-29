@@ -110,6 +110,7 @@ def _sent_invoice(
     project = api_client.post(
         "/api/projects",
         json={
+            "project_no": f"{invoice_no}-PRJ",
             "customer_id": customer["id"],
             "name": f"{customer_name} Tower Upgrade",
             "default_hourly_rate": "125.00",

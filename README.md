@@ -31,7 +31,6 @@ The React app has moved beyond the placeholder stage. It includes the app shell,
 backend/             FastAPI application source
 frontend/            React application source
 docs/architecture/   Architecture blueprints and technical decisions
-docs/discovery/      Workbook analysis and refined requirements
 docs/development.md  Local development setup and check commands
 docs/product/        Product workflow, UX, and screen planning
 references/          Source workbook and Stitch design references
@@ -43,7 +42,8 @@ On Windows, run `startup.bat` from the repository root to launch the backend and
 
 See `docs/development.md` for local setup, check commands, and dev server startup.
 
-See `docs/roadmap.md` for the current implementation roadmap.
+The single approved source of truth for product behavior is `docs/architecture/workflows.md`.
+All other documentation exists only to interpret that workflow into schema, architecture, and implementation guidance. If another document disagrees with the workflow, the workflow wins.
 
 ## First Proof Workflow
 
@@ -51,8 +51,8 @@ The proof workflow is partially implemented today. The backend covers:
 
 ```text
 Customer + Project + Time + Expense
--> Invoice candidate selection and draft creation
--> Invoice send/finalize
+-> Working invoice with line-by-line assignment
+-> Issue or reissue current PDF
 -> Payment application
 -> Customer balance and AR aging
 ```
@@ -63,7 +63,8 @@ The full target workflow remains:
 
 ```text
 Customer + Project + Time + Expense
--> Invoice Builder
+-> Working Invoice With Line-By-Line Assignment
+-> Issue / Reissue Current PDF
 -> Invoice 662 style PDF
 -> Payment Application
 -> Customer Balance

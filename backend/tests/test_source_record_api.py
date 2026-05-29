@@ -129,6 +129,7 @@ def test_invoice_linked_source_records_cannot_be_updated(
     customer = Customer(name="Air Advantage")
     project = Project(
         customer=customer,
+        project_no="AA-001",
         name="Tower Upgrade",
         default_hourly_rate=Decimal("125.00"),
     )
@@ -185,7 +186,11 @@ def test_time_entry_requires_rate_when_project_has_no_default(api_client: TestCl
     customer_response = api_client.post("/api/customers", json={"name": "Air Advantage"})
     project_response = api_client.post(
         "/api/projects",
-        json={"customer_id": customer_response.json()["id"], "name": "No Rate Project"},
+        json={
+            "project_no": "AA-002",
+            "customer_id": customer_response.json()["id"],
+            "name": "No Rate Project",
+        },
     )
 
     response = api_client.post(
@@ -210,6 +215,7 @@ def _create_customer_and_project(api_client: TestClient) -> tuple[int, int]:
     project_response = api_client.post(
         "/api/projects",
         json={
+            "project_no": "AA-001",
             "customer_id": customer_id,
             "name": "Tower Upgrade",
             "default_hourly_rate": "125.00",

@@ -8,6 +8,8 @@
 
 Windsage Ledger is a local-first accounting operations app for Air Advantage. It is intended to replace fragile spreadsheet accounting workflows with a structured app for customers, projects, time entries, expenses, invoices, payments, customer advances, customer balances, reports, and future receipt OCR.
 
+The single approved source of truth for product behavior is `docs/architecture/workflows.md`. Every other project document is subordinate to that workflow.
+
 ## Why This Exists
 
 The current spreadsheet is useful but has become too complex for reliable accounting. The original invoice sheet can produce invoices, but the workbook does not maintain a clean invoice register, payment ledger, or reliable customer balance system. Prior attempts to rebuild the workbook showed that spreadsheet formula logic is too fragile for the desired workflow.
@@ -40,7 +42,8 @@ The first working milestone should prove this flow:
 
 ```text
 Customer + Project + Time + Expense
--> Invoice Builder
+-> Working Invoice With Line-By-Line Assignment
+-> Issue / Reissue Current PDF
 -> Invoice 662 style PDF
 -> Payment Application
 -> Customer Balance
@@ -52,10 +55,9 @@ If this flow reproduces the existing invoice behavior and fixes customer balance
 
   - `README.md`
   - `docs/architecture/architect-plan-accounting-app-v1.md`
-  - `docs/discovery/Accounting Workbook Improvement Plan.md`
-  - `docs/discovery/Accounting Workbook Refined Requirements.md`
+  - `docs/architecture/database-schema-workflow-v1.md`
+  - `docs/architecture/workflows.md`
   - `docs/product/design-principles.md`
-  - `docs/product/workflows.md`
   - `docs/adr/`
   - `references/workbooks/Timesheet Log and Project Tracking 2025.xlsx`
   - `references/stitch/`
@@ -66,8 +68,8 @@ The repo has initial project scaffolding plus the first backend accounting found
 
   - `backend/` contains FastAPI routes for customers, projects, source records, invoices, payments, reports, imports, receipts/OCR review, and backups.
   - `backend/` contains SQLAlchemy models, Alembic migration setup, accounting services, and backend tests for invoice/payment/source-record rules.
-  - `frontend/` contains a minimal React/Vite placeholder app.
-  - `docs/` contains architecture, discovery, product, and ADR notes.
+  - `frontend/` contains the app shell plus first create/list workflows for customers, projects, time entries, expenses, and expense categories.
+  - `docs/` contains architecture, product, and ADR notes, with `docs/architecture/workflows.md` as the single source of truth for workflow direction.
   - `references/` contains the workbook and Stitch concept files.
 
 Python dependencies are installed into `.venv`; frontend dependencies are installed with npm.
@@ -75,7 +77,7 @@ Backend and frontend checks have been run successfully.
 
 ## Suggested Next Steps
 
-1. Replace the placeholder frontend with the first real app shell and navigation.
+1. Realign backend invoice behavior to the approved workflow in `docs/architecture/workflows.md`.
 2. Build the proof workflow around invoice `662` in the UI.
 3. Add PDF invoice rendering.
 4. Add richer workbook import staging and reconciliation.

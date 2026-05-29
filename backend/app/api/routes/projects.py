@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.api.errors import ConflictError
 from app.api.errors import NotFoundError
 from app.db.session import get_session
 from app.models import Customer, Project
@@ -35,6 +36,7 @@ def create_project(
     session: Annotated[Session, Depends(get_session)],
 ) -> Project:
     _ensure_customer_exists(session, payload.customer_id)
+    _ensure_project_no_available(session, payload.project_no)
     project = Project(**payload.model_dump())
     session.add(project)
     session.commit()
@@ -60,6 +62,8 @@ def update_project(
     updates = payload.model_dump(exclude_unset=True)
     if "customer_id" in updates:
         _ensure_customer_exists(session, updates["customer_id"])
+    if "project_no" in updates:
+        _ensure_project_no_available(session, updates["project_no"], project_id=project_id)
 
     for field, value in updates.items():
         setattr(project, field, value)
@@ -90,3 +94,14 @@ def _get_project(session: Session, project_id: int) -> Project:
 def _ensure_customer_exists(session: Session, customer_id: int) -> None:
     if session.get(Customer, customer_id) is None:
         raise NotFoundError("Customer was not found.")
+
+
+def _ensure_project_no_available(
+    session: Session,
+    project_no: str,
+    *,
+    project_id: int | None = None,
+) -> None:
+    existing = session.scalar(select(Project).where(Project.project_no == project_no))
+    if existing is not None and existing.id != project_id:
+        raise ConflictError("Project number already exists.")

@@ -15,10 +15,10 @@ The first accounting foundation is scaffolded:
 
   - SQLAlchemy models for customers, projects, time entries, expenses, invoices, invoice lines, payments, payment applications, files, OCR jobs, audit events, and app settings.
   - Alembic migration `202605250001_initial_accounting_schema`.
-  - Service tests for draft invoice creation, sending invoices, and applying payments safely.
+  - Service tests for invoice creation, current invoice issue behavior, and applying payments safely.
   - API routes and tests for customer and project CRUD.
   - API routes and tests for time entries, expenses, and expense categories.
-  - Invoice builder candidate, draft invoice, invoice register, and send/finalize routes.
+  - Invoice builder candidate, invoice register, and current invoice issue routes.
   - Payment recording, payment application, customer balance, and AR aging routes.
   - Workbook preview and CSV report export routes.
   - Receipt file registration, OCR job suggestion, and OCR review-to-expense routes.

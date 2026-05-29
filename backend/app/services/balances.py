@@ -8,6 +8,7 @@ from app.models import Customer, Invoice, InvoiceStatus, Payment
 from app.services.accounting import money
 
 OPEN_INVOICE_STATUSES = {
+    InvoiceStatus.ISSUED.value,
     InvoiceStatus.SENT.value,
     InvoiceStatus.PARTIALLY_PAID.value,
     InvoiceStatus.OVERDUE.value,

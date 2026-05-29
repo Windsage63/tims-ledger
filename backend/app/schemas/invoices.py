@@ -61,8 +61,11 @@ class InvoiceCreate(BaseModel):
     terms: str = Field(default="Due on receipt", min_length=1, max_length=100)
 
 
-class InvoiceSend(BaseModel):
+class InvoiceIssue(BaseModel):
     sent_date: date_type
+
+
+InvoiceSend = InvoiceIssue
 
 
 class InvoiceCandidatesRead(BaseModel):

@@ -59,6 +59,7 @@ def _sent_invoice(api_client: TestClient) -> tuple[int, int]:
     project = api_client.post(
         "/api/projects",
         json={
+            "project_no": "AA-001",
             "customer_id": customer["id"],
             "name": "Tower Upgrade",
             "default_hourly_rate": "125.00",

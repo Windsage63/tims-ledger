@@ -128,6 +128,7 @@ def _resolve_rate(rate: Decimal | None, project: Project) -> Decimal:
 
 def _ensure_time_entry_editable(entry: TimeEntry) -> None:
     if entry.invoice_id is not None or entry.billing_status in {
+        BillingStatus.ASSIGNED.value,
         BillingStatus.DRAFTED.value,
         BillingStatus.INVOICED.value,
     }:

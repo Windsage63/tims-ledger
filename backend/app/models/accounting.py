@@ -27,6 +27,7 @@ class ContractType(StrEnum):
 
 class BillingStatus(StrEnum):
     UNBILLED = "unbilled"
+    ASSIGNED = "assigned"
     DRAFTED = "drafted"
     INVOICED = "invoiced"
     VOIDED = "voided"
@@ -35,6 +36,7 @@ class BillingStatus(StrEnum):
 
 class InvoiceStatus(StrEnum):
     DRAFT = "draft"
+    ISSUED = "issued"
     SENT = "sent"
     PARTIALLY_PAID = "partially_paid"
     PAID = "paid"
@@ -61,8 +63,14 @@ class Customer(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(200), index=True)
+    billing_contact_name: Mapped[str | None] = mapped_column(String(200))
     billing_email: Mapped[str | None] = mapped_column(String(255))
     phone: Mapped[str | None] = mapped_column(String(50))
+    billing_address_line1: Mapped[str | None] = mapped_column(String(255))
+    billing_address_line2: Mapped[str | None] = mapped_column(String(255))
+    billing_city: Mapped[str | None] = mapped_column(String(120))
+    billing_state: Mapped[str | None] = mapped_column(String(50))
+    billing_postal_code: Mapped[str | None] = mapped_column(String(30))
     default_terms: Mapped[str] = mapped_column(String(100), default="Due on receipt")
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     notes: Mapped[str | None] = mapped_column(Text)
@@ -78,7 +86,7 @@ class Project(TimestampMixin, Base):
     __tablename__ = "projects"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    project_no: Mapped[str | None] = mapped_column(String(80), index=True)
+    project_no: Mapped[str] = mapped_column(String(80), unique=True)
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), index=True)
     name: Mapped[str] = mapped_column(String(200))
     description: Mapped[str | None] = mapped_column(Text)

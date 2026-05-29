@@ -12,8 +12,13 @@ def seed_development_data(session: Session) -> dict[str, int]:
     if customer is None:
         customer = Customer(
             name="Air Advantage",
+            billing_contact_name="Accounts Payable",
             billing_email="billing@example.com",
             phone="555-0100",
+            billing_address_line1="100 Aviation Way",
+            billing_city="Tulsa",
+            billing_state="OK",
+            billing_postal_code="74101",
             default_terms="Net 15",
             notes="Development seed customer for the first proof workflow.",
         )

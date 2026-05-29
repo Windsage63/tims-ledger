@@ -11,10 +11,10 @@ from app.schemas.invoices import (
     InvoiceCandidatesRead,
     InvoiceCreate,
     InvoiceDetailRead,
+    InvoiceIssue,
     InvoiceRead,
-    InvoiceSend,
 )
-from app.services import AccountingError, create_draft_invoice_from_sources, send_invoice
+from app.services import AccountingError, create_draft_invoice_from_sources, issue_invoice
 
 router = APIRouter(prefix="/invoices", tags=["invoices"])
 candidate_router = APIRouter(prefix="/invoice-builder", tags=["invoice builder"])
@@ -102,14 +102,15 @@ def get_invoice(
     return _get_invoice_detail(session, invoice_id)
 
 
-@router.post("/{invoice_id}/send", response_model=InvoiceDetailRead)
-def send_invoice_route(
+@router.post("/{invoice_id}/issue", response_model=InvoiceDetailRead)
+@router.post("/{invoice_id}/send", response_model=InvoiceDetailRead, include_in_schema=False)
+def issue_invoice_route(
     invoice_id: int,
-    payload: InvoiceSend,
+    payload: InvoiceIssue,
     session: Annotated[Session, Depends(get_session)],
 ) -> Invoice:
     try:
-        invoice = send_invoice(session, invoice_id, sent_date=payload.sent_date)
+        invoice = issue_invoice(session, invoice_id, issued_date=payload.sent_date)
     except AccountingError as exc:
         session.rollback()
         message = str(exc)

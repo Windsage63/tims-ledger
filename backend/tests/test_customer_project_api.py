@@ -6,8 +6,13 @@ def test_customer_crud_flow(api_client: TestClient) -> None:
         "/api/customers",
         json={
             "name": "Air Advantage",
+            "billing_contact_name": "Accounts Payable",
             "billing_email": "billing@example.com",
             "phone": "555-0100",
+            "billing_address_line1": "100 Aviation Way",
+            "billing_city": "Tulsa",
+            "billing_state": "OK",
+            "billing_postal_code": "74101",
             "default_terms": "Net 15",
             "notes": "Primary proof customer",
         },
@@ -17,6 +22,7 @@ def test_customer_crud_flow(api_client: TestClient) -> None:
     customer = create_response.json()
     assert customer["id"] > 0
     assert customer["name"] == "Air Advantage"
+    assert customer["billing_contact_name"] == "Accounts Payable"
     assert customer["active"] is True
 
     list_response = api_client.get("/api/customers", params={"search": "Air"})
@@ -26,11 +32,12 @@ def test_customer_crud_flow(api_client: TestClient) -> None:
 
     update_response = api_client.patch(
         f"/api/customers/{customer['id']}",
-        json={"phone": "555-0199", "notes": "Updated"},
+        json={"phone": "555-0199", "billing_city": "Broken Arrow", "notes": "Updated"},
     )
 
     assert update_response.status_code == 200
     assert update_response.json()["phone"] == "555-0199"
+    assert update_response.json()["billing_city"] == "Broken Arrow"
 
     delete_response = api_client.delete(f"/api/customers/{customer['id']}")
 
@@ -103,6 +110,7 @@ def test_project_create_requires_existing_customer(api_client: TestClient) -> No
     response = api_client.post(
         "/api/projects",
         json={
+            "project_no": "AA-404",
             "customer_id": 999,
             "name": "Missing customer project",
         },
@@ -110,6 +118,27 @@ def test_project_create_requires_existing_customer(api_client: TestClient) -> No
 
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "NOT_FOUND"
+
+
+def test_duplicate_project_number_returns_consistent_error(api_client: TestClient) -> None:
+    customer_id = api_client.post("/api/customers", json={"name": "Air Advantage"}).json()["id"]
+    payload = {
+        "project_no": "AA-001",
+        "customer_id": customer_id,
+        "name": "Tower Upgrade",
+    }
+
+    assert api_client.post("/api/projects", json=payload).status_code == 201
+    response = api_client.post("/api/projects", json=payload)
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "error": {
+            "code": "CONFLICT",
+            "message": "Project number already exists.",
+            "details": [],
+        }
+    }
 
 
 def test_validation_errors_use_api_error_shape(api_client: TestClient) -> None:
