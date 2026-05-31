@@ -1,1 +1,0 @@
-"""Windsage Ledger backend package."""

@@ -13,7 +13,7 @@
     - customer_email
     - customer_phone
 3. System validates that the customer record is complete enough for project and invoice use.
-4. System stores the customer record that can be reused by other modules.
+4. System stores the customer record in the `customers` table that can be reused by other modules.
 5. Customer record becomes available for the creation of projects and invoices, the receipt of payments, and the tracking of the customer account balance.
 
 ## 2. User Enters Project
@@ -21,17 +21,18 @@
 1. User creates a project under an existing customer.
 2. User enters the project information as follows:
     - project_number (must be unique)
-    - customer_name (from dropdown)
+    - customer_name (from dropdown, tied to customers table)
     - project_description
-    - project_default_rate
+    - project_default_rate (becomes default ST rate)
     - project_fixed_fee
 3. User configures rates. Built in rates include:
     - ST = 1.0 x project_default_rate
     - OT = 1.5 x project_default_rate
     - TT = 0.5 x project_default_rate
     - HD = user-entered non-hourly billing line for fixed-fee, lump-sum, or per-each billing.
-    - custom rates as entered by user. Custom rates are stored to the project.
-4. System validates that project_number is unique and that the project is linked to one customer.
+    - `rate-type` designate an hourly rate or a fixed fee rate for a specific rate code.
+    - custom rates as entered by user. Custom rates are stored to the project as a list entry in the form `rate-code`, `rate`, `rate-type`.
+4. System validates that `project_number` is unique and that the project is linked to one customer.
 5. System stores the project record. Each project is linked to only one customer.
 6. Project record becomes available for the entry of time, expenses, invoices, and payments.
 7. If project_fixed_fee is used, the default rate may be set to 0 to allow time to be allocated and expense records may still be tracked for cost and audit purposes without automatically becoming billable invoice lines.
@@ -40,7 +41,7 @@
 
 1. User enters the date.
 2. User selects the project by project number. The system derives the customer and available rates from the project record.
-3. User enters the work description, number of hours, and selects the rate.
+3. User enters the work description, number of hours, and selects the rate code.
 4. System stores the time entry as a source record.
 5. Invoice linkage is empty until the time entry checkbox is selected into an invoice.
 6. Unbilled billable time (time with no invoice linkage and a billable rate) is eligible for invoice building. When selected into an invoice, the time entry is stamped to that invoice immediately. When unselected, that invoice linkage is removed immediately. Non-billable or fixed-fee-supporting hours remain available for project tracking without being treated as labor revenue.
@@ -76,13 +77,3 @@
 3. User applies some or all of that payment to one or more open invoices.
 4. System prevents over-application and updates both invoice open balances and the payment's remaining unapplied amount.
 5. Customer balance shows open AR, unapplied credits, and net balance, each explainable from invoices, payments, and payment applications.
-
-## 7. Receipt OCR Review
-
-1. User uploads a receipt.
-2. OCR extracts suggested merchant, date, amount, and category.
-3. System shows the OCR result as a suggestion that requires review.
-4. User reviews and edits the suggestion.
-5. Approved result creates or updates an expense.
-6. Raw OCR data remains separate from approved accounting fields.
-7. Images of receipts for billed expenses may be attached as separate pages to the invoice PDF when that invoice is generated.
