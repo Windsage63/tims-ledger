@@ -1,48 +1,13 @@
 from __future__ import annotations
 
-import os
-from pathlib import Path
-from tempfile import TemporaryDirectory
 import unittest
 
-from fastapi.testclient import TestClient
-
-from app.config import load_settings
-from app.main import create_app
+from tests.fixtures.full_ledger_db import load_full_ledger_db
+from tests.support.api_test_case import ApiTestCase
 
 
-class ExpensesApiTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self.temp_dir = TemporaryDirectory()
-        self.original_env = {
-            "WINDS_LEDGER_DATA_DIR": os.getenv("WINDS_LEDGER_DATA_DIR"),
-            "WINDS_LEDGER_DB_PATH": os.getenv("WINDS_LEDGER_DB_PATH"),
-            "WINDS_LEDGER_SKIP_STARTUP_MIGRATIONS": os.getenv("WINDS_LEDGER_SKIP_STARTUP_MIGRATIONS"),
-        }
-
-        temp_path = Path(self.temp_dir.name)
-        os.environ["WINDS_LEDGER_DATA_DIR"] = str(temp_path)
-        os.environ["WINDS_LEDGER_DB_PATH"] = str(temp_path / "winds-ledger-test.db")
-        os.environ["WINDS_LEDGER_SKIP_STARTUP_MIGRATIONS"] = "0"
-
-        self.client_context = TestClient(create_app(load_settings()))
-        self.client = self.client_context.__enter__()
-
-    def tearDown(self) -> None:
-        self.client_context.__exit__(None, None, None)
-        self.client = None
-        self.client_context = None
-
-        for key, value in self.original_env.items():
-            if value is None:
-                os.environ.pop(key, None)
-            else:
-                os.environ[key] = value
-
-        try:
-            self.temp_dir.cleanup()
-        except PermissionError:
-            pass
+class ExpensesApiTests(ApiTestCase):
+    fixture_loader = load_full_ledger_db
 
     def test_bootstrap_returns_seeded_expenses_and_lookup_data(self) -> None:
         response = self.client.get("/api/expenses/bootstrap")
@@ -118,6 +83,42 @@ class ExpensesApiTests(unittest.TestCase):
         self.assertEqual(updated_expense["category"], "Travel")
         self.assertFalse(updated_expense["is_billable"])
         self.assertEqual(updated_expense["line_total_cents"], 2400)
+
+    def test_rejects_invalid_entry_date(self) -> None:
+        response = self.client.post(
+            "/api/expenses",
+            json={
+                "entry_date": "not-a-date",
+                "project_id": 36,
+                "vendor": "Campus Copy",
+                "description": "Concept boards for client review.",
+                "quantity": 1.5,
+                "unit_cost_cents": 1234,
+                "category": "Supplies",
+                "is_billable": True,
+            },
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("valid ISO date", response.text)
+
+    def test_cannot_update_expense_on_issued_invoice(self) -> None:
+        response = self.client.put(
+            "/api/expenses/813",
+            json={
+                "entry_date": "2026-05-21",
+                "project_id": 35,
+                "vendor": "Updated Vendor",
+                "description": "Blocked after issue",
+                "quantity": 3,
+                "unit_cost_cents": 4200,
+                "category": "Equipment",
+                "is_billable": True,
+            },
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.json()["detail"], "Expenses on issued invoices are read-only.")
 
 
 if __name__ == "__main__":

@@ -1,136 +1,11 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta, timezone
 import sqlite3
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
+from .date_utils import utc_now, validate_iso_date
 from .projects import customer_lookup
-
-
-SUPPORTING_PAYMENT_INVOICE_SEED_DATA = [
-    {
-        "id": 313,
-        "invoice_number": "INV-2026-024",
-        "project_id": 33,
-        "customer_id": 12,
-        "invoice_date": "2026-05-27",
-        "terms_days": 30,
-        "po_number": None,
-        "notes": "Issued to carry remaining permitting and filing costs.",
-        "pdf_file_name": "inv-2026-024.pdf",
-        "issued_at": "2026-05-27T13:00:00Z",
-        "updated_at": "2026-05-27T13:00:00Z",
-    },
-]
-
-
-SUPPORTING_PAYMENT_EXPENSE_SEED_DATA = [
-    {
-        "id": 818,
-        "entry_date": "2026-05-27",
-        "project_id": 33,
-        "customer_id": 12,
-        "vendor": "Survey Supply Co.",
-        "description": "As-built field book and archival prints.",
-        "quantity": 1.0,
-        "unit_cost_cents": 42500,
-        "line_total_cents": 42500,
-        "category": "Supplies",
-        "is_billable": True,
-        "invoice_id": 313,
-        "updated_at": "2026-05-27T13:00:00Z",
-    },
-]
-
-
-PAYMENT_SEED_DATA = [
-    {
-        "id": 68,
-        "customer_id": 38,
-        "payment_date": "2025-12-30",
-        "payment_type": "payment",
-        "reference_number": "EFT-188",
-        "amount_cents": 78200,
-        "notes": "Final payment for meeting materials and site review.",
-        "updated_at": "2025-12-30T11:00:00Z",
-    },
-    {
-        "id": 71,
-        "customer_id": 12,
-        "payment_date": "2026-05-28",
-        "payment_type": "advance",
-        "reference_number": "CHK-8122",
-        "amount_cents": 120000,
-        "notes": "Advance retained pending final invoice allocation.",
-        "updated_at": "2026-05-31T15:00:00Z",
-    },
-    {
-        "id": 72,
-        "customer_id": 19,
-        "payment_date": "2026-05-29",
-        "payment_type": "payment",
-        "reference_number": "ACH-4401",
-        "amount_cents": 25000,
-        "notes": "Partial ACH receipt.",
-        "updated_at": "2026-05-31T15:00:00Z",
-    },
-    {
-        "id": 73,
-        "customer_id": 38,
-        "payment_date": "2026-05-30",
-        "payment_type": "advance",
-        "reference_number": "ADV-0017",
-        "amount_cents": 15000,
-        "notes": "Advance retained for future meeting material work.",
-        "updated_at": "2026-05-31T15:00:00Z",
-    },
-    {
-        "id": 74,
-        "customer_id": 24,
-        "payment_date": "2026-05-30",
-        "payment_type": "payment",
-        "reference_number": "WIRE-202",
-        "amount_cents": 12600,
-        "notes": "Wire receipt pending allocation.",
-        "updated_at": "2026-05-31T15:00:00Z",
-    },
-    {
-        "id": 75,
-        "customer_id": 12,
-        "payment_date": "2026-05-31",
-        "payment_type": "payment",
-        "reference_number": "ACH-9920",
-        "amount_cents": 40000,
-        "notes": "Second receipt intended for small open balance work.",
-        "updated_at": "2026-05-31T15:00:00Z",
-    },
-]
-
-
-PAYMENT_APPLICATION_SEED_DATA = [
-    {
-        "id": 890,
-        "payment_id": 68,
-        "invoice_id": 188,
-        "applied_amount_cents": 78200,
-        "applied_at": "2025-12-30T11:05:00Z",
-    },
-    {
-        "id": 902,
-        "payment_id": 72,
-        "invoice_id": 201,
-        "applied_amount_cents": 20000,
-        "applied_at": "2026-05-29T14:15:00Z",
-    },
-    {
-        "id": 905,
-        "payment_id": 75,
-        "invoice_id": 313,
-        "applied_amount_cents": 18500,
-        "applied_at": "2026-05-31T11:40:00Z",
-    },
-]
 
 
 class PaymentWrite(BaseModel):
@@ -150,7 +25,12 @@ class PaymentWrite(BaseModel):
             raise ValueError("Customer is required.")
         return value
 
-    @field_validator("payment_date", "reference_number")
+    @field_validator("payment_date")
+    @classmethod
+    def valid_payment_date(cls, value: str) -> str:
+        return validate_iso_date(value, label="Payment date")
+
+    @field_validator("reference_number")
     @classmethod
     def require_text(cls, value: str) -> str:
         if not value:
@@ -194,15 +74,6 @@ class PaymentApplicationWrite(BaseModel):
 class PaymentApplicationsReplace(BaseModel):
     applications: list[PaymentApplicationWrite]
 
-
-def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
-
-
-def derive_due_date(invoice_date: str, terms_days: int) -> str:
-    return (date.fromisoformat(invoice_date) + timedelta(days=terms_days)).isoformat()
-
-
 def payment_status(applied_amount_cents: int, amount_cents: int) -> str:
     if applied_amount_cents <= 0:
         return "unapplied"
@@ -214,180 +85,7 @@ def payment_status(applied_amount_cents: int, amount_cents: int) -> str:
 def invoice_status(invoice_date: str, terms_days: int, open_balance_cents: int) -> str:
     if open_balance_cents <= 0:
         return "paid"
-    if derive_due_date(invoice_date, terms_days) < date.today().isoformat():
-        return "overdue"
     return "pending"
-
-
-def ensure_payment_seed_data(connection: sqlite3.Connection) -> int:
-    connection.executemany(
-        """
-        INSERT INTO invoices (
-            id,
-            invoice_number,
-            project_id,
-            customer_id,
-            invoice_date,
-            terms_days,
-            po_number,
-            notes,
-            pdf_file_name,
-            issued_at,
-            created_at,
-            updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-            invoice_number = excluded.invoice_number,
-            project_id = excluded.project_id,
-            customer_id = excluded.customer_id,
-            invoice_date = excluded.invoice_date,
-            terms_days = excluded.terms_days,
-            po_number = excluded.po_number,
-            notes = excluded.notes,
-            pdf_file_name = excluded.pdf_file_name,
-            issued_at = excluded.issued_at,
-            updated_at = excluded.updated_at
-        """,
-        [
-            (
-                row["id"],
-                row["invoice_number"],
-                row["project_id"],
-                row["customer_id"],
-                row["invoice_date"],
-                row["terms_days"],
-                row["po_number"],
-                row["notes"],
-                row["pdf_file_name"],
-                row["issued_at"],
-                row["updated_at"],
-                row["updated_at"],
-            )
-            for row in SUPPORTING_PAYMENT_INVOICE_SEED_DATA
-        ],
-    )
-
-    connection.executemany(
-        """
-        INSERT INTO expenses (
-            id,
-            entry_date,
-            project_id,
-            customer_id,
-            vendor,
-            description,
-            quantity,
-            unit_cost_cents,
-            line_total_cents,
-            category,
-            is_billable,
-            invoice_id,
-            created_at,
-            updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-            entry_date = excluded.entry_date,
-            project_id = excluded.project_id,
-            customer_id = excluded.customer_id,
-            vendor = excluded.vendor,
-            description = excluded.description,
-            quantity = excluded.quantity,
-            unit_cost_cents = excluded.unit_cost_cents,
-            line_total_cents = excluded.line_total_cents,
-            category = excluded.category,
-            is_billable = excluded.is_billable,
-            invoice_id = excluded.invoice_id,
-            updated_at = excluded.updated_at
-        """,
-        [
-            (
-                row["id"],
-                row["entry_date"],
-                row["project_id"],
-                row["customer_id"],
-                row["vendor"],
-                row["description"],
-                row["quantity"],
-                row["unit_cost_cents"],
-                row["line_total_cents"],
-                row["category"],
-                1 if row["is_billable"] else 0,
-                row["invoice_id"],
-                row["updated_at"],
-                row["updated_at"],
-            )
-            for row in SUPPORTING_PAYMENT_EXPENSE_SEED_DATA
-        ],
-    )
-
-    existing_payment_ids = {
-        row["id"] for row in connection.execute("SELECT id FROM payments WHERE id IN (68, 71, 72, 73, 74, 75)").fetchall()
-    }
-    connection.executemany(
-        """
-        INSERT INTO payments (
-            id,
-            customer_id,
-            payment_date,
-            payment_type,
-            reference_number,
-            amount_cents,
-            notes,
-            created_at,
-            updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-            customer_id = excluded.customer_id,
-            payment_date = excluded.payment_date,
-            payment_type = excluded.payment_type,
-            reference_number = excluded.reference_number,
-            amount_cents = excluded.amount_cents,
-            notes = excluded.notes,
-            updated_at = excluded.updated_at
-        """,
-        [
-            (
-                row["id"],
-                row["customer_id"],
-                row["payment_date"],
-                row["payment_type"],
-                row["reference_number"],
-                row["amount_cents"],
-                row["notes"],
-                row["updated_at"],
-                row["updated_at"],
-            )
-            for row in PAYMENT_SEED_DATA
-        ],
-    )
-
-    connection.executemany(
-        "DELETE FROM payment_applications WHERE id = ?",
-        [(row["id"],) for row in PAYMENT_APPLICATION_SEED_DATA],
-    )
-    connection.executemany(
-        """
-        INSERT INTO payment_applications (
-            id,
-            payment_id,
-            invoice_id,
-            applied_amount_cents,
-            applied_at
-        ) VALUES (?, ?, ?, ?, ?)
-        """,
-        [
-            (
-                row["id"],
-                row["payment_id"],
-                row["invoice_id"],
-                row["applied_amount_cents"],
-                row["applied_at"],
-            )
-            for row in PAYMENT_APPLICATION_SEED_DATA
-        ],
-    )
-    connection.commit()
-    return len([row for row in PAYMENT_SEED_DATA if row["id"] not in existing_payment_ids])
 
 
 def payment_select_sql() -> str:
@@ -510,7 +208,6 @@ def fetch_open_invoices(connection: sqlite3.Connection, payment: dict[str, objec
             "status": invoice_status(row["invoice_date"], row["terms_days"], open_balance_cents),
             "current_applied_cents": current_applied_cents,
             "available_to_apply_cents": open_balance_cents + current_applied_cents,
-            "due_date": derive_due_date(row["invoice_date"], row["terms_days"]),
         }
         open_invoices.append(invoice)
     return open_invoices

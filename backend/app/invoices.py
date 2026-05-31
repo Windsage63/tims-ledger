@@ -1,129 +1,14 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 import sqlite3
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
+from .date_utils import parse_iso_date, utc_now, validate_iso_date
 from .expenses import expense_select_sql
 from .projects import project_lookup
 from .time_entries import time_entry_select_sql
-
-
-INVOICE_SEED_DATA = [
-    {
-        "id": 301,
-        "invoice_number": "INV-2026-023",
-        "project_id": 33,
-        "customer_id": 12,
-        "invoice_date": "2026-05-31",
-        "terms_days": 30,
-        "po_number": "PO-1182",
-        "notes": "Thank you for your business.",
-        "pdf_file_name": None,
-        "issued_at": None,
-        "updated_at": "2026-05-31T15:00:00Z",
-    },
-    {
-        "id": 201,
-        "invoice_number": "INV-2026-014",
-        "project_id": 34,
-        "customer_id": 19,
-        "invoice_date": "2026-05-20",
-        "terms_days": 31,
-        "po_number": None,
-        "notes": "Thank you for your business.",
-        "pdf_file_name": "inv-2026-014.pdf",
-        "issued_at": "2026-05-20T14:12:00Z",
-        "updated_at": "2026-05-20T14:12:00Z",
-    },
-    {
-        "id": 205,
-        "invoice_number": "INV-2026-019",
-        "project_id": 35,
-        "customer_id": 24,
-        "invoice_date": "2026-05-21",
-        "terms_days": 8,
-        "po_number": None,
-        "notes": "Reimbursable field costs attached.",
-        "pdf_file_name": "inv-2026-019.pdf",
-        "issued_at": "2026-05-21T11:00:00Z",
-        "updated_at": "2026-05-21T11:00:00Z",
-    },
-    {
-        "id": 188,
-        "invoice_number": "INV-2025-098",
-        "project_id": 37,
-        "customer_id": 38,
-        "invoice_date": "2025-12-17",
-        "terms_days": 30,
-        "po_number": "PW-44",
-        "notes": "Final meeting materials and site review.",
-        "pdf_file_name": "inv-2025-098.pdf",
-        "issued_at": "2025-12-17T09:00:00Z",
-        "updated_at": "2025-12-17T09:00:00Z",
-    },
-]
-
-
-SUPPORTING_INVOICE_TIME_ENTRY_SEED_DATA = [
-    {
-        "id": 407,
-        "entry_date": "2026-05-25",
-        "project_id": 34,
-        "customer_id": 19,
-        "description": "Redline incorporation and sheet set coordination.",
-        "minutes": 120,
-        "rate_code": "ST",
-        "rate_cents": 13800,
-        "line_total_cents": 27600,
-        "invoice_id": None,
-        "updated_at": "2026-05-31T15:00:00Z",
-    },
-]
-
-
-SUPPORTING_PAYMENT_SEED_DATA = [
-    {
-        "id": 68,
-        "customer_id": 38,
-        "payment_date": "2025-12-30",
-        "payment_type": "payment",
-        "reference_number": "EFT-188",
-        "amount_cents": 78200,
-        "notes": "Final payment for meeting materials and site review.",
-        "updated_at": "2025-12-30T11:00:00Z",
-    },
-    {
-        "id": 72,
-        "customer_id": 19,
-        "payment_date": "2026-05-29",
-        "payment_type": "payment",
-        "reference_number": "ACH-4401",
-        "amount_cents": 25000,
-        "notes": "Partial ACH receipt.",
-        "updated_at": "2026-05-31T15:00:00Z",
-    },
-]
-
-
-SUPPORTING_PAYMENT_APPLICATION_SEED_DATA = [
-    {
-        "id": 890,
-        "payment_id": 68,
-        "invoice_id": 188,
-        "applied_amount_cents": 78200,
-        "applied_at": "2025-12-30T11:05:00Z",
-    },
-    {
-        "id": 902,
-        "payment_id": 72,
-        "invoice_id": 201,
-        "applied_amount_cents": 20000,
-        "applied_at": "2026-05-29T14:15:00Z",
-    },
-]
 
 
 class InvoiceWrite(BaseModel):
@@ -153,10 +38,7 @@ class InvoiceWrite(BaseModel):
     @field_validator("invoice_date")
     @classmethod
     def valid_invoice_date(cls, value: str) -> str:
-        if not value:
-            raise ValueError("Invoice date is required.")
-        date.fromisoformat(value)
-        return value
+        return validate_iso_date(value, label="Invoice date")
 
     @field_validator("invoice_number")
     @classmethod
@@ -170,19 +52,6 @@ class InvoiceWrite(BaseModel):
 class InvoiceSelectionWrite(BaseModel):
     time_entry_ids: list[int] = []
     expense_ids: list[int] = []
-
-
-def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
-
-
-def parse_iso_date(value: str) -> date:
-    return date.fromisoformat(value)
-
-
-def derive_due_date(invoice_date: str, terms_days: int) -> str:
-    return (parse_iso_date(invoice_date) + timedelta(days=terms_days)).isoformat()
-
 
 def slugify_invoice_number(invoice_number: str) -> str:
     return invoice_number.lower().replace(" ", "-")
@@ -198,6 +67,10 @@ def pdf_escape(value: str) -> str:
 
 def currency(cents: int) -> str:
     return f"${cents / 100:,.2f}"
+
+
+def terms_label(terms_days: int) -> str:
+    return "Due on receipt" if terms_days <= 0 else f"Net {terms_days}"
 
 
 def line_for_time_entry(entry: dict[str, object]) -> str:
@@ -217,7 +90,7 @@ def build_invoice_pdf_bytes(payload: dict[str, object]) -> bytes:
         f"Customer: {invoice['customer_name']}",
         f"Project: {invoice['project_number']}",
         f"Invoice Date: {invoice['invoice_date']}",
-        f"Due Date: {invoice['due_date']}",
+        f"Terms: {terms_label(int(invoice['terms_days']))}",
         f"PO Number: {invoice['po_number'] or 'None'}",
         "",
         "Time Charges",
@@ -295,173 +168,6 @@ def write_invoice_pdf(data_dir: Path, payload: dict[str, object]) -> Path:
     return pdf_path
 
 
-def ensure_invoice_seed_data(connection: sqlite3.Connection) -> int:
-    already_seeded = connection.execute("SELECT 1 FROM invoices WHERE id = 301").fetchone()
-    if already_seeded is not None:
-        return 0
-
-    connection.executemany(
-        """
-        INSERT INTO invoices (
-            id,
-            invoice_number,
-            project_id,
-            customer_id,
-            invoice_date,
-            terms_days,
-            po_number,
-            notes,
-            pdf_file_name,
-            issued_at,
-            created_at,
-            updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-            invoice_number = excluded.invoice_number,
-            project_id = excluded.project_id,
-            customer_id = excluded.customer_id,
-            invoice_date = excluded.invoice_date,
-            terms_days = excluded.terms_days,
-            po_number = excluded.po_number,
-            notes = excluded.notes,
-            pdf_file_name = excluded.pdf_file_name,
-            issued_at = excluded.issued_at,
-            updated_at = excluded.updated_at
-        """,
-        [
-            (
-                row["id"],
-                row["invoice_number"],
-                row["project_id"],
-                row["customer_id"],
-                row["invoice_date"],
-                row["terms_days"],
-                row["po_number"],
-                row["notes"],
-                row["pdf_file_name"],
-                row["issued_at"],
-                row["updated_at"],
-                row["updated_at"],
-            )
-            for row in INVOICE_SEED_DATA
-        ],
-    )
-
-    connection.executemany(
-        """
-        INSERT INTO time_entries (
-            id,
-            entry_date,
-            project_id,
-            customer_id,
-            description,
-            minutes,
-            rate_code,
-            rate_cents,
-            line_total_cents,
-            invoice_id,
-            created_at,
-            updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id) DO NOTHING
-        """,
-        [
-            (
-                row["id"],
-                row["entry_date"],
-                row["project_id"],
-                row["customer_id"],
-                row["description"],
-                row["minutes"],
-                row["rate_code"],
-                row["rate_cents"],
-                row["line_total_cents"],
-                row["invoice_id"],
-                row["updated_at"],
-                row["updated_at"],
-            )
-            for row in SUPPORTING_INVOICE_TIME_ENTRY_SEED_DATA
-        ],
-    )
-
-    connection.executemany(
-        """
-        INSERT INTO payments (
-            id,
-            customer_id,
-            payment_date,
-            payment_type,
-            reference_number,
-            amount_cents,
-            notes,
-            created_at,
-            updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id) DO NOTHING
-        """,
-        [
-            (
-                row["id"],
-                row["customer_id"],
-                row["payment_date"],
-                row["payment_type"],
-                row["reference_number"],
-                row["amount_cents"],
-                row["notes"],
-                row["updated_at"],
-                row["updated_at"],
-            )
-            for row in SUPPORTING_PAYMENT_SEED_DATA
-        ],
-    )
-
-    connection.executemany(
-        """
-        INSERT INTO payment_applications (
-            id,
-            payment_id,
-            invoice_id,
-            applied_amount_cents,
-            applied_at
-        ) VALUES (?, ?, ?, ?, ?)
-        ON CONFLICT(id) DO NOTHING
-        """,
-        [
-            (
-                row["id"],
-                row["payment_id"],
-                row["invoice_id"],
-                row["applied_amount_cents"],
-                row["applied_at"],
-            )
-            for row in SUPPORTING_PAYMENT_APPLICATION_SEED_DATA
-        ],
-    )
-
-    connection.executemany(
-        "UPDATE time_entries SET invoice_id = ? WHERE id = ?",
-        [
-            (301, 401),
-            (301, 402),
-            (201, 403),
-            (188, 406),
-            (None, 407),
-        ],
-    )
-    connection.executemany(
-        "UPDATE expenses SET invoice_id = ? WHERE id = ?",
-        [
-            (301, 812),
-            (205, 813),
-            (None, 815),
-            (188, 816),
-            (None, 817),
-        ],
-    )
-    connection.commit()
-    return len(INVOICE_SEED_DATA)
-
-
 def next_invoice_number(connection: sqlite3.Connection, invoice_date: str) -> str:
     year = parse_iso_date(invoice_date).year
     rows = connection.execute("SELECT invoice_number FROM invoices WHERE invoice_number LIKE ?", (f"INV-{year}-%",)).fetchall()
@@ -522,8 +228,6 @@ def derive_invoice_status(invoice: dict[str, object]) -> str:
         return "draft"
     if int(invoice["invoice_amount_cents"] or 0) > 0 and int(invoice["open_balance_cents"] or 0) <= 0:
         return "paid"
-    if str(invoice["due_date"]) < date.today().isoformat():
-        return "overdue"
     return "pending"
 
 
@@ -537,7 +241,6 @@ def row_to_invoice(connection: sqlite3.Connection, row: sqlite3.Row) -> dict[str
         "customer_name": row["customer_name"],
         "invoice_date": row["invoice_date"],
         "terms_days": row["terms_days"],
-        "due_date": derive_due_date(row["invoice_date"], row["terms_days"]),
         "po_number": row["po_number"],
         "notes": row["notes"],
         "pdf_file_name": row["pdf_file_name"],
@@ -605,20 +308,6 @@ def fetch_eligible_expenses(connection: sqlite3.Connection, invoice: dict[str, o
     return [dict(row) for row in rows]
 
 
-def invoice_summary(connection: sqlite3.Connection, invoice: dict[str, object]) -> dict[str, object]:
-    return {
-        "time_total_cents": invoice["invoice_amount_cents"] - sum(expense["line_total_cents"] for expense in fetch_selected_expenses(connection, invoice["id"])),
-        "expense_total_cents": sum(expense["line_total_cents"] for expense in fetch_selected_expenses(connection, invoice["id"])),
-        "invoice_total_cents": invoice["invoice_amount_cents"],
-        "prior_balance_cents": invoice["prior_balance_cents"],
-        "unapplied_credit_cents": invoice["unapplied_credit_cents"],
-        "open_balance_after_issue_cents": max(
-            0,
-            int(invoice["prior_balance_cents"]) + int(invoice["invoice_amount_cents"]) - int(invoice["unapplied_credit_cents"]),
-        ),
-    }
-
-
 def invoice_editor_payload(connection: sqlite3.Connection, invoice_id: int) -> dict[str, object] | None:
     invoice = fetch_invoice(connection, invoice_id)
     if invoice is None:
@@ -650,7 +339,7 @@ def invoice_editor_payload(connection: sqlite3.Connection, invoice_id: int) -> d
 
 def invoice_bootstrap_payload(connection: sqlite3.Connection, year: str | None = None) -> dict[str, object]:
     invoices = fetch_invoices(connection, year=year)
-    status_counts = {"all": len(invoices), "draft": 0, "pending": 0, "overdue": 0, "paid": 0}
+    status_counts = {"all": len(invoices), "draft": 0, "pending": 0, "paid": 0}
     for invoice in invoices:
         status_counts[invoice["status"]] += 1
     return {

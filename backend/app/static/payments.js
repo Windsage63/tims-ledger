@@ -35,16 +35,6 @@ function dollarsInput(cents) {
     return ((cents || 0) / 100).toFixed(2);
 }
 
-function addDays(isoDate, days) {
-    const date = new Date(`${isoDate}T00:00:00Z`);
-    date.setUTCDate(date.getUTCDate() + Number(days || 0));
-    return date.toISOString().slice(0, 10);
-}
-
-function dueDateForInvoice(invoice) {
-    return addDays(invoice.invoice_date, invoice.terms_days);
-}
-
 function setText(id, value) {
     const element = document.getElementById(id);
     if (!element) {
@@ -162,9 +152,6 @@ function paymentStatusMeta(payment) {
 function invoiceStatusMeta(invoice) {
     if (invoice.status === "paid") {
         return { label: "Paid", classes: "bg-brand/10 text-brand border border-brand/20" };
-    }
-    if (invoice.status === "overdue") {
-        return { label: "Overdue", classes: "bg-danger/10 text-danger border border-danger/20" };
     }
     return { label: "Pending", classes: "bg-calm/10 text-calm border border-calm/20" };
 }
@@ -410,7 +397,7 @@ function renderApplications(payment) {
                 <div class="flex items-start justify-between gap-3">
                     <div>
                         <p class="font-mono text-xs text-ink">${invoice.invoice_number}</p>
-                        <p class="mt-1 text-sm text-ink">Due ${invoice.due_date || dueDateForInvoice(invoice)}</p>
+                        <p class="mt-1 text-sm text-ink">Invoice Date ${invoice.invoice_date}</p>
                     </div>
                     <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${status.classes}">${status.label}</span>
                 </div>

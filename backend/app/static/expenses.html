@@ -62,7 +62,7 @@
                 <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./expenses.html">Expenses</a>
                 <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./invoices.html">Invoices</a>
                 <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./payments.html">Payments</a>
-                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="#queue">Exports</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./index.html#exports">Exports</a>
             </nav>
 
             <div class="rounded-3xl border border-white/10 bg-white/8 p-4 backdrop-blur-sm">
@@ -90,7 +90,7 @@
 
             <section class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Expense summary metrics">
                 <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Visible Spend</p>
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Visible Total</p>
                     <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-visible-spend">-</p>
                 </article>
                 <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
@@ -98,11 +98,11 @@
                     <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-billable-unbilled">-</p>
                 </article>
                 <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Invoiced Spend</p>
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Invoiced</p>
                     <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-invoiced-spend">-</p>
                 </article>
                 <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Non-Billable Spend</p>
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Non-Billable</p>
                     <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-nonbillable-spend">-</p>
                 </article>
             </section>
@@ -110,15 +110,10 @@
             <section class="mt-4 grid gap-4 2xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
                 <article class="min-w-0 rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
                     <div class="flex flex-col gap-4 border-b border-line/80 pb-5 lg:flex-row lg:items-end lg:justify-between">
-                        <div>
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Browse Surface</p>
-                            <h2 class="mt-2 font-display text-3xl font-bold text-ink">Review vendor costs, reimbursable status, and invoice linkage.</h2>
-                        </div>
-
-                        <div class="grid min-w-0 w-full gap-3 md:grid-cols-2 2xl:max-w-4xl 2xl:grid-cols-[minmax(0,1fr)_12rem_10rem_10rem]">
+                        <div class="grid min-w-0 w-full gap-3 md:grid-cols-4 2xl:max-w-4xl 2xl:grid-cols-[minmax(0,1fr)_12rem_10rem_10rem]">
                             <div class="min-w-0">
                                 <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="expense-search">Search</label>
-                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="expense-search" placeholder="Search project, customer, vendor, description, or category" type="search">
+                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="expense-search" placeholder="Search" type="search">
                             </div>
                             <div class="min-w-0">
                                 <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="expense-project-filter">Project</label>

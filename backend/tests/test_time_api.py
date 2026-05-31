@@ -1,48 +1,13 @@
 from __future__ import annotations
 
-import os
-from pathlib import Path
-from tempfile import TemporaryDirectory
 import unittest
 
-from fastapi.testclient import TestClient
-
-from app.config import load_settings
-from app.main import create_app
+from tests.fixtures.full_ledger_db import load_full_ledger_db
+from tests.support.api_test_case import ApiTestCase
 
 
-class TimeApiTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self.temp_dir = TemporaryDirectory()
-        self.original_env = {
-            "WINDS_LEDGER_DATA_DIR": os.getenv("WINDS_LEDGER_DATA_DIR"),
-            "WINDS_LEDGER_DB_PATH": os.getenv("WINDS_LEDGER_DB_PATH"),
-            "WINDS_LEDGER_SKIP_STARTUP_MIGRATIONS": os.getenv("WINDS_LEDGER_SKIP_STARTUP_MIGRATIONS"),
-        }
-
-        temp_path = Path(self.temp_dir.name)
-        os.environ["WINDS_LEDGER_DATA_DIR"] = str(temp_path)
-        os.environ["WINDS_LEDGER_DB_PATH"] = str(temp_path / "winds-ledger-test.db")
-        os.environ["WINDS_LEDGER_SKIP_STARTUP_MIGRATIONS"] = "0"
-
-        self.client_context = TestClient(create_app(load_settings()))
-        self.client = self.client_context.__enter__()
-
-    def tearDown(self) -> None:
-        self.client_context.__exit__(None, None, None)
-        self.client = None
-        self.client_context = None
-
-        for key, value in self.original_env.items():
-            if value is None:
-                os.environ.pop(key, None)
-            else:
-                os.environ[key] = value
-
-        try:
-            self.temp_dir.cleanup()
-        except PermissionError:
-            pass
+class TimeApiTests(ApiTestCase):
+    fixture_loader = load_full_ledger_db
 
     def test_bootstrap_returns_seeded_entries_and_lookup_data(self) -> None:
         response = self.client.get("/api/time/bootstrap")
@@ -103,6 +68,43 @@ class TimeApiTests(unittest.TestCase):
         self.assertEqual(updated_entry["rate_cents"], 0)
         self.assertEqual(updated_entry["line_total_cents"], 0)
         self.assertEqual(updated_entry["invoice_number"], None)
+
+    def test_rejects_invalid_entry_date(self) -> None:
+        response = self.client.post(
+            "/api/time-entries",
+            json={
+                "entry_date": "not-a-date",
+                "project_id": 35,
+                "description": "Retention basin analysis",
+                "minutes": 90,
+                "rate_code": "SITE",
+            },
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("valid ISO date", response.text)
+
+    def test_cannot_update_time_entry_on_issued_invoice(self) -> None:
+        before_response = self.client.get("/api/invoices/201/editor")
+        before_total = before_response.json()["data"]["summary"]["invoice_total_cents"]
+
+        response = self.client.put(
+            "/api/time-entries/403",
+            json={
+                "entry_date": "2026-05-22",
+                "project_id": 34,
+                "description": "Blocked after issue",
+                "minutes": 255,
+                "rate_code": "OT",
+            },
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.json()["detail"], "Time entries on issued invoices are read-only.")
+
+        after_response = self.client.get("/api/invoices/201/editor")
+        after_total = after_response.json()["data"]["summary"]["invoice_total_cents"]
+        self.assertEqual(after_total, before_total)
 
 
 if __name__ == "__main__":

@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import sqlite3
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
+from .date_utils import utc_now, validate_iso_date
 from .projects import customer_lookup, project_lookup
-from .time_entries import ensure_supporting_invoice_seed_data
 
 
 EXPENSE_CATEGORIES = [
@@ -18,100 +17,6 @@ EXPENSE_CATEGORIES = [
     "Records",
     "Supplies",
     "Travel",
-]
-
-
-EXPENSE_SEED_DATA = [
-    {
-        "id": 812,
-        "entry_date": "2026-05-19",
-        "project_id": 33,
-        "customer_id": 12,
-        "vendor": "County Recorder",
-        "description": "Map copy fee",
-        "quantity": 2.0,
-        "unit_cost_cents": 1500,
-        "line_total_cents": 3000,
-        "category": "Records",
-        "is_billable": True,
-        "invoice_id": None,
-        "updated_at": "2026-05-31T15:00:00Z",
-    },
-    {
-        "id": 813,
-        "entry_date": "2026-05-21",
-        "project_id": 35,
-        "customer_id": 24,
-        "vendor": "United Rentals",
-        "description": "Laser level rental for drainage retrofit staking.",
-        "quantity": 3.0,
-        "unit_cost_cents": 4200,
-        "line_total_cents": 12600,
-        "category": "Equipment",
-        "is_billable": True,
-        "invoice_id": 205,
-        "updated_at": "2026-05-29T11:10:00Z",
-    },
-    {
-        "id": 814,
-        "entry_date": "2026-05-23",
-        "project_id": 36,
-        "customer_id": 31,
-        "vendor": "Corner Cafe",
-        "description": "Internal design workshop lunch.",
-        "quantity": 4.0,
-        "unit_cost_cents": 1800,
-        "line_total_cents": 7200,
-        "category": "Meals",
-        "is_billable": False,
-        "invoice_id": None,
-        "updated_at": "2026-05-27T08:40:00Z",
-    },
-    {
-        "id": 815,
-        "entry_date": "2026-05-24",
-        "project_id": 34,
-        "customer_id": 19,
-        "vendor": "State Permit Office",
-        "description": "Subdivision review filing fee.",
-        "quantity": 1.0,
-        "unit_cost_cents": 18500,
-        "line_total_cents": 18500,
-        "category": "Permits",
-        "is_billable": True,
-        "invoice_id": None,
-        "updated_at": "2026-05-30T09:15:00Z",
-    },
-    {
-        "id": 816,
-        "entry_date": "2026-05-26",
-        "project_id": 37,
-        "customer_id": 38,
-        "vendor": "FedEx Office",
-        "description": "Meeting board print set.",
-        "quantity": 6.0,
-        "unit_cost_cents": 950,
-        "line_total_cents": 5700,
-        "category": "Printing",
-        "is_billable": True,
-        "invoice_id": 188,
-        "updated_at": "2026-05-26T16:30:00Z",
-    },
-    {
-        "id": 817,
-        "entry_date": "2025-12-14",
-        "project_id": 37,
-        "customer_id": 38,
-        "vendor": "Fuel Card",
-        "description": "Site mileage reimbursement.",
-        "quantity": 86.0,
-        "unit_cost_cents": 67,
-        "line_total_cents": 5762,
-        "category": "Mileage",
-        "is_billable": True,
-        "invoice_id": None,
-        "updated_at": "2025-12-15T10:05:00Z",
-    },
 ]
 
 
@@ -127,7 +32,12 @@ class ExpenseWrite(BaseModel):
 
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    @field_validator("entry_date", "vendor", "description", "category")
+    @field_validator("entry_date")
+    @classmethod
+    def valid_entry_date(cls, value: str) -> str:
+        return validate_iso_date(value, label="Entry date")
+
+    @field_validator("vendor", "description", "category")
     @classmethod
     def require_text(cls, value: str) -> str:
         if not value:
@@ -154,59 +64,6 @@ class ExpenseWrite(BaseModel):
         if value < 0:
             raise ValueError("Unit cost must be zero or greater.")
         return value
-
-
-def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
-
-
-def ensure_expense_seed_data(connection: sqlite3.Connection) -> int:
-    existing_count = connection.execute("SELECT COUNT(*) FROM expenses").fetchone()[0]
-    if existing_count:
-        return 0
-
-    ensure_supporting_invoice_seed_data(connection)
-    connection.executemany(
-        """
-        INSERT INTO expenses (
-            id,
-            entry_date,
-            project_id,
-            customer_id,
-            vendor,
-            description,
-            quantity,
-            unit_cost_cents,
-            line_total_cents,
-            category,
-            is_billable,
-            invoice_id,
-            created_at,
-            updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        [
-            (
-                row["id"],
-                row["entry_date"],
-                row["project_id"],
-                row["customer_id"],
-                row["vendor"],
-                row["description"],
-                row["quantity"],
-                row["unit_cost_cents"],
-                row["line_total_cents"],
-                row["category"],
-                1 if row["is_billable"] else 0,
-                row["invoice_id"],
-                row["updated_at"],
-                row["updated_at"],
-            )
-            for row in EXPENSE_SEED_DATA
-        ],
-    )
-    connection.commit()
-    return len(EXPENSE_SEED_DATA)
 
 
 def expense_select_sql() -> str:
@@ -339,11 +196,18 @@ def update_expense(
     payload: ExpenseWrite,
 ) -> dict[str, object] | None:
     existing = connection.execute(
-        "SELECT invoice_id FROM expenses WHERE id = ?",
+        """
+        SELECT e.invoice_id, i.issued_at
+        FROM expenses e
+        LEFT JOIN invoices i ON i.id = e.invoice_id
+        WHERE e.id = ?
+        """,
         (expense_id,),
     ).fetchone()
     if existing is None:
         return None
+    if existing["invoice_id"] is not None and existing["issued_at"] is not None:
+        raise ValueError("Expenses on issued invoices are read-only.")
 
     project_row = resolve_project_customer(connection, payload.project_id)
     if project_row is None:

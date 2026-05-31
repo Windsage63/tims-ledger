@@ -1,48 +1,13 @@
 from __future__ import annotations
 
-import os
-from pathlib import Path
-from tempfile import TemporaryDirectory
 import unittest
 
-from fastapi.testclient import TestClient
-
-from app.config import load_settings
-from app.main import create_app
+from tests.fixtures.projects_db import load_projects_db
+from tests.support.api_test_case import ApiTestCase
 
 
-class ProjectApiTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self.temp_dir = TemporaryDirectory()
-        self.original_env = {
-            "WINDS_LEDGER_DATA_DIR": os.getenv("WINDS_LEDGER_DATA_DIR"),
-            "WINDS_LEDGER_DB_PATH": os.getenv("WINDS_LEDGER_DB_PATH"),
-            "WINDS_LEDGER_SKIP_STARTUP_MIGRATIONS": os.getenv("WINDS_LEDGER_SKIP_STARTUP_MIGRATIONS"),
-        }
-
-        temp_path = Path(self.temp_dir.name)
-        os.environ["WINDS_LEDGER_DATA_DIR"] = str(temp_path)
-        os.environ["WINDS_LEDGER_DB_PATH"] = str(temp_path / "winds-ledger-test.db")
-        os.environ["WINDS_LEDGER_SKIP_STARTUP_MIGRATIONS"] = "0"
-
-        self.client_context = TestClient(create_app(load_settings()))
-        self.client = self.client_context.__enter__()
-
-    def tearDown(self) -> None:
-        self.client_context.__exit__(None, None, None)
-        self.client = None
-        self.client_context = None
-
-        for key, value in self.original_env.items():
-            if value is None:
-                os.environ.pop(key, None)
-            else:
-                os.environ[key] = value
-
-        try:
-            self.temp_dir.cleanup()
-        except PermissionError:
-            pass
+class ProjectApiTests(ApiTestCase):
+    fixture_loader = load_projects_db
 
     def test_bootstrap_returns_seeded_projects_and_lookup(self) -> None:
         response = self.client.get("/api/projects/bootstrap")
@@ -121,6 +86,25 @@ class ProjectApiTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 409)
         self.assertEqual(response.json()["detail"], "Project number must be unique.")
+
+    def test_invalid_customer_returns_clear_validation_error(self) -> None:
+        response = self.client.post(
+            "/api/projects",
+            json={
+                "project_number": "0799",
+                "customer_id": 999999,
+                "description": "Invalid customer check",
+                "default_rate_cents": 12000,
+                "rates": [
+                    {"rate_code": "ST", "rate_cents": 12000, "is_builtin": True, "sort_order": 1},
+                    {"rate_code": "OT", "rate_cents": 18000, "is_builtin": True, "sort_order": 2},
+                    {"rate_code": "TT", "rate_cents": 6000, "is_builtin": True, "sort_order": 3},
+                ],
+            },
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.json()["detail"], "Customer not found.")
 
 
 if __name__ == "__main__":

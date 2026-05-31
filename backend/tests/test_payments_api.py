@@ -1,48 +1,13 @@
 from __future__ import annotations
 
-import os
-from pathlib import Path
-from tempfile import TemporaryDirectory
 import unittest
 
-from fastapi.testclient import TestClient
-
-from app.config import load_settings
-from app.main import create_app
+from tests.fixtures.payments_db import load_payments_db
+from tests.support.api_test_case import ApiTestCase
 
 
-class PaymentsApiTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self.temp_dir = TemporaryDirectory()
-        self.original_env = {
-            "WINDS_LEDGER_DATA_DIR": os.getenv("WINDS_LEDGER_DATA_DIR"),
-            "WINDS_LEDGER_DB_PATH": os.getenv("WINDS_LEDGER_DB_PATH"),
-            "WINDS_LEDGER_SKIP_STARTUP_MIGRATIONS": os.getenv("WINDS_LEDGER_SKIP_STARTUP_MIGRATIONS"),
-        }
-
-        temp_path = Path(self.temp_dir.name)
-        os.environ["WINDS_LEDGER_DATA_DIR"] = str(temp_path)
-        os.environ["WINDS_LEDGER_DB_PATH"] = str(temp_path / "winds-ledger-test.db")
-        os.environ["WINDS_LEDGER_SKIP_STARTUP_MIGRATIONS"] = "0"
-
-        self.client_context = TestClient(create_app(load_settings()))
-        self.client = self.client_context.__enter__()
-
-    def tearDown(self) -> None:
-        self.client_context.__exit__(None, None, None)
-        self.client = None
-        self.client_context = None
-
-        for key, value in self.original_env.items():
-            if value is None:
-                os.environ.pop(key, None)
-            else:
-                os.environ[key] = value
-
-        try:
-            self.temp_dir.cleanup()
-        except PermissionError:
-            pass
+class PaymentsApiTests(ApiTestCase):
+    fixture_loader = load_payments_db
 
     def test_bootstrap_returns_seeded_payments_and_customers(self) -> None:
         response = self.client.get("/api/payments/bootstrap")
@@ -127,6 +92,22 @@ class PaymentsApiTests(unittest.TestCase):
         self.assertEqual(editor_payload["payment"]["unapplied_amount_cents"], 3400)
         self.assertEqual(editor_payload["applications"][0]["invoice_number"], "INV-2026-019")
         self.assertEqual(editor_payload["open_invoices"][0]["status"], "paid")
+
+    def test_rejects_invalid_payment_date(self) -> None:
+        response = self.client.post(
+            "/api/payments",
+            json={
+                "customer_id": 24,
+                "payment_date": "not-a-date",
+                "payment_type": "payment",
+                "reference_number": "WIRE-303",
+                "amount_cents": 15000,
+                "notes": "Applied after invoice review.",
+            },
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("valid ISO date", response.text)
 
 
 if __name__ == "__main__":

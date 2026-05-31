@@ -191,12 +191,12 @@
                         <div>
                             <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Accounts Receivable</p>
                             <h2 class="mt-2 font-display text-3xl font-bold text-ink">Derived customer balances and statement detail.</h2>
-                            <p class="mt-3 max-w-3xl text-sm leading-7 text-muted">Open AR, overdue exposure, and unapplied credits are read from the ledger views so each balance stays explainable from invoices and payment applications.</p>
+                            <p class="mt-3 max-w-3xl text-sm leading-7 text-muted">Open AR and unapplied credits are read from the ledger views so each balance stays explainable from invoices and payment applications.</p>
                         </div>
                         <a class="inline-flex min-w-52 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" download href="/api/exports/audit.xlsx" id="audit-export-link">Download XLSX Audit Export</a>
                     </div>
 
-                    <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         <article class="rounded-[1.2rem] border border-line/80 bg-panel/35 p-4">
                             <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Total Open AR</p>
                             <p class="mt-2 font-display text-3xl font-bold text-ink" id="ar-total-open">-</p>
@@ -208,10 +208,6 @@
                         <article class="rounded-[1.2rem] border border-line/80 bg-panel/35 p-4">
                             <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Net Receivables</p>
                             <p class="mt-2 font-display text-3xl font-bold text-ink" id="ar-total-net">-</p>
-                        </article>
-                        <article class="rounded-[1.2rem] border border-line/80 bg-panel/35 p-4">
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Overdue Exposure</p>
-                            <p class="mt-2 font-display text-3xl font-bold text-ink" id="ar-total-overdue">-</p>
                         </article>
                     </div>
 
@@ -225,12 +221,11 @@
                                         <th class="px-4 py-3">Unapplied</th>
                                         <th class="px-4 py-3">Net</th>
                                         <th class="px-4 py-3">Open Invoices</th>
-                                        <th class="px-4 py-3">Overdue</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-line/70 text-sm text-ink" id="ar-customers-body">
                                     <tr>
-                                        <td class="px-4 py-4 text-muted" colspan="6">Loading accounts receivable report...</td>
+                                        <td class="px-4 py-4 text-muted" colspan="5">Loading accounts receivable report...</td>
                                     </tr>
                                 </tbody>
                             </table>

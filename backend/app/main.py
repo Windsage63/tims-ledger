@@ -8,15 +8,15 @@ from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from .config import Settings, load_settings
-from .customers import CustomerWrite, create_customer, ensure_customer_seed_data, fetch_customers, update_customer
+from .customers import CustomerWrite, create_customer, fetch_customers, update_customer
 from .db import apply_pending_migrations, connect, get_database_status
-from .expenses import ExpenseWrite, create_expense, ensure_expense_seed_data, expense_bootstrap_payload, update_expense
-from .invoices import InvoiceSelectionWrite, InvoiceWrite, create_invoice, ensure_invoice_pdf, ensure_invoice_seed_data, invoice_bootstrap_payload, invoice_editor_payload, issue_invoice, replace_invoice_selection, update_invoice
+from .expenses import ExpenseWrite, create_expense, expense_bootstrap_payload, update_expense
+from .invoices import InvoiceSelectionWrite, InvoiceWrite, create_invoice, ensure_invoice_pdf, invoice_bootstrap_payload, invoice_editor_payload, issue_invoice, replace_invoice_selection, update_invoice
 from .overview import overview_bootstrap_payload
-from .payments import PaymentApplicationsReplace, PaymentWrite, create_payment, ensure_payment_seed_data, payment_editor_payload, payments_bootstrap_payload, replace_payment_applications, update_payment
-from .projects import ProjectWrite, create_project, customer_lookup, ensure_project_seed_data, fetch_projects, update_project
+from .payments import PaymentApplicationsReplace, PaymentWrite, create_payment, payment_editor_payload, payments_bootstrap_payload, replace_payment_applications, update_payment
+from .projects import ProjectWrite, create_project, customer_lookup, fetch_projects, update_project
 from .reporting import accounts_receivable_report_payload, build_audit_export_bytes
-from .time_entries import TimeEntryWrite, create_time_entry, ensure_supporting_invoice_seed_data, ensure_time_entry_seed_data, time_bootstrap_payload, update_time_entry
+from .time_entries import TimeEntryWrite, create_time_entry, time_bootstrap_payload, update_time_entry
 import sqlite3
 
 
@@ -35,6 +35,13 @@ def response_envelope(data: dict[str, object], *, screen: str | None = None) -> 
     }
 
 
+def project_integrity_http_error(exc: sqlite3.IntegrityError) -> HTTPException:
+    detail = str(exc).lower()
+    if "project_number" in detail and "unique" in detail:
+        return HTTPException(status_code=409, detail="Project number must be unique.")
+    return HTTPException(status_code=422, detail="Project payload violates database constraints.")
+
+
 def create_lifespan(settings: Settings):
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -43,26 +50,8 @@ def create_lifespan(settings: Settings):
         if not settings.skip_startup_migrations:
             startup_migrations_applied = apply_pending_migrations(settings)
 
-        with connect(settings.database_path) as connection:
-            seeded_customers = ensure_customer_seed_data(connection)
-            seeded_projects = ensure_project_seed_data(connection)
-            seeded_supporting_invoices = ensure_supporting_invoice_seed_data(connection)
-            seeded_time_entries = ensure_time_entry_seed_data(connection)
-            seeded_expenses = ensure_expense_seed_data(connection)
-            seeded_invoices = ensure_invoice_seed_data(connection)
-            seeded_payments = ensure_payment_seed_data(connection)
-
         app.state.settings = settings
         app.state.startup_migrations_applied = startup_migrations_applied
-        app.state.startup_seed_counts = {
-            "customers": seeded_customers,
-            "projects": seeded_projects,
-            "supporting_invoices": seeded_supporting_invoices,
-            "time_entries": seeded_time_entries,
-            "expenses": seeded_expenses,
-            "invoices": seeded_invoices,
-            "payments": seeded_payments,
-        }
         yield
 
     return lifespan
@@ -79,7 +68,6 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings = settings
     app.state.startup_migrations_applied = []
-    app.state.startup_seed_counts = {"customers": 0, "projects": 0, "supporting_invoices": 0, "time_entries": 0, "expenses": 0, "invoices": 0, "payments": 0}
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
     @app.get("/")
@@ -112,7 +100,6 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
             "migrations_dir": str(request.app.state.settings.migrations_dir),
             "skip_startup_migrations": request.app.state.settings.skip_startup_migrations,
             "startup_migrations_applied": request.app.state.startup_migrations_applied,
-            "startup_seed_counts": request.app.state.startup_seed_counts,
             "applied_migrations": status.applied_migrations,
             "pending_migrations": status.pending_migrations,
             "table_count": status.table_count,
@@ -206,8 +193,10 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
         try:
             with connect(request.app.state.settings.database_path) as connection:
                 project = create_project(connection, payload)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
         except sqlite3.IntegrityError as exc:
-            raise HTTPException(status_code=409, detail="Project number must be unique.") from exc
+            raise project_integrity_http_error(exc) from exc
 
         return response_envelope({"project": project}, screen="projects")
 
@@ -220,8 +209,10 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
         try:
             with connect(request.app.state.settings.database_path) as connection:
                 project = update_project(connection, project_id, payload)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
         except sqlite3.IntegrityError as exc:
-            raise HTTPException(status_code=409, detail="Project number must be unique.") from exc
+            raise project_integrity_http_error(exc) from exc
 
         if project is None:
             raise HTTPException(status_code=404, detail="Project not found.")

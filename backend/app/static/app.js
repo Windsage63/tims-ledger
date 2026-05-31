@@ -108,7 +108,6 @@ function renderAccountsReceivable() {
     setText("ar-total-open", currency(summary.total_open_ar_cents || 0));
     setText("ar-total-credit", currency(summary.total_unapplied_credit_cents || 0));
     setText("ar-total-net", currency(summary.net_receivables_cents || 0));
-    setText("ar-total-overdue", currency(summary.overdue_amount_cents || 0));
 
     const exportLink = document.getElementById("audit-export-link");
     if (exportLink) {
@@ -130,9 +129,8 @@ function renderAccountsReceivable() {
                     <td class="px-4 py-4 font-mono text-sm">${currency(customer.unapplied_credit_cents)}</td>
                     <td class="px-4 py-4 font-mono text-sm">${currency(customer.net_balance_cents)}</td>
                     <td class="px-4 py-4 text-sm text-muted">${customer.open_invoice_count}</td>
-                    <td class="px-4 py-4 text-sm text-muted">${customer.overdue_invoice_count} · ${currency(customer.overdue_amount_cents)}</td>
                 </tr>`).join("")
-            : '<tr><td class="px-4 py-4 text-muted" colspan="6">No customer balance activity is available.</td></tr>'
+            : '<tr><td class="px-4 py-4 text-muted" colspan="5">No customer balance activity is available.</td></tr>'
     );
 
     if (!statement || !statement.customer) {
@@ -164,7 +162,7 @@ function renderAccountsReceivable() {
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div>
                             <p class="font-display text-lg font-bold text-ink">${invoice.invoice_number}</p>
-                            <p class="mt-1 text-sm text-muted">${invoice.project_number} · ${invoice.invoice_date} · due ${invoice.due_date}</p>
+                            <p class="mt-1 text-sm text-muted">${invoice.project_number} · ${invoice.invoice_date}</p>
                         </div>
                         <div class="text-right">
                             <p class="font-mono text-sm text-ink">${currency(invoice.invoice_amount_cents)}</p>
@@ -203,8 +201,7 @@ function renderAccountsReceivableError(message) {
     setText("ar-total-open", "-");
     setText("ar-total-credit", "-");
     setText("ar-total-net", "-");
-    setText("ar-total-overdue", "-");
-    setHtml("ar-customers-body", `<tr><td class="px-4 py-4 text-muted" colspan="6">${message}</td></tr>`);
+    setHtml("ar-customers-body", `<tr><td class="px-4 py-4 text-muted" colspan="5">${message}</td></tr>`);
     setText("statement-customer-name", "Load Error");
     setText("statement-customer-meta", message);
     setText("statement-open-ar", "-");

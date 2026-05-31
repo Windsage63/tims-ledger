@@ -80,25 +80,6 @@ function projectById(projectId) {
     return invoicesState.projects.find((project) => project.id === Number(projectId)) || null;
 }
 
-function dueDateFromTerms(invoiceDate, termsDays) {
-    const parts = String(invoiceDate).split("-").map((value) => Number(value));
-    if (parts.length !== 3 || parts.some((value) => !Number.isFinite(value))) {
-        return invoiceDate;
-    }
-    const nextDate = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
-    nextDate.setUTCDate(nextDate.getUTCDate() + Number(termsDays || 0));
-    return nextDate.toISOString().slice(0, 10);
-}
-
-function termsDaysFromDates(invoiceDate, dueDate) {
-    const invoiceAt = Date.parse(`${invoiceDate}T00:00:00Z`);
-    const dueAt = Date.parse(`${dueDate}T00:00:00Z`);
-    if (!Number.isFinite(invoiceAt) || !Number.isFinite(dueAt)) {
-        return 0;
-    }
-    return Math.max(0, Math.round((dueAt - invoiceAt) / 86400000));
-}
-
 function timeHours(minutes) {
     return ((minutes || 0) / 60).toFixed(2);
 }
@@ -111,9 +92,6 @@ function invoiceStatusMeta(invoice) {
     const status = deriveInvoiceStatus(invoice);
     if (status === "paid") {
         return { key: status, label: "Paid", classes: "bg-brand/10 text-brand border border-brand/20" };
-    }
-    if (status === "overdue") {
-        return { key: status, label: "Overdue", classes: "bg-danger/10 text-danger border border-danger/20" };
     }
     if (status === "pending") {
         return { key: status, label: "Pending", classes: "bg-warn/10 text-warn border border-warn/20" };
@@ -259,12 +237,12 @@ function renderYearOptions() {
 
 function renderMetrics(invoices) {
     const openReceivables = invoices.reduce((sum, invoice) => sum + (deriveInvoiceStatus(invoice) !== "paid" ? (invoice.open_balance_cents || 0) : 0), 0);
-    const overdueAmount = invoices.reduce((sum, invoice) => sum + (deriveInvoiceStatus(invoice) === "overdue" ? (invoice.open_balance_cents || 0) : 0), 0);
+    const pendingAmount = invoices.reduce((sum, invoice) => sum + (deriveInvoiceStatus(invoice) === "pending" ? (invoice.open_balance_cents || 0) : 0), 0);
     const paidAmount = invoices.reduce((sum, invoice) => sum + (invoice.paid_amount_cents || 0), 0);
     const draftAmount = invoices.reduce((sum, invoice) => sum + (deriveInvoiceStatus(invoice) === "draft" ? (invoice.invoice_amount_cents || 0) : 0), 0);
     setText("invoices-mode", invoicesState.isLoading ? "Loading" : "Served Mode");
     setText("metric-open-receivables", currency(openReceivables));
-    setText("metric-overdue-amount", currency(overdueAmount));
+    setText("metric-pending-amount", currency(pendingAmount));
     setText("metric-paid-amount", currency(paidAmount));
     setText("metric-draft-amount", currency(draftAmount));
 }
@@ -315,7 +293,7 @@ function renderInvoiceRows(invoices) {
                 <td class="px-4 py-4 align-top font-mono text-sm text-ink">${invoice.invoice_number}</td>
                 <td class="px-4 py-4 align-top text-sm text-ink">${invoice.customer_name}</td>
                 <td class="px-4 py-4 align-top text-sm text-ink">${invoice.project_number}</td>
-                <td class="px-4 py-4 align-top text-sm text-ink">${invoice.due_date}</td>
+                <td class="px-4 py-4 align-top text-sm text-ink">${invoice.invoice_date}</td>
                 <td class="px-4 py-4 align-top text-right font-mono text-sm text-ink">${currency(invoice.invoice_amount_cents || 0)}</td>
                 <td class="px-4 py-4 align-top"><span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${status.classes}">${status.label}</span></td>
             </tr>
@@ -389,11 +367,10 @@ function renderEditor(invoice) {
     document.getElementById("invoice-number").value = invoice.invoice_number;
     projectSelect.value = String(invoice.project_id);
     document.getElementById("invoice-date").value = invoice.invoice_date;
-    document.getElementById("invoice-due-date").value = invoice.due_date;
     document.getElementById("invoice-po-number").value = invoice.po_number || "";
     document.getElementById("invoice-notes").value = invoice.notes || "";
 
-    ["invoice-number", "invoice-project", "invoice-date", "invoice-due-date", "invoice-po-number", "invoice-notes"].forEach((id) => {
+    ["invoice-number", "invoice-project", "invoice-date", "invoice-po-number", "invoice-notes"].forEach((id) => {
         document.getElementById(id).disabled = isLocked || invoicesState.isSaving;
     });
 
@@ -478,12 +455,11 @@ function renderEditor(invoice) {
 
 function invoicePayloadFromForm(currentInvoice) {
     const invoiceDate = String(document.getElementById("invoice-date")?.value || currentInvoice?.invoice_date || TODAY);
-    const dueDate = String(document.getElementById("invoice-due-date")?.value || currentInvoice?.due_date || dueDateFromTerms(invoiceDate, 30));
     return {
         invoice_number: String(document.getElementById("invoice-number")?.value || currentInvoice?.invoice_number || "").trim() || null,
         project_id: Number(document.getElementById("invoice-project")?.value || currentInvoice?.project_id || 0),
         invoice_date: invoiceDate,
-        terms_days: termsDaysFromDates(invoiceDate, dueDate),
+        terms_days: Number(currentInvoice?.terms_days ?? 30),
         po_number: String(document.getElementById("invoice-po-number")?.value || "").trim() || null,
         notes: String(document.getElementById("invoice-notes")?.value || "")
     };
@@ -503,7 +479,6 @@ function syncSelectedInvoiceFromForm() {
     invoice.customer_name = project?.customer_name || invoice.customer_name;
     invoice.invoice_date = payload.invoice_date;
     invoice.terms_days = payload.terms_days;
-    invoice.due_date = dueDateFromTerms(payload.invoice_date, payload.terms_days);
     invoice.po_number = payload.po_number;
     invoice.notes = payload.notes;
 }
@@ -708,10 +683,6 @@ function bindEvents() {
         render();
     });
     document.getElementById("invoice-date")?.addEventListener("input", () => {
-        syncSelectedInvoiceFromForm();
-        render();
-    });
-    document.getElementById("invoice-due-date")?.addEventListener("input", () => {
         syncSelectedInvoiceFromForm();
         render();
     });

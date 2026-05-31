@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
 from io import BytesIO
 import sqlite3
 from xml.etree import ElementTree as ET
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from .invoices import derive_due_date, invoice_select_sql, row_to_invoice
+from .date_utils import utc_now
+from .invoices import invoice_select_sql, row_to_invoice
 from .overview import overview_bootstrap_payload
 
 
@@ -17,11 +17,6 @@ CONTENT_TYPES_NS = "http://schemas.openxmlformats.org/package/2006/content-types
 
 ET.register_namespace("", SPREADSHEET_NS)
 ET.register_namespace("r", OFFICE_DOC_REL_NS)
-
-
-def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
-
 
 def customer_statement_select_sql() -> str:
     return """
@@ -63,24 +58,6 @@ def customer_statement_select_sql() -> str:
             JOIN invoice_balance_view ibv ON ibv.invoice_id = i.id
             WHERE i.customer_id = c.id AND i.issued_at IS NOT NULL AND ibv.open_amount_cents > 0
         ), 0) AS open_invoice_count,
-        COALESCE((
-            SELECT COUNT(*)
-            FROM invoices i
-            JOIN invoice_balance_view ibv ON ibv.invoice_id = i.id
-            WHERE i.customer_id = c.id
-              AND i.issued_at IS NOT NULL
-              AND ibv.open_amount_cents > 0
-              AND date(i.invoice_date, '+' || i.terms_days || ' day') < ?
-        ), 0) AS overdue_invoice_count,
-        COALESCE((
-            SELECT SUM(ibv.open_amount_cents)
-            FROM invoices i
-            JOIN invoice_balance_view ibv ON ibv.invoice_id = i.id
-            WHERE i.customer_id = c.id
-              AND i.issued_at IS NOT NULL
-              AND ibv.open_amount_cents > 0
-              AND date(i.invoice_date, '+' || i.terms_days || ' day') < ?
-        ), 0) AS overdue_amount_cents,
         (
             SELECT MAX(i.invoice_date)
             FROM invoices i
@@ -112,25 +89,21 @@ def row_to_statement_customer(row: sqlite3.Row) -> dict[str, object]:
         "unapplied_credit_cents": int(row["unapplied_credit_cents"] or 0),
         "net_balance_cents": int(row["net_balance_cents"] or 0),
         "open_invoice_count": int(row["open_invoice_count"] or 0),
-        "overdue_invoice_count": int(row["overdue_invoice_count"] or 0),
-        "overdue_amount_cents": int(row["overdue_amount_cents"] or 0),
         "last_invoice_date": row["last_invoice_date"],
         "last_payment_date": row["last_payment_date"],
         "updated_at": row["updated_at"],
     }
 
 
-def fetch_statement_customers(connection: sqlite3.Connection, today_iso: str) -> list[dict[str, object]]:
+def fetch_statement_customers(connection: sqlite3.Connection) -> list[dict[str, object]]:
     rows = connection.execute(
-        customer_statement_select_sql()
-        + " ORDER BY open_ar_cents DESC, net_balance_cents DESC, c.customer_name COLLATE NOCASE, c.id",
-        (today_iso, today_iso),
+        customer_statement_select_sql() + " ORDER BY open_ar_cents DESC, net_balance_cents DESC, c.customer_name COLLATE NOCASE, c.id"
     ).fetchall()
     return [row_to_statement_customer(row) for row in rows]
 
 
-def fetch_statement_customer(connection: sqlite3.Connection, customer_id: int, today_iso: str) -> dict[str, object] | None:
-    row = connection.execute(customer_statement_select_sql() + " WHERE c.id = ?", (today_iso, today_iso, customer_id)).fetchone()
+def fetch_statement_customer(connection: sqlite3.Connection, customer_id: int) -> dict[str, object] | None:
+    row = connection.execute(customer_statement_select_sql() + " WHERE c.id = ?", (customer_id,)).fetchone()
     if row is None:
         return None
     return row_to_statement_customer(row)
@@ -186,7 +159,6 @@ def statement_totals(customer: dict[str, object], invoices: list[dict[str, objec
         "open_ar_cents": int(customer["open_ar_cents"]),
         "unapplied_credit_cents": int(customer["unapplied_credit_cents"]),
         "net_balance_cents": int(customer["net_balance_cents"]),
-        "overdue_amount_cents": int(customer["overdue_amount_cents"]),
         "issued_invoice_count": len(invoices),
         "open_invoice_count": sum(1 for invoice in invoices if int(invoice["open_balance_cents"] or 0) > 0),
         "unapplied_payment_count": len(unapplied_payments),
@@ -194,8 +166,7 @@ def statement_totals(customer: dict[str, object], invoices: list[dict[str, objec
 
 
 def accounts_receivable_report_payload(connection: sqlite3.Connection, customer_id: int | None = None) -> dict[str, object]:
-    today_iso = date.today().isoformat()
-    customers = fetch_statement_customers(connection, today_iso)
+    customers = fetch_statement_customers(connection)
     selected_customer_id = customer_id
     if selected_customer_id is None and customers:
         selected_customer_id = next(
@@ -207,7 +178,7 @@ def accounts_receivable_report_payload(connection: sqlite3.Connection, customer_
     total_unapplied_credit_cents = sum(int(customer["unapplied_credit_cents"]) for customer in customers)
     statement = None
     if selected_customer_id is not None:
-        customer = fetch_statement_customer(connection, selected_customer_id, today_iso)
+        customer = fetch_statement_customer(connection, selected_customer_id)
         if customer is not None:
             invoices = fetch_statement_invoices(connection, selected_customer_id)
             unapplied_payments = fetch_statement_unapplied_payments(connection, selected_customer_id)
@@ -225,8 +196,6 @@ def accounts_receivable_report_payload(connection: sqlite3.Connection, customer_
             "total_unapplied_credit_cents": total_unapplied_credit_cents,
             "net_receivables_cents": total_open_ar_cents - total_unapplied_credit_cents,
             "customers_with_balance_count": sum(1 for customer in customers if customer["open_ar_cents"] or customer["unapplied_credit_cents"]),
-            "overdue_invoices_count": sum(int(customer["overdue_invoice_count"]) for customer in customers),
-            "overdue_amount_cents": sum(int(customer["overdue_amount_cents"]) for customer in customers),
         },
         "customers": customers,
         "selected_customer_id": selected_customer_id,
@@ -254,7 +223,7 @@ def build_open_invoice_sheet(connection: sqlite3.Connection) -> list[list[object
         "customer_name",
         "project_number",
         "invoice_date",
-        "due_date",
+        "terms_days",
         "status",
         "invoice_amount_cents",
         "paid_amount_cents",
@@ -280,7 +249,7 @@ def build_overview_sheet(connection: sqlite3.Connection) -> list[list[object]]:
 
 
 def build_workbook_sheets(connection: sqlite3.Connection) -> list[tuple[str, list[list[object]]]]:
-    customer_rows = fetch_statement_customers(connection, date.today().isoformat())
+    customer_rows = fetch_statement_customers(connection)
     customer_headers = [
         "id",
         "customer_name",
@@ -295,8 +264,6 @@ def build_workbook_sheets(connection: sqlite3.Connection) -> list[tuple[str, lis
         "unapplied_credit_cents",
         "net_balance_cents",
         "open_invoice_count",
-        "overdue_invoice_count",
-        "overdue_amount_cents",
         "last_invoice_date",
         "last_payment_date",
         "updated_at",

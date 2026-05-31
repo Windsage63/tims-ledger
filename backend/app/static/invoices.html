@@ -62,7 +62,7 @@
                 <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./expenses.html">Expenses</a>
                 <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./invoices.html">Invoices</a>
                 <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./payments.html">Payments</a>
-                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="#queue">Exports</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./index.html#exports">Exports</a>
             </nav>
 
             <div class="rounded-3xl border border-white/10 bg-white/8 p-4 backdrop-blur-sm">
@@ -94,8 +94,8 @@
                     <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-open-receivables">-</p>
                 </article>
                 <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Overdue Amount</p>
-                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-overdue-amount">-</p>
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Pending Amount</p>
+                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-pending-amount">-</p>
                 </article>
                 <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
                     <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Paid Amount</p>
@@ -131,7 +131,6 @@
                         <button class="invoice-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-invoice-status-filter="all" type="button">All</button>
                         <button class="invoice-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-invoice-status-filter="draft" type="button">Draft</button>
                         <button class="invoice-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-invoice-status-filter="pending" type="button">Pending</button>
-                        <button class="invoice-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-invoice-status-filter="overdue" type="button">Overdue</button>
                         <button class="invoice-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-invoice-status-filter="paid" type="button">Paid</button>
                     </div>
 
@@ -142,7 +141,7 @@
                                     <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Invoice</th>
                                     <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Customer</th>
                                     <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Project</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Due</th>
+                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Invoice Date</th>
                                     <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em] text-right">Amount</th>
                                     <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Status</th>
                                 </tr>
@@ -195,14 +194,10 @@
                             </div>
                         </div>
 
-                        <div class="grid gap-4 sm:grid-cols-3">
+                        <div class="grid gap-4 sm:grid-cols-2">
                             <div>
                                 <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="invoice-date">Invoice Date</label>
                                 <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="invoice-date" required type="date">
-                            </div>
-                            <div>
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="invoice-due-date">Due Date</label>
-                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="invoice-due-date" required type="date">
                             </div>
                             <div>
                                 <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="invoice-po-number">PO Number</label>

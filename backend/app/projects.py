@@ -1,89 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import sqlite3
 
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
-
-PROJECT_SEED_DATA = [
-    {
-        "id": 33,
-        "project_number": "0526",
-        "customer_id": 12,
-        "description": "Stormwater review",
-        "updated_at": "2026-05-31T15:00:00Z",
-        "rates": [
-            {"id": 1, "rate_code": "ST", "rate_cents": 12500, "is_builtin": True, "sort_order": 1},
-            {"id": 2, "rate_code": "OT", "rate_cents": 18750, "is_builtin": True, "sort_order": 2},
-            {"id": 3, "rate_code": "TT", "rate_cents": 6250, "is_builtin": True, "sort_order": 3},
-            {"id": 4, "rate_code": "FF1", "rate_cents": 250000, "is_builtin": False, "sort_order": 10},
-        ],
-    },
-    {
-        "id": 34,
-        "project_number": "0527",
-        "customer_id": 19,
-        "description": "Subdivision grading package",
-        "updated_at": "2026-05-28T09:30:00Z",
-        "rates": [
-            {"id": 5, "rate_code": "ST", "rate_cents": 13800, "is_builtin": True, "sort_order": 1},
-            {"id": 6, "rate_code": "OT", "rate_cents": 20700, "is_builtin": True, "sort_order": 2},
-            {"id": 7, "rate_code": "TT", "rate_cents": 6900, "is_builtin": True, "sort_order": 3},
-        ],
-    },
-    {
-        "id": 35,
-        "project_number": "0528",
-        "customer_id": 24,
-        "description": "Drainage retrofit scope",
-        "updated_at": "2026-05-27T14:10:00Z",
-        "rates": [
-            {"id": 8, "rate_code": "ST", "rate_cents": 15000, "is_builtin": True, "sort_order": 1},
-            {"id": 9, "rate_code": "OT", "rate_cents": 22500, "is_builtin": True, "sort_order": 2},
-            {"id": 10, "rate_code": "TT", "rate_cents": 7500, "is_builtin": True, "sort_order": 3},
-            {"id": 11, "rate_code": "SITE", "rate_cents": 11000, "is_builtin": False, "sort_order": 11},
-            {"id": 22, "rate_code": "NB", "rate_cents": 0, "is_builtin": False, "sort_order": 12},
-        ],
-    },
-    {
-        "id": 36,
-        "project_number": "0611",
-        "customer_id": 31,
-        "description": "Campus entry concept",
-        "updated_at": "2026-05-31T09:40:00Z",
-        "rates": [
-            {"id": 12, "rate_code": "ST", "rate_cents": 11800, "is_builtin": True, "sort_order": 1},
-            {"id": 13, "rate_code": "OT", "rate_cents": 17700, "is_builtin": True, "sort_order": 2},
-            {"id": 14, "rate_code": "TT", "rate_cents": 5900, "is_builtin": True, "sort_order": 3},
-        ],
-    },
-    {
-        "id": 37,
-        "project_number": "0618",
-        "customer_id": 38,
-        "description": "Civic plaza grading and detention",
-        "updated_at": "2026-05-29T16:55:00Z",
-        "rates": [
-            {"id": 15, "rate_code": "ST", "rate_cents": 14500, "is_builtin": True, "sort_order": 1},
-            {"id": 16, "rate_code": "OT", "rate_cents": 21750, "is_builtin": True, "sort_order": 2},
-            {"id": 17, "rate_code": "TT", "rate_cents": 7250, "is_builtin": True, "sort_order": 3},
-            {"id": 18, "rate_code": "FFC", "rate_cents": 125000, "is_builtin": False, "sort_order": 12},
-        ],
-    },
-    {
-        "id": 38,
-        "project_number": "0495",
-        "customer_id": 44,
-        "description": "Legacy wetland feasibility",
-        "updated_at": "2026-04-18T13:10:00Z",
-        "rates": [
-            {"id": 19, "rate_code": "ST", "rate_cents": 9800, "is_builtin": True, "sort_order": 1},
-            {"id": 20, "rate_code": "OT", "rate_cents": 14700, "is_builtin": True, "sort_order": 2},
-            {"id": 21, "rate_code": "TT", "rate_cents": 4900, "is_builtin": True, "sort_order": 3},
-        ],
-    },
-]
+from .date_utils import utc_now
 
 
 class ProjectRateWrite(BaseModel):
@@ -131,9 +52,16 @@ class ProjectWrite(BaseModel):
     def normalize_project_number(cls, value: str) -> str:
         return value.upper()
 
-    @field_validator("customer_id", "default_rate_cents")
+    @field_validator("customer_id")
     @classmethod
-    def positive_or_zero(cls, value: int) -> int:
+    def positive_customer_id(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("Customer is required.")
+        return value
+
+    @field_validator("default_rate_cents")
+    @classmethod
+    def non_negative_default_rate_cents(cls, value: int) -> int:
         if value < 0:
             raise ValueError("This field must be zero or greater.")
         return value
@@ -146,11 +74,6 @@ class ProjectWrite(BaseModel):
                 raise ValueError("Rate codes must be unique per project.")
             normalized_codes.add(rate.rate_code)
         return self
-
-
-def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
-
 
 def builtin_rates(default_rate_cents: int) -> list[dict[str, object]]:
     return [
@@ -287,6 +210,13 @@ def fetch_project(connection: sqlite3.Connection, project_id: int) -> dict[str, 
     return row_to_project(row, rates_by_project)
 
 
+def resolve_customer(connection: sqlite3.Connection, customer_id: int) -> sqlite3.Row | None:
+    return connection.execute(
+        "SELECT id, customer_name FROM customers WHERE id = ?",
+        (customer_id,),
+    ).fetchone()
+
+
 def insert_project_rates(
     connection: sqlite3.Connection,
     project_id: int,
@@ -322,6 +252,10 @@ def insert_project_rates(
 
 
 def create_project(connection: sqlite3.Connection, payload: ProjectWrite) -> dict[str, object]:
+    customer = resolve_customer(connection, payload.customer_id)
+    if customer is None:
+        raise ValueError("Customer not found.")
+
     timestamp = utc_now()
     rates = normalize_rates(payload)
     cursor = connection.execute(
@@ -354,6 +288,14 @@ def update_project(
     project_id: int,
     payload: ProjectWrite,
 ) -> dict[str, object] | None:
+    existing = fetch_project(connection, project_id)
+    if existing is None:
+        return None
+
+    customer = resolve_customer(connection, payload.customer_id)
+    if customer is None:
+        raise ValueError("Customer not found.")
+
     timestamp = utc_now()
     cursor = connection.execute(
         """
@@ -375,71 +317,7 @@ def update_project(
             project_id,
         ),
     )
-    if cursor.rowcount == 0:
-        connection.rollback()
-        return None
-
     connection.execute("DELETE FROM project_rates WHERE project_id = ?", (project_id,))
     insert_project_rates(connection, project_id, normalize_rates(payload), timestamp=timestamp)
     connection.commit()
     return fetch_project(connection, project_id)
-
-
-def ensure_project_seed_data(connection: sqlite3.Connection) -> int:
-    existing_count = connection.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
-    if existing_count:
-        return 0
-
-    for row in PROJECT_SEED_DATA:
-        connection.execute(
-            """
-            INSERT INTO projects (
-                id,
-                project_number,
-                customer_id,
-                description,
-                default_rate_cents,
-                created_at,
-                updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                row["id"],
-                row["project_number"],
-                row["customer_id"],
-                row["description"],
-                next(rate["rate_cents"] for rate in row["rates"] if rate["rate_code"] == "ST"),
-                row["updated_at"],
-                row["updated_at"],
-            ),
-        )
-        connection.executemany(
-            """
-            INSERT INTO project_rates (
-                id,
-                project_id,
-                rate_code,
-                rate_cents,
-                is_builtin,
-                sort_order,
-                created_at,
-                updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            [
-                (
-                    rate["id"],
-                    row["id"],
-                    rate["rate_code"],
-                    rate["rate_cents"],
-                    1 if rate["is_builtin"] else 0,
-                    rate["sort_order"],
-                    row["updated_at"],
-                    row["updated_at"],
-                )
-                for rate in row["rates"]
-            ],
-        )
-
-    connection.commit()
-    return len(PROJECT_SEED_DATA)
