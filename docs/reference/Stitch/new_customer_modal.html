@@ -1,0 +1,316 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Add New Customer - LedgerFlow</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Work+Sans:wght@600;700&amp;family=JetBrains+Mono&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "on-surface-variant": "#404751",
+                        "surface-tint": "#0061a3",
+                        "on-tertiary": "#ffffff",
+                        "secondary": "#096e00",
+                        "on-secondary-fixed-variant": "#055300",
+                        "on-secondary-container": "#0a7300",
+                        "on-background": "#1a1b20",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed": "#d1e4ff",
+                        "background": "#f9f9ff",
+                        "surface-dim": "#dad9e0",
+                        "error": "#ba1a1a",
+                        "secondary-container": "#86f96d",
+                        "on-tertiary-fixed-variant": "#713700",
+                        "inverse-primary": "#9ecaff",
+                        "on-primary-fixed-variant": "#00497c",
+                        "outline": "#707882",
+                        "on-surface": "#1a1b20",
+                        "on-secondary-fixed": "#012200",
+                        "on-primary-fixed": "#001d36",
+                        "on-primary-container": "#fafaff",
+                        "tertiary-fixed": "#ffdcc6",
+                        "surface-container-low": "#f3f3fa",
+                        "outline-variant": "#c0c7d3",
+                        "on-tertiary-container": "#fff9f7",
+                        "surface-variant": "#e2e2e9",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#e8e7ee",
+                        "secondary-fixed": "#89fc6f",
+                        "on-tertiary-fixed": "#301400",
+                        "inverse-surface": "#2f3035",
+                        "secondary-fixed-dim": "#6ddf56",
+                        "surface-container-highest": "#e2e2e9",
+                        "on-error-container": "#93000a",
+                        "tertiary": "#8f4700",
+                        "surface-bright": "#f9f9ff",
+                        "on-primary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-container": "#eeedf4",
+                        "surface": "#f9f9ff",
+                        "tertiary-container": "#b45b00",
+                        "inverse-on-surface": "#f0f0f7",
+                        "primary": "#005e9d",
+                        "primary-container": "#0077c5",
+                        "tertiary-fixed-dim": "#ffb785",
+                        "primary-fixed-dim": "#9ecaff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "md": "16px",
+                        "gutter": "20px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "unit": "4px",
+                        "margin-mobile": "16px",
+                        "sm": "8px",
+                        "margin-desktop": "40px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "data-mono": ["JetBrains Mono"],
+                        "headline-sm": ["Work Sans"],
+                        "headline-lg": ["Work Sans"],
+                        "headline-lg-mobile": ["Work Sans"],
+                        "display": ["Work Sans"],
+                        "label-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Work Sans"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "data-mono": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                        "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .modal-overlay {
+            background-color: rgba(26, 27, 32, 0.4);
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md overflow-hidden">
+<!-- Sidebar (Shared Component) -->
+<aside class="bg-surface-container-lowest dark:bg-inverse-surface text-secondary dark:text-secondary-fixed h-screen w-64 fixed left-0 top-0 border-r border-outline-variant dark:border-outline flex flex-col h-full py-6 px-4 z-50">
+<div class="mb-8 px-2">
+<h1 class="font-headline-sm text-headline-sm font-bold text-on-surface">LedgerFlow</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">Accounting Suite</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="assignment">assignment</span>
+<span class="font-body-sm text-body-sm">Projects</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-secondary-container bg-secondary-container dark:bg-on-secondary-fixed-variant dark:text-secondary-fixed font-bold rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-body-sm text-body-sm">Customers</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="receipt">receipt</span>
+<span class="font-body-sm text-body-sm">Invoices</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-body-sm text-body-sm">Tracking</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 border-t border-outline-variant/30 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-sm text-body-sm">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-body-sm text-body-sm">Support</span>
+</a>
+</div>
+</aside>
+<!-- Top Bar (Shared Component) -->
+<header class="bg-surface dark:bg-background fixed top-0 right-0 w-[calc(100%-16rem)] h-16 border-b border-outline-variant dark:border-outline flex justify-between items-center px-8 w-full z-40">
+<div class="flex items-center gap-4">
+<h2 class="font-headline-sm text-headline-sm font-semibold text-on-surface">Accounting Console</h2>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative group focus-within:ring-1 focus-within:ring-on-tertiary-container rounded-lg">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="bg-surface-container-low border-none rounded-lg pl-10 pr-4 py-2 text-body-sm focus:ring-0 w-64 transition-all" placeholder="Search customers..." type="text">
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors" data-icon="notifications">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors" data-icon="help_outline">help_outline</button>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container-high border border-outline-variant">
+<img alt="User Avatar" data-alt="A professional headshot of a corporate executive with a friendly expression. The lighting is soft and even, highlighting clear skin and sharp facial features. The background is a blurred office interior with neutral tones, maintaining a clean and minimalist aesthetic. The image conveys trust, expertise, and corporate reliability." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_WWPk8QDJBwKJqv0NiF0MTKt2Ytf7uhSX3pdEl9xmwy1JiZZ78ENly5Jslwrbsv96MSV_xGNS_3F8jUy-F3R8XHg4anKsbiCnVALGE_neQp6SmlOAUVwsT04E-X1hBf5BkIyOqLAlzSuJaMa3lY3v0rHfvF6DwWl6De1u-1k0KSv3ig21p817mf3vFxh3Oz3ZMUgwg4S3n4n8e4qBZP2g8G4TvZYwcIZWB0GCUw8dKDrhXNx2ubnehjQHc5LWnl6zEycT035np1A7">
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content (Customers Directory Background) -->
+<main class="ml-64 mt-16 p-xl">
+<div class="max-w-6xl mx-auto">
+<div class="flex justify-between items-end mb-xl">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-xs">Customers</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Manage your client relationships and billing accounts.</p>
+</div>
+<button class="bg-primary text-on-primary px-lg py-sm rounded-lg font-label-md flex items-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[20px]" data-icon="add">add</span>
+                    New Customer
+                </button>
+</div>
+<!-- Fake Data Grid for context -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
+<table class="w-full text-left">
+<thead class="bg-surface-container text-on-surface-variant border-b border-outline-variant">
+<tr>
+<th class="px-md py-sm font-label-md">COMPANY</th>
+<th class="px-md py-sm font-label-md">PRIMARY CONTACT</th>
+<th class="px-md py-sm font-label-md">EMAIL</th>
+<th class="px-md py-sm font-label-md">TIER</th>
+<th class="px-md py-sm font-label-md">STATUS</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/30">
+<tr class="hover:bg-surface-container-low/50">
+<td class="px-md py-md font-body-md font-semibold">Stark Industries</td>
+<td class="px-md py-md font-body-md">Pepper Potts</td>
+<td class="px-md py-md font-body-md text-on-surface-variant">p.potts@stark.com</td>
+<td class="px-md py-md">
+<span class="bg-tertiary/10 text-tertiary px-sm py-xs rounded text-body-sm font-semibold">Enterprise</span>
+</td>
+<td class="px-md py-md">
+<span class="bg-secondary/10 text-secondary px-sm py-xs rounded text-body-sm font-semibold">Active</span>
+</td>
+</tr>
+<tr class="bg-surface-container-low/20">
+<td class="px-md py-md font-body-md font-semibold">Wayne Enterprises</td>
+<td class="px-md py-md font-body-md">Lucius Fox</td>
+<td class="px-md py-md font-body-md text-on-surface-variant">l.fox@wayne.corp</td>
+<td class="px-md py-md">
+<span class="bg-tertiary/10 text-tertiary px-sm py-xs rounded text-body-sm font-semibold">Enterprise</span>
+</td>
+<td class="px-md py-md">
+<span class="bg-secondary/10 text-secondary px-sm py-xs rounded text-body-sm font-semibold">Active</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+<!-- Modal Overlay -->
+<div class="modal-overlay fixed inset-0 z-[100] flex items-center justify-center p-gutter" id="modalOverlay">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-[0px_8px_16px_rgba(0,0,0,0.1)] w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+<!-- Modal Header -->
+<div class="px-xl py-lg border-b border-outline-variant flex justify-between items-center">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Add New Customer</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">Create a new organizational profile in the LedgerFlow suite.</p>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors" onclick="document.getElementById('modalOverlay').style.display='none'">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+<!-- Modal Content (Form) -->
+<form class="p-xl space-y-lg">
+<div class="grid gap-lg grid-cols-3">
+<!-- Company Name -->
+<div class="col-span-3">
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">COMPANY NAME</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-md py-sm text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none" placeholder="e.g. Acme Corp" type="text">
+</div>
+<!-- Primary Contact -->
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">PRIMARY CONTACT</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-md py-sm text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none" placeholder="Full Name" type="text">
+</div>
+<!-- Email Address -->
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">EMAIL ADDRESS</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-md py-sm text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none" placeholder="contact@company.com" type="email">
+</div><div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">PHONE NUMBER</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-md py-sm text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none" placeholder="+1 (555) 000-0000" type="tel">
+</div>
+<!-- Billing Address -->
+<div class="col-span-3">
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">BILLING ADDRESS</label>
+<textarea class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-md py-sm text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none resize-none" placeholder="Street Address, City, State, ZIP" rows="3"></textarea>
+</div>
+<!-- Performance Tier -->
+<div class="col-span-3">
+
+<div class="relative">
+
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+</div><div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">PHONE NUMBER</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-md py-sm text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none" placeholder="+1 (555) 000-0000" type="tel">
+</div>
+<!-- Action Footer -->
+<div class="pt-lg border-t border-outline-variant/30 flex justify-end gap-md">
+<button class="px-xl py-sm font-label-md text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-colors border border-transparent hover:border-outline-variant" onclick="document.getElementById('modalOverlay').style.display='none'" type="button">
+                        Cancel
+                    </button>
+<button class="px-xl py-sm font-label-md bg-primary text-on-primary rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2" type="submit">
+<span class="material-symbols-outlined text-[18px]" data-icon="save">save</span>
+                        Create Customer
+                    </button>
+</div>
+</form>
+</div><div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">PHONE NUMBER</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-md py-sm text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none" placeholder="+1 (555) 000-0000" type="tel">
+</div>
+</div><div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">PHONE NUMBER</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-md py-sm text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none" placeholder="+1 (555) 000-0000" type="tel">
+</div>
+<!-- Micro-interaction Script -->
+<script>
+        // Simple form submission prevention for demo
+        document.querySelector('form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const overlay = document.getElementById('modalOverlay');
+            overlay.classList.remove('zoom-in');
+            overlay.classList.add('zoom-out', 'fade-out');
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 200);
+        });
+
+        // Close on backdrop click
+        document.getElementById('modalOverlay').addEventListener('click', (e) => {
+            if (e.target.id === 'modalOverlay') {
+                e.target.style.display = 'none';
+            }
+        });
+    </script>
+</body></html>

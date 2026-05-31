@@ -1,0 +1,417 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Invoice Creation | LedgerFlow</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Work+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#b45b00",
+                        "secondary": "#096e00",
+                        "on-primary-fixed-variant": "#00497c",
+                        "on-tertiary-fixed": "#301400",
+                        "on-primary-fixed": "#001d36",
+                        "secondary-container": "#86f96d",
+                        "primary-fixed-dim": "#9ecaff",
+                        "surface-bright": "#f9f9ff",
+                        "on-background": "#1a1b20",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-fixed": "#012200",
+                        "tertiary-fixed-dim": "#ffb785",
+                        "surface-container-high": "#e8e7ee",
+                        "surface-dim": "#dad9e0",
+                        "outline": "#707882",
+                        "inverse-surface": "#2f3035",
+                        "on-surface": "#1a1b20",
+                        "secondary-fixed-dim": "#6ddf56",
+                        "on-secondary-container": "#0a7300",
+                        "background": "#f9f9ff",
+                        "inverse-on-surface": "#f0f0f7",
+                        "error-container": "#ffdad6",
+                        "surface-tint": "#0061a3",
+                        "surface-variant": "#e2e2e9",
+                        "on-primary-container": "#fafaff",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed-variant": "#055300",
+                        "outline-variant": "#c0c7d3",
+                        "secondary-fixed": "#89fc6f",
+                        "on-surface-variant": "#404751",
+                        "tertiary-fixed": "#ffdcc6",
+                        "primary": "#005e9d",
+                        "surface-container": "#eeedf4",
+                        "inverse-primary": "#9ecaff",
+                        "error": "#ba1a1a",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#fff9f7",
+                        "surface-container-low": "#f3f3fa",
+                        "on-tertiary-fixed-variant": "#713700",
+                        "on-primary": "#ffffff",
+                        "surface": "#f9f9ff",
+                        "tertiary": "#8f4700",
+                        "primary-container": "#0077c5",
+                        "surface-container-highest": "#e2e2e9",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "primary-fixed": "#d1e4ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "unit": "4px",
+                        "margin-desktop": "40px",
+                        "sm": "8px",
+                        "gutter": "20px",
+                        "xs": "4px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Work Sans"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Work Sans"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["Work Sans"],
+                        "display": ["Work Sans"],
+                        "headline-sm": ["Work Sans"],
+                        "body-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "data-mono": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "data-mono": ["13px", {"lineHeight": "18px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4, .font-display { font-family: 'Work Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 border-r border-outline-variant dark:border-outline bg-surface-container-lowest flex flex-col py-6 px-4 z-50">
+<div class="mb-10 px-2 flex items-center gap-3">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">account_balance</span>
+</div>
+<div>
+<h1 class="text-headline-sm font-bold text-on-surface leading-tight font-headline-sm">Wind's Ledger</h1>
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Simple Books</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 text-body-sm" href="#">
+<span class="material-symbols-outlined">assignment</span> Projects
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 text-body-sm" href="#">
+<span class="material-symbols-outlined">group</span> Customers
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container bg-primary-container/10 border-r-4 border-primary font-bold text-body-sm" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">receipt</span> Invoices
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 text-body-sm" href="#"><br><span class="material-symbols-outlined">analytics</span>Time Tracking
+        </a><a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 text-body-sm" href="#">
+<span class="material-symbols-outlined">payments</span> Expenses
+        </a>
+</nav>
+<div class="mt-auto pt-6 border-t border-outline-variant space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 text-body-sm" href="#">
+<span class="material-symbols-outlined">settings</span> Settings
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 text-body-sm" href="#">
+<span class="material-symbols-outlined">help</span> Support
+        </a>
+</div>
+</aside>
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-16rem)] h-16 border-b border-outline-variant bg-surface-container-lowest flex justify-between items-center px-8 z-40">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative w-full max-w-md focus-within:ring-1 focus-within:ring-primary rounded">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-lg pl-10 pr-4 py-2 text-body-sm focus:ring-0" placeholder="Search invoices or clients..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">notifications</span></button>
+<button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">help_outline</span></button>
+</div>
+<div class="h-8 w-[1px] bg-outline-variant"></div>
+<div class="flex items-center gap-3">
+<div class="text-right hidden sm:block">
+
+
+</div>
+
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="ml-64 pt-24 pb-12 px-8 min-h-screen bg-surface">
+<div class="max-w-[1200px] mx-auto">
+<!-- Header Actions -->
+<div class="flex justify-between items-center mb-8">
+<div>
+<nav class="flex items-center gap-2 text-on-surface-variant text-[11px] mb-2 font-semibold uppercase tracking-wider">
+<span class="">INVOICES</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary">NEW INVOICE</span>
+</nav>
+<h2 class="text-headline-md font-bold text-on-surface">Create New Invoice</h2>
+</div>
+<div class="flex gap-3">
+<button class="px-6 py-2.5 border border-outline text-on-surface hover:bg-surface-container-low transition-all text-label-md font-semibold rounded flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">draft</span> SAVE DRAFT
+                </button>
+<button class="px-6 py-2.5 text-white transition-all text-label-md font-semibold rounded flex items-center gap-2 bg-secondary hover:bg-on-secondary-container">
+<span class="material-symbols-outlined text-[18px]">send</span> SEND INVOICE
+                </button>
+</div>
+</div>
+<!-- Invoice Canvas -->
+<div class="bg-white shadow-xl border border-outline-variant min-h-[1056px] w-full max-w-[850px] mx-auto p-12 flex flex-col gap-12 relative rounded-sm">
+<!-- Invoice Header -->
+<div class="flex justify-between items-start">
+<div>
+<div class="flex items-center gap-3 mb-6">
+<div class="w-12 h-12 bg-primary flex items-center justify-center text-white rounded">
+<span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">account_balance</span>
+</div>
+<span class="text-headline-sm font-bold tracking-tight text-on-surface">LedgerFlow.</span>
+</div>
+<div class="space-y-1 text-on-surface-variant text-body-sm">
+<p class="font-semibold text-on-surface">LedgerFlow Systems Inc.</p>
+<p class="">123 Finance Plaza, Suite 400</p>
+<p class="">San Francisco, CA 94105</p>
+<p class="">United States</p>
+<p class="pt-2">billing@ledgerflow.io</p>
+</div>
+</div>
+<div class="text-right">
+<h3 class="text-display text-primary leading-none mb-6">INVOICE</h3>
+<div class="space-y-4">
+<div class="flex flex-col items-end">
+<label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">INVOICE NUMBER</label>
+<input class="border-b-2 border-outline-variant focus:border-primary border-t-0 border-x-0 p-0 text-body-md font-medium text-right focus:ring-0 w-40" type="text" value="INV-2024-001">
+</div>
+</div>
+</div>
+</div>
+<!-- Client & Dates -->
+<div class="grid grid-cols-2 gap-16">
+<div>
+<label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2">BILL TO</label>
+<div class="relative group">
+<select class="w-full border-outline-variant group-hover:border-outline focus:border-primary rounded py-2.5 px-3 text-body-sm focus:ring-0 transition-colors">
+<option value="">Select a client...</option>
+<option selected="">Stellar Dynamics Inc.</option>
+<option>AeroGlobal Logistics</option>
+<option>Nebula Creative Agency</option>
+<option>+ Add New Client</option>
+</select>
+</div>
+<div class="mt-4 p-5 bg-surface-container-low rounded border border-outline-variant text-on-surface-variant text-body-sm leading-relaxed">
+<p class="font-semibold text-on-surface mb-1">Stellar Dynamics Inc.</p>
+<p class="">456 Innovation Way</p>
+<p class="">Palo Alto, CA 94304</p>
+<p class="">accounting@stellardynamics.com</p>
+</div>
+</div>
+<div class="grid grid-cols-1 gap-6">
+<div class="flex justify-between items-center border-b border-outline-variant pb-2">
+<label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">INVOICE DATE</label>
+<input class="border-none p-0 text-body-sm text-right focus:ring-0 bg-transparent w-32" type="date" value="2024-05-20">
+</div>
+<div class="flex justify-between items-center border-b border-outline-variant pb-2">
+<label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">DUE DATE</label>
+<input class="border-none p-0 text-body-sm text-right focus:ring-0 bg-transparent w-32 font-semibold text-primary" type="date" value="2024-06-20">
+</div>
+<div class="flex justify-between items-center border-b border-outline-variant pb-2">
+<label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">P.O. NUMBER</label>
+<input class="border-none p-0 text-body-sm text-right focus:ring-0 bg-transparent w-32" placeholder="Optional" type="text">
+</div>
+</div>
+</div>
+<!-- Line Items Table -->
+<div class="mt-4">
+<table class="w-full">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant">
+<th class="text-left text-[10px] font-bold uppercase tracking-widest py-3 px-4 rounded-tl">DESCRIPTION</th>
+<th class="text-center text-[10px] font-bold uppercase tracking-widest py-3 px-2 w-20">QTY</th>
+<th class="text-right text-[10px] font-bold uppercase tracking-widest py-3 px-2 w-28">RATE</th>
+<th class="text-right text-[10px] font-bold uppercase tracking-widest py-3 px-4 w-32 rounded-tr">AMOUNT</th>
+<th class="w-10"></th>
+</tr>
+</thead>
+<tbody id="line-items">
+<tr class="border-b border-outline-variant group hover:bg-surface-container-lowest transition-colors">
+<td class="py-5 px-4">
+<input class="w-full border-none p-0 focus:ring-0 text-body-md font-medium" placeholder="Service or product name" type="text" value="Financial Audit Services - Q2">
+<input class="w-full border-none p-0 focus:ring-0 text-body-sm text-on-surface-variant mt-1" placeholder="Add description..." type="text" value="Comprehensive review of Q2 financial statements and compliance.">
+</td>
+<td class="py-5 px-2">
+<input class="w-full text-center border-none p-0 focus:ring-0 font-data-mono" type="number" value="40">
+</td>
+<td class="py-5 px-2">
+<div class="flex items-center justify-end font-data-mono">
+<span class="text-on-surface-variant mr-1">$</span>
+<input class="w-20 text-right border-none p-0 focus:ring-0 font-data-mono" type="number" value="150.00">
+</div>
+</td>
+<td class="py-5 px-4 text-right font-semibold font-data-mono">$6,000.00</td>
+<td class="text-center">
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-error transition-all delete-row">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</td>
+</tr>
+<tr class="border-b border-outline-variant group hover:bg-surface-container-lowest transition-colors">
+<td class="py-5 px-4">
+<input class="w-full border-none p-0 focus:ring-0 text-body-md font-medium" placeholder="Service or product name" type="text" value="Tax Consultation Fee">
+<input class="w-full border-none p-0 focus:ring-0 text-body-sm text-on-surface-variant mt-1" placeholder="Add description..." type="text" value="Advisory on state and local tax nexus.">
+</td>
+<td class="py-5 px-2">
+<input class="w-full text-center border-none p-0 focus:ring-0 font-data-mono" type="number" value="1">
+</td>
+<td class="py-5 px-2">
+<div class="flex items-center justify-end font-data-mono">
+<span class="text-on-surface-variant mr-1">$</span>
+<input class="w-20 text-right border-none p-0 focus:ring-0 font-data-mono" type="number" value="750.00">
+</div>
+</td>
+<td class="py-5 px-4 text-right font-semibold font-data-mono">$750.00</td>
+<td class="text-center">
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-error transition-all delete-row">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+<button class="mt-6 flex items-center gap-2 text-primary font-semibold text-label-md hover:text-primary-container transition-colors group" id="add-row">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">add_circle</span> ADD LINE ITEM
+                </button>
+</div>
+<!-- Footer Totals -->
+<div class="mt-auto flex justify-between border-t border-outline-variant pt-12">
+<div class="w-1/2">
+<label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-3">NOTES / PAYMENT TERMS</label>
+<textarea class="w-full h-32 border-outline-variant rounded focus:ring-1 focus:ring-primary focus:border-primary text-body-sm p-4 bg-surface-container-low transition-all" placeholder="Enter terms (e.g. Net 30, Bank Transfer details...)"></textarea>
+<p class="text-[10px] text-on-surface-variant mt-2 italic">Thank you for your business. Please make checks payable to LedgerFlow Systems Inc.</p>
+</div>
+<div class="w-[300px] space-y-3">
+<div class="flex justify-between items-center text-body-sm">
+<span class="text-on-surface-variant font-medium">SUBTOTAL</span>
+<span class="font-data-mono font-semibold">$6,750.00</span>
+</div>
+<div class="flex justify-between items-center text-body-sm">
+<div class="flex items-center gap-2">
+<span class="text-on-surface-variant font-medium">TAX (%)</span>
+<input class="w-12 text-center border-b border-outline-variant border-x-0 border-t-0 p-0 text-body-sm focus:ring-0 font-data-mono" type="number" value="8.5">
+</div>
+<span class="font-data-mono font-semibold">$573.75</span>
+</div>
+<div class="flex justify-between items-center text-body-sm pb-4">
+<span class="text-on-surface-variant font-medium">DISCOUNT</span>
+<span class="font-data-mono font-semibold">$0.00</span>
+</div>
+<div class="pt-6 border-t-2 border-on-surface flex justify-between items-center">
+<span class="text-headline-sm font-bold text-on-surface">TOTAL DUE</span>
+<span class="text-headline-sm font-bold text-primary">$7,323.75</span>
+</div>
+<div class="pt-2 text-right">
+<p class="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">USD - UNITED STATES DOLLAR</p>
+</div>
+</div>
+</div>
+<!-- Watermark / Footer -->
+<div class="mt-12 pt-8 border-t border-surface-container-high text-center">
+<p class="text-[10px] text-on-surface-variant uppercase tracking-[0.25em] font-medium opacity-60">Generated via LedgerFlow Accounting Suite • Professional Series</p>
+</div>
+</div>
+</div>
+</main>
+<script>
+    // Micro-interactions
+    const addRowBtn = document.getElementById('add-row');
+    const lineItemsTable = document.getElementById('line-items');
+
+    const updateDeleteListeners = () => {
+        document.querySelectorAll('.delete-row').forEach(btn => {
+            btn.onclick = (e) => {
+                const row = e.target.closest('tr');
+                if (lineItemsTable.children.length > 1) {
+                    row.remove();
+                }
+            };
+        });
+    };
+
+    addRowBtn.addEventListener('click', () => {
+        const newRow = document.createElement('tr');
+        newRow.className = 'border-b border-outline-variant group hover:bg-surface-container-lowest transition-colors';
+        newRow.innerHTML = `
+            <td class="py-5 px-4">
+                <input class="w-full border-none p-0 focus:ring-0 text-body-md font-medium" placeholder="Service or product name" type="text">
+                <input class="w-full border-none p-0 focus:ring-0 text-body-sm text-on-surface-variant mt-1" placeholder="Add description..." type="text">
+            </td>
+            <td class="py-5 px-2">
+                <input class="w-full text-center border-none p-0 focus:ring-0 font-data-mono" type="number" value="1">
+            </td>
+            <td class="py-5 px-2">
+                <div class="flex items-center justify-end font-data-mono">
+                    <span class="text-on-surface-variant mr-1">$</span>
+                    <input class="w-20 text-right border-none p-0 focus:ring-0 font-data-mono" type="number" value="0.00">
+                </div>
+            </td>
+            <td class="py-5 px-4 text-right font-semibold font-data-mono">$0.00</td>
+            <td class="text-center">
+                <button class="opacity-0 group-hover:opacity-100 text-outline hover:text-error transition-all delete-row">
+                    <span class="material-symbols-outlined text-[20px]">delete</span>
+                </button>
+            </td>
+        `;
+        lineItemsTable.appendChild(newRow);
+        updateDeleteListeners();
+    });
+
+    // Initialize existing delete buttons
+    updateDeleteListeners();
+</script>
+
+
+
+
+
+
+
+
+
+
+</body></html>

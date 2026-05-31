@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en" style=""><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LedgerFlow | Projects Management</title>
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Work+Sans:wght@400;600;700&amp;family=JetBrains+Mono&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "tertiary-container": "#b45b00",
+                "secondary": "#096e00",
+                "on-primary-fixed-variant": "#00497c",
+                "on-tertiary-fixed": "#301400",
+                "on-primary-fixed": "#001d36",
+                "secondary-container": "#86f96d",
+                "primary-fixed-dim": "#9ecaff",
+                "surface-bright": "#f9f9ff",
+                "on-background": "#1a1b20",
+                "on-secondary": "#ffffff",
+                "on-secondary-fixed": "#012200",
+                "tertiary-fixed-dim": "#ffb785",
+                "surface-container-high": "#e8e7ee",
+                "surface-dim": "#dad9e0",
+                "outline": "#707882",
+                "inverse-surface": "#2f3035",
+                "on-surface": "#1a1b20",
+                "secondary-fixed-dim": "#6ddf56",
+                "on-secondary-container": "#0a7300",
+                "background": "#f9f9ff",
+                "inverse-on-surface": "#f0f0f7",
+                "error-container": "#ffdad6",
+                "surface-tint": "#0061a3",
+                "surface-variant": "#e2e2e9",
+                "on-primary-container": "#fafaff",
+                "on-error": "#ffffff",
+                "on-secondary-fixed-variant": "#055300",
+                "outline-variant": "#c0c7d3",
+                "secondary-fixed": "#89fc6f",
+                "on-surface-variant": "#404751",
+                "tertiary-fixed": "#ffdcc6",
+                "primary": "#005e9d",
+                "surface-container": "#eeedf4",
+                "inverse-primary": "#9ecaff",
+                "error": "#ba1a1a",
+                "on-tertiary": "#ffffff",
+                "on-tertiary-container": "#fff9f7",
+                "surface-container-low": "#f3f3fa",
+                "on-tertiary-fixed-variant": "#713700",
+                "on-primary": "#ffffff",
+                "surface": "#f9f9ff",
+                "tertiary": "#8f4700",
+                "primary-container": "#0077c5",
+                "surface-container-highest": "#e2e2e9",
+                "surface-container-lowest": "#ffffff",
+                "on-error-container": "#93000a",
+                "primary-fixed": "#d1e4ff"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+            },
+            "spacing": {
+                "xl": "32px",
+                "unit": "4px",
+                "margin-desktop": "40px",
+                "sm": "8px",
+                "gutter": "20px",
+                "xs": "4px",
+                "md": "16px",
+                "lg": "24px",
+                "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                "headline-lg-mobile": ["Work Sans"],
+                "body-md": ["Inter"],
+                "headline-lg": ["Work Sans"],
+                "label-md": ["Inter"],
+                "headline-md": ["Work Sans"],
+                "display": ["Work Sans"],
+                "headline-sm": ["Work Sans"],
+                "body-sm": ["Inter"],
+                "body-lg": ["Inter"],
+                "data-mono": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                "data-mono": ["13px", {"lineHeight": "18px", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .table-row-hover:hover { background-color: #f3f3fa; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md overflow-hidden">
+<!-- SideNavBar Shell -->
+<aside class="bg-surface-container-lowest font-body-sm text-body-sm h-screen w-64 fixed left-0 top-0 border-r border-outline-variant flex flex-col py-6 px-4 z-50">
+<div class="mb-10 px-2 flex items-center gap-2">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary text-xl">account_balance</span>
+</div>
+<div>
+<h1 class="font-headline-sm text-[18px] font-bold text-on-surface leading-tight">Wind's Ledger</h1>
+<p class="text-on-surface-variant text-[10px] uppercase tracking-widest font-bold">Simple Books</p>
+</div>
+</div>
+<nav class="flex-grow space-y-1">
+<!-- Active: Projects -->
+<a class="flex items-center gap-3 px-3 py-2 text-primary font-bold bg-primary/5 border-l-4 border-primary rounded-r transition-all" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">assignment</span>
+<span class="">Projects</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="">Customers</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">receipt</span>
+<span class="">Invoices</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="">Tracking</span>
+</a><a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#"><span class="material-symbols-outlined">payments</span><span class="">Expenses</span></a>
+</nav>
+<div class="mt-auto space-y-1 border-t border-outline-variant pt-4">
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="">Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 min-h-screen flex flex-col">
+<!-- TopNavBar Shell -->
+<header class="fixed top-0 right-0 w-[calc(100%-16rem)] h-16 bg-surface-container-lowest border-b border-outline-variant flex justify-between items-center px-8 z-40">
+<div class="flex items-center gap-6 flex-1">
+<h2 class="font-headline-sm text-headline-sm font-semibold text-on-surface whitespace-nowrap">Accounting Console</h2>
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-full py-1.5 pl-10 pr-4 text-body-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" placeholder="Search anything..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4 ml-8">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border border-outline-variant cursor-pointer">
+</div>
+</div>
+</header>
+<!-- Content Canvas -->
+<section class="mt-16 p-8 max-w-[1440px]">
+<!-- Header Section -->
+<div class="flex justify-between items-end mb-8">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Active Projects</h3>
+</div>
+<button class="bg-secondary text-on-secondary px-6 py-2 rounded-full font-bold flex items-center gap-2 hover:bg-on-secondary-fixed-variant active:scale-95 transition-all shadow-sm">
+<span class="material-symbols-outlined text-[20px]">add</span>
+<span class="">New Project</span>
+</button>
+</div>
+<!-- Bento Stats Grid - QuickBooks style (cleaner, lighter) -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+</div>
+<!-- Main Data Table Container - QuickBooks style -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm overflow-hidden">
+<!-- Table Filters -->
+<div class="px-6 py-4 border-b border-outline-variant flex items-center justify-between bg-surface-bright">
+<div class="flex gap-4">
+<button class="flex items-center gap-2 border border-outline-variant rounded-lg px-4 py-2 text-body-sm font-semibold hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+<span class="">Filter</span>
+</button>
+</div>
+<div class="text-body-sm text-on-surface-variant">
+                        Showing <span class="font-bold text-on-surface">12</span> of 48 Projects
+                    </div>
+</div>
+<!-- Table Content -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-label-md font-bold text-on-surface-variant border-b border-outline-variant">
+<th class="px-6 py-4 tracking-wider uppercase">Project NUMBER</th>
+<th class="px-6 py-4 tracking-wider uppercase">Client</th><th class="px-6 py-4 tracking-wider uppercase">Rates</th>
+<th class="px-6 py-4 tracking-wider uppercase text-right">Spent (TO DATE)</th>
+<th class="px-6 py-4"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/30">
+<!-- Row 1: In Progress -->
+<tr class="table-row-hover transition-all">
+<td class="px-6 py-4"><div class="font-bold text-on-surface">0526</div></td>
+<td class="px-6 py-4 font-medium">Acme Corp.</td><td class="px-6 py-4"><div class="text-[11px] text-on-surface-variant leading-tight max-w-[180px]"><span class="font-bold text-on-surface">ST:</span> $125.00, <span class="font-bold text-on-surface">OT:</span> $185.00, <span class="font-bold text-on-surface">TT:</span> $100.00, <span class="font-bold text-on-surface">HD1:</span> $12,500.00</div></td>
+<td class="px-6 py-4 text-right font-data-mono text-on-surface font-bold">
+                                    $42,500.00
+                                </td>
+<td class="px-6 py-4 text-right">
+<button class="p-1 hover:bg-surface-container-low rounded transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 2: Completed -->
+<tr class="table-row-hover transition-all">
+<td class="px-6 py-4">
+<div class="font-bold text-on-surface">0527</div></td>
+<td class="px-6 py-4 font-medium">Stark Industries</td><td class="px-6 py-4"><div class="text-[11px] text-on-surface-variant leading-tight max-w-[180px]"><span class="font-bold text-on-surface">ST:</span> $150.00, <span class="font-bold text-on-surface">OT:</span> $225.00, <span class="font-bold text-on-surface">TT:</span> $120.00</div></td>
+<td class="px-6 py-4 text-right font-data-mono text-on-surface font-bold">
+                                    $18,200.00
+                                </td>
+<td class="px-6 py-4 text-right">
+<button class="p-1 hover:bg-surface-container-low rounded transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 3: On Hold -->
+<tr class="table-row-hover transition-all">
+<td class="px-6 py-4">
+<div class="font-bold text-on-surface">0528</div></td>
+<td class="px-6 py-4 font-medium">Wayne Ent.</td><td class="px-6 py-4"><div class="text-[11px] text-on-surface-variant leading-tight max-w-[180px]"><span class="font-bold text-on-surface">ST:</span> $200.00, <span class="font-bold text-on-surface">OT:</span> $300.00, <span class="font-bold text-on-surface">HD1:</span> $25,000.00</div></td>
+<td class="px-6 py-4 text-right font-data-mono text-on-surface font-bold">
+                                    $94,000.00
+                                </td>
+<td class="px-6 py-4 text-right">
+<button class="p-1 hover:bg-surface-container-low rounded transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 4: In Progress -->
+<tr class="table-row-hover transition-all">
+<td class="px-6 py-4">
+<div class="font-bold text-on-surface">0529</div></td>
+<td class="px-6 py-4 font-medium">Globex Corp</td><td class="px-6 py-4"><div class="text-[11px] text-on-surface-variant leading-tight max-w-[180px]"><span class="font-bold text-on-surface">ST:</span> $110.00, <span class="font-bold text-on-surface">TT:</span> $90.00</div></td>
+<td class="px-6 py-4 text-right font-data-mono text-on-surface font-bold">
+                                    $5,600.00
+                                </td>
+<td class="px-6 py-4 text-right">
+<button class="p-1 hover:bg-surface-container-low rounded transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer/Pagination -->
+<div class="px-6 py-4 border-t border-outline-variant flex items-center justify-between bg-surface-container-lowest">
+<button class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors text-body-sm disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+                        Previous
+                    </button>
+<div class="flex gap-1">
+<button class="h-8 w-8 rounded-full bg-primary text-on-primary font-bold text-[12px]">1</button>
+<button class="h-8 w-8 rounded-full hover:bg-surface-container-low text-on-surface-variant text-[12px]">2</button>
+<button class="h-8 w-8 rounded-full hover:bg-surface-container-low text-on-surface-variant text-[12px]">3</button>
+<span class="h-8 w-8 flex items-center justify-center text-on-surface-variant">...</span>
+<button class="h-8 w-8 rounded-full hover:bg-surface-container-low text-on-surface-variant text-[12px]">12</button>
+</div>
+<button class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors text-body-sm">
+                        Next
+                        <span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+<!-- Micro-interactions Script -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Smooth row hover
+            const rows = document.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                row.addEventListener('mouseenter', () => {
+                    row.classList.add('shadow-sm');
+                });
+                row.addEventListener('mouseleave', () => {
+                    row.classList.remove('shadow-sm');
+                });
+            });
+
+            // Search bar interaction
+            const searchInput = document.querySelector('input[type="text"]');
+            searchInput.addEventListener('focus', () => {
+                searchInput.classList.add('bg-white');
+            });
+            searchInput.addEventListener('blur', () => {
+                searchInput.classList.remove('bg-white');
+            });
+        });
+    </script>
+</body></html>

@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Winds Ledger Projects</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Work+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        background: "#f5efe2",
+                        surface: "#fffaf3",
+                        ink: "#1f1b16",
+                        muted: "#6a6257",
+                        line: "#d8cabb",
+                        brand: "#155e52",
+                        branddeep: "#0f433a",
+                        sand: "#d0b189",
+                        panel: "#efe6d7",
+                        forest: "#1d332f",
+                        danger: "#a84432",
+                        warn: "#a66a11",
+                        calm: "#375a7f"
+                    },
+                    fontFamily: {
+                        sans: ["Inter", "sans-serif"],
+                        display: ["Work Sans", "sans-serif"],
+                        mono: ["JetBrains Mono", "monospace"]
+                    },
+                    boxShadow: {
+                        soft: "0 24px 60px rgba(56, 37, 16, 0.12)"
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.72),transparent_24%),linear-gradient(145deg,#f6f0e4_0%,#ebddca_48%,#d5c7b0_100%)] font-sans text-ink">
+    <div class="min-h-screen lg:grid lg:grid-cols-[18rem_minmax(0,1fr)]">
+        <aside class="flex flex-col justify-between gap-8 border-b border-white/10 bg-[linear-gradient(180deg,rgba(23,29,28,0.96),rgba(22,70,62,0.96))] px-5 py-6 text-stone-100 lg:min-h-screen lg:border-b-0 lg:border-r lg:border-r-white/10 lg:px-6">
+            <div>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-stone-300/80">Local Accounting Workflow</p>
+                <a class="mt-2 inline-block font-display text-3xl font-bold tracking-tight text-stone-50" href="./index.html">Winds Ledger</a>
+                <p class="mt-3 max-w-xs text-sm leading-6 text-stone-200/75">Projects tie customer identity to rate logic. This screen makes the rate table visible instead of hiding it behind a modal or another sheet.</p>
+            </div>
+
+            <nav class="side-nav grid gap-2" aria-label="Primary">
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./index.html">Overview</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./customers.html">Customers</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./projects.html">Projects</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./time.html">Time</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./expenses.html">Expenses</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./invoices.html">Invoices</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./payments.html">Payments</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="#queue">Exports</a>
+            </nav>
+
+            <div class="rounded-3xl border border-white/10 bg-white/8 p-4 backdrop-blur-sm">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-stone-300/80">Projects Module</p>
+                <p class="mt-2 text-2xl font-display font-bold text-stone-50" id="projects-mode">Loading...</p>
+                <p class="mt-2 text-sm leading-6 text-stone-200/75">This module now loads customer lookup and project rates from FastAPI so project setup is exercising the real database path.</p>
+            </div>
+        </aside>
+
+        <main class="min-w-0 px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+            <section class="rounded-[2rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur md:p-8">
+                <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+                    <div class="max-w-4xl">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted">Projects Management</p>
+                        <h1 class="mt-3 font-display text-4xl font-extrabold leading-none text-ink sm:text-5xl xl:text-6xl">Browse projects by number, customer, and rate profile, then edit the whole rate table in one place.</h1>
+                        <p class="mt-4 max-w-3xl text-base leading-7 text-muted sm:text-lg">This follows the projects contract as a permanent customer-linked rate profile: project number, customer linkage, description, default rate, and embedded rates without a separate active or inactive flag.</p>
+                    </div>
+
+                    <div class="flex flex-wrap gap-3">
+                        <button class="inline-flex min-w-44 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" id="new-project-button" type="button">New Project</button>
+                        <button class="inline-flex min-w-44 items-center justify-center rounded-full border border-brand/20 bg-white/40 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70" id="reset-project-filters-button" type="button">Reset Filters</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Project summary metrics">
+                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Visible Projects</p>
+                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-visible-projects">-</p>
+                </article>
+                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Customers in View</p>
+                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-linked-customers">-</p>
+                </article>
+                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Avg Default Rate</p>
+                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-default-rate">-</p>
+                </article>
+                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Custom Rate Codes</p>
+                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-custom-rates">-</p>
+                </article>
+            </section>
+
+            <section class="mt-4 grid gap-4 2xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
+                <article class="min-w-0 rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
+                    <div class="flex flex-col gap-4 border-b border-line/80 pb-5 lg:flex-row lg:items-end lg:justify-between">
+                        <div>
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Browse Surface</p>
+                            <h2 class="mt-2 font-display text-3xl font-bold text-ink">Scan project numbers and rate summaries quickly.</h2>
+                        </div>
+
+                        <div class="grid min-w-0 w-full gap-3 md:grid-cols-2 2xl:max-w-2xl 2xl:grid-cols-[minmax(0,1fr)_12rem]">
+                            <div class="min-w-0">
+                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="project-search">Search</label>
+                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="project-search" placeholder="Search number, customer, description, or rate code" type="search">
+                            </div>
+                            <div class="min-w-0">
+                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="project-customer-filter">Customer</label>
+                                <select class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="project-customer-filter"></select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 overflow-x-auto rounded-[1.4rem] border border-line bg-white/70">
+                        <table class="min-w-full border-collapse text-left text-sm">
+                            <thead class="bg-panel/65 text-muted">
+                                <tr>
+                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Project</th>
+                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Customer</th>
+                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Rates</th>
+                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em] text-right">Default</th>
+                                </tr>
+                            </thead>
+                            <tbody id="projects-table-body"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-5 hidden rounded-[1.4rem] border border-dashed border-line bg-panel/40 p-8 text-center" id="projects-empty-state">
+                        <p class="font-display text-2xl font-bold text-ink">No projects match the current filter.</p>
+                        <p class="mt-2 text-sm leading-6 text-muted">Adjust the search, switch the customer filter, or create a new project draft.</p>
+                    </div>
+                </article>
+
+                <article class="min-w-0 rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
+                    <div class="mb-5 flex items-start justify-between gap-4">
+                        <div>
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Project Record</p>
+                            <h2 class="mt-2 font-display text-3xl font-bold text-ink" id="project-editor-title">Select a project</h2>
+                        </div>
+                        <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]" id="project-editor-status-chip">Draft</span>
+                    </div>
+
+                    <div class="mb-5 rounded-[1.2rem] border border-line bg-panel/45 p-4">
+                        <div class="grid gap-3 sm:grid-cols-3">
+                            <div>
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Customer</p>
+                                <p class="mt-2 text-sm text-ink" id="project-detail-customer">None</p>
+                            </div>
+                            <div>
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Rate Codes</p>
+                                <p class="mt-2 font-mono text-sm text-ink" id="project-detail-rate-count">0</p>
+                            </div>
+                            <div>
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Default Rate</p>
+                                <p class="mt-2 font-mono text-sm text-ink" id="project-detail-default-rate">$0.00</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form class="grid gap-4" id="project-form">
+                        <input id="project-id" type="hidden">
+
+                        <div class="grid min-w-0 gap-4 sm:grid-cols-[8rem_minmax(0,1fr)]">
+                            <div>
+                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="project-number">Project Number</label>
+                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="project-number" name="project_number" required type="text">
+                            </div>
+                            <div class="min-w-0">
+                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="project-customer">Customer</label>
+                                <select class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="project-customer" name="customer_id" required></select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="project-description">Description</label>
+                            <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="project-description" name="description" required type="text">
+                        </div>
+
+                        <div>
+                            <div>
+                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="project-default-rate">Default Rate</label>
+                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="project-default-rate" min="0" name="default_rate_dollars" step="0.01" type="number">
+                            </div>
+                        </div>
+
+                        <div class="rounded-[1.2rem] border border-line bg-panel/45 p-4">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Rate Table</p>
+                                    <p class="mt-2 text-sm leading-6 text-muted">Built-in ST, OT, and TT are regenerated from the default rate. Add custom hourly-equivalent codes below.</p>
+                                </div>
+                                <button class="inline-flex items-center justify-center rounded-full border border-brand/20 bg-white/40 px-4 py-2 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70" id="add-custom-rate-button" type="button">Add Custom Rate</button>
+                            </div>
+
+                            <div class="mt-4 grid gap-3" id="builtin-rate-preview"></div>
+
+                            <div class="mt-4 grid gap-3" id="custom-rates-list"></div>
+                        </div>
+
+                        <div class="grid gap-3 pt-2 sm:grid-cols-2 xl:grid-cols-3">
+                            <button class="inline-flex w-full items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" type="submit">Save Project</button>
+                            <button class="inline-flex w-full items-center justify-center rounded-full border border-brand/20 bg-white/40 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70" id="duplicate-project-button" type="button">Duplicate</button>
+                            <button class="inline-flex w-full items-center justify-center rounded-full border border-line bg-panel/50 px-5 py-3 text-sm font-semibold text-ink transition hover:bg-white sm:col-span-2 xl:col-span-1" id="clear-project-form-button" type="button">Clear Form</button>
+                        </div>
+                    </form>
+                </article>
+            </section>
+
+            <section class="mt-4 rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7" id="queue">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Sequence</p>
+                <h2 class="mt-2 font-display text-3xl font-bold text-ink">Project setup is the second concrete slice.</h2>
+                <div class="mt-4 grid gap-3 md:grid-cols-3">
+                    <div class="rounded-[1.2rem] border border-line bg-panel/45 p-4">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Now</p>
+                        <p class="mt-2 text-sm leading-6 text-ink">Project browse, customer linkage, default rate editing, and custom rate management backed by the API and SQLite.</p>
+                    </div>
+                    <div class="rounded-[1.2rem] border border-line bg-panel/45 p-4">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Next</p>
+                        <p class="mt-2 text-sm leading-6 text-ink">Time and expense entry will consume the same project and rate tables after this slice is verified.</p>
+                    </div>
+                    <div class="rounded-[1.2rem] border border-line bg-panel/45 p-4">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Later</p>
+                        <p class="mt-2 text-sm leading-6 text-ink">Derive project spend from real time and expense rows as the downstream workflow moves into the database.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="./projects.js" defer></script>
+</body>
+</html>

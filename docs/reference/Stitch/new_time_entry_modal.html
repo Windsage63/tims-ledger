@@ -1,0 +1,328 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Work+Sans:wght@600;700&amp;family=JetBrains+Mono&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Work+Sans:wght@100..900&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .modal-overlay {
+            backdrop-filter: blur(4px);
+            background-color: rgba(26, 27, 32, 0.4);
+        }
+        /* Custom scrollbar for data density */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d1e4ff;
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "on-surface-variant": "#404751",
+                        "surface-tint": "#0061a3",
+                        "on-tertiary": "#ffffff",
+                        "secondary": "#096e00",
+                        "on-secondary-fixed-variant": "#055300",
+                        "on-secondary-container": "#0a7300",
+                        "on-background": "#1a1b20",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed": "#d1e4ff",
+                        "background": "#f9f9ff",
+                        "surface-dim": "#dad9e0",
+                        "error": "#ba1a1a",
+                        "secondary-container": "#86f96d",
+                        "on-tertiary-fixed-variant": "#713700",
+                        "inverse-primary": "#9ecaff",
+                        "on-primary-fixed-variant": "#00497c",
+                        "outline": "#707882",
+                        "on-surface": "#1a1b20",
+                        "on-secondary-fixed": "#012200",
+                        "on-primary-fixed": "#001d36",
+                        "on-primary-container": "#fafaff",
+                        "tertiary-fixed": "#ffdcc6",
+                        "surface-container-low": "#f3f3fa",
+                        "outline-variant": "#c0c7d3",
+                        "on-tertiary-container": "#fff9f7",
+                        "surface-variant": "#e2e2e9",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#e8e7ee",
+                        "secondary-fixed": "#89fc6f",
+                        "on-tertiary-fixed": "#301400",
+                        "inverse-surface": "#2f3035",
+                        "secondary-fixed-dim": "#6ddf56",
+                        "surface-container-highest": "#e2e2e9",
+                        "on-error-container": "#93000a",
+                        "tertiary": "#8f4700",
+                        "surface-bright": "#f9f9ff",
+                        "on-primary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-container": "#eeedf4",
+                        "surface": "#f9f9ff",
+                        "tertiary-container": "#b45b00",
+                        "inverse-on-surface": "#f0f0f7",
+                        "primary": "#005e9d",
+                        "primary-container": "#0077c5",
+                        "tertiary-fixed-dim": "#ffb785",
+                        "primary-fixed-dim": "#9ecaff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "md": "16px",
+                        "gutter": "20px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "unit": "4px",
+                        "margin-mobile": "16px",
+                        "sm": "8px",
+                        "margin-desktop": "40px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "data-mono": ["JetBrains Mono"],
+                        "headline-sm": ["Work Sans"],
+                        "headline-lg": ["Work Sans"],
+                        "headline-lg-mobile": ["Work Sans"],
+                        "display": ["Work Sans"],
+                        "label-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Work Sans"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "data-mono": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                        "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md overflow-hidden">
+<!-- Main Dashboard Shell (Blurred Backdrop) -->
+<div class="flex h-screen w-full">
+<!-- SideNavBar -->
+<aside class="flex flex-col h-full py-6 px-4 bg-surface-container-lowest dark:bg-inverse-surface h-screen w-64 fixed left-0 top-0 border-r border-outline-variant dark:border-outline flat no shadows z-10">
+<div class="mb-8 px-2">
+<h1 class="font-headline-sm text-headline-sm font-bold text-on-surface">LedgerFlow</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Accounting Suite</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined mr-3">assignment</span>
+<span class="font-body-sm text-body-sm">Projects</span>
+</a>
+<a class="flex items-center px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined mr-3">group</span>
+<span class="font-body-sm text-body-sm">Customers</span>
+</a>
+<a class="flex items-center px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined mr-3">receipt</span>
+<span class="font-body-sm text-body-sm">Invoices</span>
+</a>
+<a class="flex items-center px-3 py-2 text-on-secondary-container bg-secondary-container dark:bg-on-secondary-fixed-variant dark:text-secondary-fixed font-bold rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">analytics</span>
+<span class="font-body-sm text-body-sm">Tracking</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 space-y-1">
+<a class="flex items-center px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined mr-3">settings</span>
+<span class="font-body-sm text-body-sm">Settings</span>
+</a>
+<a class="flex items-center px-3 py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined mr-3">help</span>
+<span class="font-body-sm text-body-sm">Support</span>
+</a>
+</div>
+</aside>
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-16rem)] h-16 bg-surface dark:bg-background border-b border-outline-variant dark:border-outline flex justify-between items-center px-8 w-full z-40">
+<div class="flex items-center space-x-4">
+<div class="relative focus-within:ring-1 focus-within:ring-on-tertiary-container rounded-md overflow-hidden bg-surface-container-low px-3 py-1.5 flex items-center">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-sm font-body-sm ml-2 w-64" placeholder="Search entries..." type="text">
+</div>
+</div>
+<div class="flex items-center space-x-6">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">Accounting Console</span>
+<div class="flex items-center space-x-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-primary-fixed">
+<img alt="User Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAHeAJKEqVsUDkl6v_TYh-30ElNRylAmuSNeHiphIiFlyW2clSsJ1sXEZ74QqrinyJd46lxh01DOCfUTwipI7IfxT4vH28CNeZF2t-kNUZZZv42FM9YFs_Rtx-YBw0IZUgdrAzA7HehgyiNPyNvpYRmry5pUW026Q7-W7yi4EDFZvb7zGfkjvuixuWjGXABPASzu4InIxNnAn5GeNpO9PdqkWUZqM9gbMLqYuo5P1QBy8jdpw4Lo4HGM2pnsGh6I1LxE0XcPnIVyW2u">
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Area (Background for Modal) -->
+<main class="ml-64 mt-16 p-margin-desktop w-full">
+<div class="flex justify-between items-center mb-8">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Tracking Dashboard</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Monitor your team's billable hours and project progress.</p>
+</div>
+<button class="bg-primary text-on-primary px-lg py-sm rounded-lg font-label-md text-label-md flex items-center hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined mr-2">add</span>
+                    NEW ENTRY
+                </button>
+</div>
+<!-- Bento Grid Preview (Blurred in Background) -->
+<div class="grid grid-cols-12 gap-lg opacity-40">
+<div class="col-span-8 bg-surface-container-lowest border border-outline-variant p-md rounded-xl h-64 flex flex-col justify-center items-center">
+<span class="material-symbols-outlined text-[48px] text-primary-fixed-dim">query_stats</span>
+<p class="mt-md font-label-md text-label-md text-on-surface-variant">Activity Graph</p>
+</div>
+<div class="col-span-4 bg-surface-container-lowest border border-outline-variant p-md rounded-xl h-64 flex flex-col justify-center items-center">
+<span class="material-symbols-outlined text-[48px] text-secondary">pie_chart</span>
+<p class="mt-md font-label-md text-label-md text-on-surface-variant">Project Split</p>
+</div>
+</div>
+</main>
+</div>
+<!-- Modal Overlay -->
+<div class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-margin-mobile" id="modal-container">
+<!-- Modal Card -->
+<div class="bg-surface-container-lowest w-full max-w-xl rounded-xl shadow-[0px_8px_16px_rgba(0,0,0,0.1)] border border-outline-variant overflow-hidden transform transition-all duration-300">
+<!-- Modal Header -->
+<div class="px-xl py-lg bg-surface-container-low flex justify-between items-center border-b border-outline-variant">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">New Time Entry</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Logging hours for today, Oct 24, 2023</p>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors" onclick="document.getElementById('modal-container').classList.add('hidden')">
+<span class="material-symbols-outlined text-on-surface-variant">close</span>
+</button>
+</div>
+<!-- Modal Content (Form) -->
+<form class="px-xl py-xl space-y-lg">
+<div class="grid grid-cols-2 gap-lg">
+<!-- Date Field -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">DATE</label>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-md py-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-body-md" type="date" value="2023-10-24">
+<span class="material-symbols-outlined absolute right-3 top-2.5 text-on-surface-variant pointer-events-none">calendar_today</span>
+</div>
+</div>
+<!-- Project Selection -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">PROJECT Number</label>
+<select class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-md py-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-body-md appearance-none">
+<option>Corporate Audit FY24</option>
+<option>Tax Strategy Q4</option>
+<option>LedgerFlow Integration</option>
+<option>General Support</option>
+</select>
+</div>
+</div>
+<!-- Task Description -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">TASK DESCRIPTION</label>
+<textarea class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-md py-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-body-md resize-none" placeholder="Explain the work performed..." rows="3"></textarea>
+</div>
+<div class="grid grid-cols-2 gap-lg">
+<!-- Hours Entry -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">HOURS</label>
+<div class="flex items-center space-x-2">
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-md py-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-data-mono text-center" placeholder="0.00" step="0.25" type="number">
+<div class="flex flex-col space-y-1">
+<button class="bg-surface-container-high px-2 rounded-sm hover:bg-surface-variant" type="button"><span class="material-symbols-outlined text-[14px]">add</span></button>
+<button class="bg-surface-container-high px-2 rounded-sm hover:bg-surface-variant" type="button"><span class="material-symbols-outlined text-[14px]">remove</span></button>
+</div>
+</div>
+</div>
+<!-- Rate Code -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">RATE CODE</label>
+<div class="flex bg-surface-container-low p-1 rounded-lg border border-outline-variant">
+<label class="flex-1 cursor-pointer">
+<input checked="" class="hidden peer" name="rate" type="radio">
+<div class="text-center py-sm rounded-md font-body-sm text-body-sm peer-checked:bg-primary-container peer-checked:text-on-primary-container transition-all">Std</div>
+</label>
+<label class="flex-1 cursor-pointer">
+<input class="hidden peer" name="rate" type="radio">
+<div class="text-center py-sm rounded-md font-body-sm text-body-sm peer-checked:bg-primary-container peer-checked:text-on-primary-container transition-all">OT</div>
+</label>
+<label class="flex-1 cursor-pointer">
+<input class="hidden peer" name="rate" type="radio">
+<div class="text-center py-sm rounded-md font-body-sm text-body-sm peer-checked:bg-primary-container peer-checked:text-on-primary-container transition-all">Trv</div>
+</label>
+</div>
+</div>
+</div>
+<!-- Visual Cue for Rate Selection -->
+<div class="bg-tertiary-fixed/20 p-md rounded-lg flex items-start gap-md">
+
+
+</div>
+</form>
+<!-- Modal Footer -->
+<div class="px-xl py-lg bg-surface-container-lowest border-t border-outline-variant flex justify-end space-x-md">
+<button class="px-lg py-sm font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-colors" onclick="document.getElementById('modal-container').classList.add('hidden')">
+                    DISCARD
+                </button>
+<button class="px-xl py-sm font-label-md text-label-md bg-primary-container text-on-primary-container hover:opacity-90 rounded-lg shadow-sm transition-all flex items-center">
+                    SAVE ENTRY
+                    <span class="material-symbols-outlined ml-2 text-[18px]">check</span>
+</button>
+</div>
+</div>
+</div>
+<script>
+        // Simple Interaction: Close modal on escape key
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.getElementById('modal-container').classList.add('hidden');
+            }
+        });
+
+        // Background atmosphere: Subtle particles
+        const createParticles = () => {
+            const container = document.body;
+            for (let i = 0; i < 5; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'fixed bg-primary-fixed/20 rounded-full blur-3xl -z-10 pointer-events-none';
+                const size = Math.random() * 300 + 100;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.top = `${Math.random() * 100}%`;
+                particle.style.left = `${Math.random() * 100}%`;
+                container.appendChild(particle);
+            }
+        }
+        createParticles();
+    </script>
+</body></html>

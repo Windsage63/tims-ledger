@@ -1,79 +1,65 @@
 # Core Workflows
 
+This document is a companion reference to the primary PRD in `docs/winds_ledger_prd.md`. When wording differs, the PRD and later explicit product decisions take precedence.
+
 ## 1. User Enters Customer
 
 1. User creates or updates a customer master record before entering project work.
-2. User enters the customer information as follows:
-    - customer_name
-    - customer_street_address
-    - customer_city
-    - customer_state
-    - customer_zip
-    - customer_contact
-    - customer_email
-    - customer_phone
-3. System validates that the customer record is complete enough for project and invoice use.
-4. System stores the customer record in the `customers` table that can be reused by other modules.
-5. Customer record becomes available for the creation of projects and invoices, the receipt of payments, and the tracking of the customer account balance.
+2. User enters customer name, street address, city, state, ZIP code, contact name, email, and phone.
+3. System validates that the customer record is complete enough for project setup, invoice printing, and payment receipt.
+4. System stores the customer record in the `customers` table.
+5. Customer record becomes available for project creation, invoice generation, payment receipt, and derived balance reporting.
 
 ## 2. User Enters Project
 
 1. User creates a project under an existing customer.
-2. User enters the project information as follows:
-    - project_number (must be unique)
-    - customer_name (from dropdown, tied to customers table)
-    - project_description
-    - project_default_rate (becomes default ST rate)
-    - project_fixed_fee
-3. User configures rates. Built in rates include:
-    - ST = 1.0 x project_default_rate
-    - OT = 1.5 x project_default_rate
-    - TT = 0.5 x project_default_rate
-    - HD = user-entered non-hourly billing line for fixed-fee, lump-sum, or per-each billing.
-    - `rate-type` designate an hourly rate or a fixed fee rate for a specific rate code.
-    - custom rates as entered by user. Custom rates are stored to the project as a list entry in the form `rate-code`, `rate`, `rate-type`.
-4. System validates that `project_number` is unique and that the project is linked to one customer.
-5. System stores the project record. Each project is linked to only one customer.
-6. Project record becomes available for the entry of time, expenses, invoices, and payments.
-7. If project_fixed_fee is used, the default rate may be set to 0 to allow time to be allocated and expense records may still be tracked for cost and audit purposes without automatically becoming billable invoice lines.
+2. User enters `project_number`, customer, project description, and project default rate.
+3. System provisions built-in rates from the default rate: `ST` at 1.0x, `OT` at 1.5x, and `TT` at 0.5x.
+4. User may add custom project rates as rate code plus hourly-equivalent rate.
+5. If the project needs fixed-fee billing, the fixed fee is represented by a custom project rate that will later be used on a one-hour time entry.
+6. System validates that `project_number` is unique and that the project is linked to exactly one customer.
+7. System stores the project record and its rate records.
+8. Project becomes available for time entry, expense entry, invoice building, and payment reporting.
 
 ## 3. User Enters Time
 
-1. User enters the date.
-2. User selects the project by project number. The system derives the customer and available rates from the project record.
-3. User enters the work description, number of hours, and selects the rate code.
-4. System stores the time entry as a source record.
-5. Invoice linkage is empty until the time entry checkbox is selected into an invoice.
-6. Unbilled billable time (time with no invoice linkage and a billable rate) is eligible for invoice building. When selected into an invoice, the time entry is stamped to that invoice immediately. When unselected, that invoice linkage is removed immediately. Non-billable or fixed-fee-supporting hours remain available for project tracking without being treated as labor revenue.
+1. User enters the work date.
+2. User selects the project by project number. The system derives the customer and available rates from the project.
+3. User enters work description, duration, and rate code. There is no separate time billable toggle. Time with a selected rate of `0` is non-billable.
+4. System stores the time entry as a source record, snapshots the selected rate, and calculates the line total.
+5. Invoice linkage is empty until the time entry is selected into an invoice.
+6. Unbilled time with a non-zero rate is eligible for invoice building. When selected into an invoice, the time entry is stamped to that invoice immediately. When unselected, the invoice linkage is cleared immediately.
+7. Fixed-fee billing is represented by a one-hour time entry that uses a custom rate equal to the fixed fee. There are no separate manual invoice lines.
 
 ## 4. User Enters Expense
 
-1. User enters the date.
-2. User selects the project by project number. The system derives the customer from the project record.
-3. User enters expense vendor, description, quantity, unit cost, and selects the expense category, and billable flag.
-4. System stores the expense as a source record.
+1. User enters the expense date.
+2. User selects the project by project number. The system derives the customer from the project.
+3. User enters vendor, description, quantity, unit cost, category, and billable flag.
+4. System stores the expense as a source record and calculates the line total.
 5. Invoice linkage is empty until the expense is selected into an invoice.
-6. Unbilled billable expenses (expenses with no invoice linkage that are flagged as billable) are eligible for invoice building. When selected into an invoice, the expense is stamped to that invoice immediately. When unselected, that invoice linkage is removed immediately. Non-billable or fixed-fee-supporting expenses remain available for internal cost tracking.
+6. Unbilled billable expenses are eligible for invoice building. When selected into an invoice, the expense is stamped to that invoice immediately. When unselected, the invoice linkage is cleared immediately.
+7. Non-billable expenses remain available for internal cost tracking and must not appear as invoice charges.
 
 ## 5. User Creates an Invoice
 
-1. User enters the date, a unique invoice number and a project number.
+1. User enters the invoice date, a unique invoice number, and a project number.
 2. System validates that the invoice number is unique.
-3. System creates a listing of all eligible unbilled time assigned to the project, showing the date, description, number of hours, rate, and total cost for each line, plus a checkbox labeled `invoice?`.
-4. System creates a listing of all eligible unbilled expenses assigned to the project, showing the date, description, expense category, unit cost, and total cost for each line, plus a checkbox labeled `invoice?`.
-5. If the project uses fixed-fee or non-hourly billing, the draft may also include approved HD or other controlled manual billing lines.
-6. User selects the time, expense, and approved non-hourly lines to be assigned to the invoice.
-7. As each line is selected, the system stamps that source record to the invoice immediately and calculates updated invoice totals.
+3. System lists all eligible unbilled time for the project, showing date, description, duration, rate, total, and an `invoice?` checkbox.
+4. System lists all eligible unbilled expenses for the project, showing date, description, category, unit cost, total, and an `invoice?` checkbox.
+5. If the project bills a fixed fee, that amount appears through the one-hour custom-rate time entry that represents the fee. There are no separate HD, non-hourly, or manual billing lines.
+6. User selects the time and expense source records to assign to the invoice.
+7. As each source record is selected, the system stamps that record to the invoice immediately and recalculates invoice totals.
 8. Prior customer balance is shown separately from the current invoice charges. Unapplied credits may be displayed and optionally applied through payment application logic, not by rewriting invoice lines.
-9. The user may review, add, or remove eligible source records. Removing a selected line clears that source record from the invoice immediately and returns it to the unbilled pool.
-10. When the user issues the invoice, the system adds or updates that invoice in the invoice listing, generates the PDF, and stores or overwrites the current invoice PDF.
-11. Existing issued invoices may be viewed and printed by invoice number, and they remain editable.
-12. If the user edits an issued invoice, the same line-by-line checkbox workflow applies: added lines are stamped immediately, removed lines are unstamped immediately, and reissuing updates the invoice listing entry and overwrites the current PDF.
+9. User may review, add, or remove eligible source records. Removing a selected record clears its invoice linkage immediately and returns it to the unbilled pool.
+10. When the user issues the invoice, the system updates the invoice listing, generates the PDF, and stores or overwrites the current invoice PDF.
+11. Existing issued invoices may be viewed, printed, edited, and reissued by invoice number.
+12. If the user edits an issued invoice, the same source-linked checkbox workflow applies: added records are stamped immediately, removed records are unstamped immediately, and reissuing updates the current PDF.
 
 ## 6. User Records and Applies a Payment
 
-1. User records a payment, deposit, advance, or refund for a customer.
-2. System creates a payment record with a full unapplied amount.
+1. User records a payment or advance for a customer.
+2. System creates a payment record with the full amount initially unapplied.
 3. User applies some or all of that payment to one or more open invoices.
 4. System prevents over-application and updates both invoice open balances and the payment's remaining unapplied amount.
-5. Customer balance shows open AR, unapplied credits, and net balance, each explainable from invoices, payments, and payment applications.
+5. Customer balance shows open AR and net balance, each derived from invoices, payments, and payment applications.

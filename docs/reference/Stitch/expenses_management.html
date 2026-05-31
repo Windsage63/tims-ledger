@@ -1,0 +1,369 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Expenses | LedgerFlow Accounting Suite</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Work+Sans:wght@600;700&amp;family=JetBrains+Mono&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed-dim": "#ffb785",
+                    "primary-fixed": "#d1e4ff",
+                    "inverse-on-surface": "#f0f0f7",
+                    "on-primary-fixed-variant": "#00497c",
+                    "inverse-surface": "#2f3035",
+                    "secondary-fixed-dim": "#6ddf56",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-container": "#86f96d",
+                    "surface-container-highest": "#e2e2e9",
+                    "on-secondary": "#ffffff",
+                    "secondary": "#096e00",
+                    "primary-container": "#0077c5",
+                    "on-primary-container": "#fafaff",
+                    "on-primary": "#ffffff",
+                    "tertiary": "#8f4700",
+                    "surface-container-high": "#e8e7ee",
+                    "error-container": "#ffdad6",
+                    "on-secondary-fixed": "#012200",
+                    "on-error-container": "#93000a",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-container": "#b45b00",
+                    "secondary-fixed": "#89fc6f",
+                    "on-tertiary-container": "#fff9f7",
+                    "surface-container-low": "#f3f3fa",
+                    "outline": "#707882",
+                    "on-background": "#1a1b20",
+                    "on-error": "#ffffff",
+                    "error": "#ba1a1a",
+                    "outline-variant": "#c0c7d3",
+                    "surface-dim": "#dad9e0",
+                    "inverse-primary": "#9ecaff",
+                    "primary": "#005e9d",
+                    "background": "#f9f9ff",
+                    "surface-variant": "#e2e2e9",
+                    "on-tertiary-fixed": "#301400",
+                    "primary-fixed-dim": "#9ecaff",
+                    "on-secondary-fixed-variant": "#055300",
+                    "on-tertiary-fixed-variant": "#713700",
+                    "on-secondary-container": "#0a7300",
+                    "surface-bright": "#f9f9ff",
+                    "on-primary-fixed": "#001d36",
+                    "on-surface": "#1a1b20",
+                    "on-surface-variant": "#404751",
+                    "surface-container": "#eeedf4",
+                    "surface": "#f9f9ff",
+                    "surface-tint": "#0061a3",
+                    "tertiary-fixed": "#ffdcc6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "sm": "8px",
+                    "md": "16px",
+                    "margin-mobile": "16px",
+                    "unit": "4px",
+                    "lg": "24px",
+                    "xl": "32px",
+                    "gutter": "20px",
+                    "margin-desktop": "40px",
+                    "xs": "4px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Work Sans"],
+                    "display": ["Work Sans"],
+                    "body-md": ["Inter"],
+                    "headline-md": ["Work Sans"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "data-mono": ["JetBrains Mono"],
+                    "body-sm": ["Inter"],
+                    "headline-sm": ["Work Sans"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d4d7dc; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #c0c7d3; }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-surface-container-lowest dark:bg-inverse-surface border-r border-outline-variant dark:border-outline flex flex-col py-6 px-4 z-50">
+<div class="mb-10 px-2 flex items-center gap-3">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-[20px]">account_balance</span>
+</div>
+<div>
+<h1 class="font-headline-sm text-headline-sm font-bold text-on-surface leading-none">Wind's Ledger</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant opacity-70">Simple Books</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<!-- Navigation Items Mapping -->
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-label-md text-label-md">Projects</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-md text-label-md">Customers</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined">receipt</span>
+<span class="font-label-md text-label-md">Invoices</span>
+</a>
+<!-- Active State: Tracking/Expenses mapping -->
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-secondary-container bg-secondary-container font-bold rounded-lg transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-md text-label-md">Time Tracking</span>
+</a><a class="flex items-center gap-3 px-3 py-2.5 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-md text-label-md">Expenses</span>
+</a>
+</nav>
+<div class="pt-6 border-t border-outline-variant mt-auto space-y-1">
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-md text-label-md">Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 flex flex-col h-screen">
+<!-- Top App Bar -->
+<header class="fixed top-0 right-0 w-[calc(100%-16rem)] h-16 bg-surface dark:bg-background border-b border-outline-variant flex justify-between items-center px-8 z-40">
+<div class="flex items-center gap-4 flex-1 max-w-xl">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-lg pl-10 pr-4 py-2 text-body-md focus:ring-1 focus:ring-primary" placeholder="Search expenses, vendors, or projects..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+</div>
+<div class="h-8 w-px bg-outline-variant"></div>
+<div class="flex items-center gap-3 cursor-pointer group">
+<div class="text-right">
+<p class="font-label-md text-label-md text-on-surface leading-none">Sarah Jenkins</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-wider mt-1">Sr. Accountant</p>
+</div>
+<img alt="User Avatar" class="w-9 h-9 rounded-full object-cover border border-outline-variant group-hover:border-primary transition-colors" data-alt="A professional headshot of a female accountant with a friendly smile, set against a neutral, high-key office background. The lighting is soft and natural, emphasizing a professional and clean aesthetic consistent with a modern corporate environment. The overall mood is reliable and welcoming." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDr9J4KOSk2Fjx4WfQuQGr5CnrGLD5P07WFZyAZPhvpSrk-hZBn2L57VOPkTNXJiiZXm-bX1vWxKzT5f_sloZNYQ8sn9-p6dCcAAsbXpCsbC6fUMbf3vU009LmhrjFmt9cB6VVWUelmVwdL-MmISu2dlIoqpcnDlubxCEe9TM8XDFOIIKtrOrnpsj0FppuSS2AIyj32Ms77_j-RO16X6fU0xgfPQUX0ZBHQ1TXljOgMegdvIQOMhR__xaK-5NvN27gC4Amu0_pSNkPg">
+</div>
+</div>
+</header>
+<!-- Scrollable Content -->
+<section class="mt-16 p-8 flex-1 overflow-y-auto bg-[#F4F5F8]">
+<!-- Page Header -->
+<div class="flex justify-between items-start mb-8">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Expenses</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Track and manage project-related costs and vendor payments.</p>
+</div>
+<button class="text-white px-6 py-2.5 rounded-lg flex items-center gap-2 transition-opacity shadow-sm bg-secondary hover:bg-on-secondary-fixed-variant">
+<span class="material-symbols-outlined text-[20px]">add</span>
+<span class="font-label-md text-label-md">Log New Expense</span>
+</button>
+</div>
+<!-- Metrics Bar -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+</div>
+<!-- Filter Bar -->
+<div class="bg-white p-4 rounded-lg border border-outline-variant mb-6 flex flex-wrap items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-sm">filter_list</span>
+<span class="font-label-md text-label-md text-on-surface">Filters:</span>
+</div>
+<select class="bg-surface-container-low border-none rounded-lg py-1.5 pl-3 pr-8 text-body-sm font-medium focus:ring-1 focus:ring-primary cursor-pointer">
+<option>Date Range: Last 30 Days</option>
+<option>This Quarter</option>
+<option>Year to Date</option>
+</select>
+<select class="bg-surface-container-low border-none rounded-lg py-1.5 pl-3 pr-8 text-body-sm font-medium focus:ring-1 focus:ring-primary cursor-pointer">
+<option>Category: All</option>
+<option>Travel</option>
+<option>Supplies</option>
+<option>Meals</option>
+</select>
+<select class="bg-surface-container-low border-none rounded-lg py-1.5 pl-3 pr-8 text-body-sm font-medium focus:ring-1 focus:ring-primary cursor-pointer">
+<option>Project: All Projects</option>
+<option>Skyline Phase 2 (#0526)</option>
+<option>Retail Hub (#0411)</option>
+</select>
+<div class="flex-1"></div>
+<button class="text-primary hover:bg-primary/5 px-3 py-1.5 rounded text-label-md font-semibold transition-colors">Clear All</button>
+</div>
+<!-- Expenses Data Table -->
+<div class="bg-white rounded-xl border border-outline-variant shadow-[0px_2px_4px_rgba(0,0,0,0.05)] overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low border-b border-outline-variant sticky top-0">
+<tr>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant">DATE</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant">PROJECT</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant">VENDOR</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant">DESCRIPTION</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant text-center">QTY</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant text-right">UNIT COST</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant">CATEGORY</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant">STATUS</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant w-10"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4 font-data-mono text-data-mono text-on-surface">Oct 24, 2023</td>
+<td class="px-6 py-4 font-body-md text-body-md text-primary font-medium">0526</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">Amazon Business</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">Site Materials - Safety Cones</td>
+<td class="px-6 py-4 font-data-mono text-data-mono text-center">12</td>
+<td class="px-6 py-4 font-data-mono text-data-mono text-right">$45.00</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 rounded bg-blue-50 text-blue-700 text-[11px] font-bold uppercase tracking-wider">Supplies</span>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 rounded bg-secondary-container/20 text-on-secondary-container text-[11px] font-bold uppercase tracking-wider">Billable</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 hover:text-primary transition-all">more_vert</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="bg-gray-50/50 hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4 font-data-mono text-data-mono text-on-surface">Oct 23, 2023</td>
+<td class="px-6 py-4 font-body-md text-body-md text-primary font-medium">0411</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">Local Courier</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">Rush Delivery - Blueprints</td>
+<td class="px-6 py-4 font-data-mono text-data-mono text-center">1</td>
+<td class="px-6 py-4 font-data-mono text-data-mono text-right">$85.20</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 rounded bg-purple-50 text-purple-700 text-[11px] font-bold uppercase tracking-wider">Logistics</span>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 rounded bg-primary-container/10 text-primary-container text-[11px] font-bold uppercase tracking-wider">#INV-88219</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 hover:text-primary transition-all">more_vert</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4 font-data-mono text-data-mono text-on-surface">Oct 22, 2023</td>
+<td class="px-6 py-4 font-body-md text-body-md text-primary font-medium">0526</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">Staples</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">Office Supplies - Ink &amp; Paper</td>
+<td class="px-6 py-4 font-data-mono text-data-mono text-center">3</td>
+<td class="px-6 py-4 font-data-mono text-data-mono text-right">$120.00</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 rounded bg-blue-50 text-blue-700 text-[11px] font-bold uppercase tracking-wider">Supplies</span>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 rounded bg-on-surface-variant/10 text-on-surface-variant text-[11px] font-bold uppercase tracking-wider">Un-billable</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 hover:text-primary transition-all">more_vert</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="bg-gray-50/50 hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4 font-data-mono text-data-mono text-on-surface">Oct 20, 2023</td>
+<td class="px-6 py-4 font-body-md text-body-md text-primary font-medium">0299</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">Delta Airlines</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">Client Meeting - SFO</td>
+<td class="px-6 py-4 font-data-mono text-data-mono text-center">1</td>
+<td class="px-6 py-4 font-data-mono text-data-mono text-right">$542.00</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 rounded bg-amber-50 text-amber-700 text-[11px] font-bold uppercase tracking-wider">Travel</span>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 rounded bg-secondary-container/20 text-on-secondary-container text-[11px] font-bold uppercase tracking-wider">Billable</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 hover:text-primary transition-all">more_vert</button>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4 font-data-mono text-data-mono text-on-surface">Oct 19, 2023</td>
+<td class="px-6 py-4 font-body-md text-body-md text-primary font-medium">0345</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">L'Artiste Bistro</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">Client Lunch - Project Review</td>
+<td class="px-6 py-4 font-data-mono text-data-mono text-center">1</td>
+<td class="px-6 py-4 font-data-mono text-data-mono text-right">$145.50</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 rounded bg-emerald-50 text-emerald-700 text-[11px] font-bold uppercase tracking-wider">Meals</span>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 rounded bg-secondary-container/20 text-on-secondary-container text-[11px] font-bold uppercase tracking-wider">Billable</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 hover:text-primary transition-all">more_vert</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Footer -->
+<div class="px-6 py-4 bg-surface-container-low border-t border-outline-variant flex items-center justify-between">
+<span class="text-body-sm text-on-surface-variant">Showing 1 to 5 of 1,240 expenses</span>
+<div class="flex items-center gap-2">
+<button class="p-1 rounded hover:bg-outline-variant/20 disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<span class="font-label-md text-label-md px-2">Page 1 of 248</span>
+<button class="p-1 rounded hover:bg-outline-variant/20">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Footer Attribution -->
+<footer class="mt-12 text-center text-on-surface-variant opacity-60 text-[10px] uppercase tracking-widest pb-8">
+                © 2023 LedgerFlow Accounting Suite • Pro Enterprise Edition
+            </footer>
+</section>
+</main>
+<script>
+        // Simple micro-interaction for rows
+        document.querySelectorAll('tbody tr').forEach(row => {
+            row.addEventListener('click', () => {
+                console.log('Expense row selected');
+                // Potential expansion logic or side-panel trigger
+            });
+        });
+    </script>
+
+
+
+
+
+
+</body></html>

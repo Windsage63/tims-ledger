@@ -1,4 +1,4 @@
-<!DOCTYPE html><html class="light" lang="en"><head>
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
 <meta charset="utf-8">
 <meta content="width=device-width, initial-scale=1.0" name="viewport">
 <title>Time Tracking | Acme Ledger</title>
@@ -119,12 +119,12 @@
 <aside class="flex flex-col h-screen fixed left-0 top-0 overflow-y-auto bg-surface-container-lowest dark:bg-surface-dim h-full w-64 border-r border-outline-variant">
 <div class="px-lg py-xl">
 <div class="flex items-center gap-sm mb-xl">
-<div class="w-10 h-10 rounded bg-primary flex items-center justify-center text-on-primary">
+<div class="w-10 h-10 rounded flex items-center justify-center bg-surface-container-high text-on-surface-variant">
 <span class="material-symbols-outlined">account_balance</span>
 </div>
 <div>
-<h1 class="font-headline-sm text-headline-sm text-primary">Acme Ledger</h1>
-<p class="font-label-md text-label-md text-on-surface-variant">Management Suite</p>
+<h1 class="font-headline-sm text-headline-sm text-on-surface">Wind's Ledger</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">Simple Books</p>
 </div>
 </div>
 <nav class="space-y-unit">
@@ -142,14 +142,14 @@
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded transition-colors hover:bg-surface-container-low text-primary font-bold" href="#">
 <span class="material-symbols-outlined">analytics</span>
-<span class="font-body-md text-body-md">Tracking</span>
+<span class="font-body-md text-body-md">Time Tracking</span>
+</a><a class="flex items-center gap-md px-md py-sm rounded transition-colors hover:bg-surface-container-low text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-body-md text-body-md">Expenses</span>
 </a>
 </nav>
 <div class="mt-xl pt-lg border-t border-outline-variant">
-<button class="w-full flex items-center justify-center gap-sm py-sm px-md bg-primary text-on-primary rounded font-label-md text-label-md hover:bg-primary-container transition-colors active:scale-95 duration-150">
-<span class="material-symbols-outlined">add</span>
-                    New Project
-                </button>
+
 </div>
 </div>
 <div class="mt-auto px-lg py-lg space-y-unit border-t border-outline-variant">
@@ -172,7 +172,7 @@
 </div>
 </div>
 <div class="flex items-center gap-lg">
-<h2 class="font-headline-sm text-headline-sm text-primary mr-xl">Accounting Central</h2>
+
 <div class="flex items-center gap-md">
 <button class="p-sm rounded-full hover:bg-surface-container transition-colors relative">
 <span class="material-symbols-outlined">notifications</span>
@@ -196,7 +196,7 @@
 <h1 class="font-headline-lg text-headline-lg text-on-surface mb-xs">Time Tracking</h1>
 <p class="font-body-md text-body-md text-on-surface-variant">Review and log hours across all active projects and billable tasks.</p>
 </div>
-<button class="flex items-center gap-sm bg-primary text-on-primary px-lg py-md rounded-lg font-label-md text-label-md hover:bg-primary-container transition-all shadow-sm active:scale-95 duration-150">
+<button class="flex items-center gap-sm text-on-primary px-lg py-md rounded-lg font-label-md text-label-md transition-all shadow-sm active:scale-95 duration-150 hover:bg-on-secondary-fixed-variant" style="background-color: rgb(9, 110, 0);">
 <span class="material-symbols-outlined">timer</span>
                     New Time Entry
                 </button>
@@ -204,11 +204,11 @@
 <!-- Dashboard Stats Summary (Bento-lite) -->
 <div class="grid grid-cols-1 md:grid-cols-4 gap-lg mb-xl">
 <div class="bg-surface-container-lowest p-md border border-outline-variant rounded-xl flex flex-col gap-xs">
-<span class="font-label-md text-label-md text-on-surface-variant">TOTAL HOURS (MTD)</span>
+<span class="font-label-md text-label-md text-on-surface-variant">TOTAL HOURS (YTD)</span>
 <span class="font-headline-md text-headline-md text-primary">164.5</span>
 <div class="flex items-center gap-xs text-secondary">
-<span class="material-symbols-outlined text-[16px]">arrow_upward</span>
-<span class="font-body-sm text-body-sm">+12% from last month</span>
+
+
 </div>
 </div>
 <div class="bg-surface-container-lowest p-md border border-outline-variant rounded-xl flex flex-col gap-xs">
@@ -221,13 +221,7 @@
 <span class="font-headline-md text-headline-md text-tertiary">42.2</span>
 <span class="font-body-sm text-body-sm text-tertiary underline cursor-pointer">Generate Invoices</span>
 </div>
-<div class="bg-surface-container-lowest p-md border border-outline-variant rounded-xl flex flex-col gap-xs">
-<span class="font-label-md text-label-md text-on-surface-variant">TEAM EFFICIENCY</span>
-<span class="font-headline-md text-headline-md text-on-surface">92%</span>
-<div class="w-full bg-surface-container-high h-1 rounded-full mt-sm">
-<div class="bg-secondary h-full rounded-full w-[92%]"></div>
-</div>
-</div>
+
 </div>
 <!-- Filters & Actions -->
 <div class="bg-surface-container-lowest border border-outline-variant rounded-t-xl px-lg py-md flex items-center justify-between">
@@ -261,7 +255,7 @@
 <th class="px-lg py-md font-semibold uppercase tracking-wider">Project</th>
 <th class="px-lg py-md font-semibold uppercase tracking-wider">Customer</th>
 <th class="px-lg py-md font-semibold uppercase tracking-wider">Task Description</th>
-<th class="px-lg py-md font-semibold uppercase tracking-wider text-right">Hours</th>
+<th class="px-lg py-md font-semibold uppercase tracking-wider text-right">Hours</th><th class="px-lg py-md font-semibold uppercase tracking-wider">Rate Code</th>
 <th class="px-lg py-md font-semibold uppercase tracking-wider">Status</th>
 <th class="px-lg py-md"></th>
 </tr>
@@ -270,14 +264,12 @@
 <!-- Row 1 -->
 <tr class="hover:bg-surface-container-low transition-colors group">
 <td class="px-lg py-md font-data-mono">Oct 24, 2023</td>
-<td class="px-lg py-md font-medium">Q4 Audit Prep</td>
+<td class="px-lg py-md font-medium">0526</td>
 <td class="px-lg py-md">Stellar Dynamics</td>
 <td class="px-lg py-md text-on-surface-variant">Financial statement reconciliation for subsidiary entities.</td>
-<td class="px-lg py-md text-right font-medium">4.5</td>
+<td class="px-lg py-md text-right font-medium">4.5</td><td class="px-lg py-md font-data-mono">ST</td>
 <td class="px-lg py-md">
-<span class="inline-flex items-center px-sm py-xs rounded-full bg-primary-container/10 text-primary-container font-label-md text-[11px] font-bold">
-                                    BILLABLE
-                                </span>
+<span class="inline-flex items-center px-sm py-xs rounded-full bg-primary-container/10 text-primary-container font-label-md text-[11px] font-bold"></span>
 </td>
 <td class="px-lg py-md text-right opacity-0 group-hover:opacity-100 transition-opacity">
 <button class="p-xs text-outline hover:text-primary"><span class="material-symbols-outlined">edit</span></button>
@@ -286,14 +278,12 @@
 <!-- Row 2 -->
 <tr class="bg-surface-container-lowest/50 hover:bg-surface-container-low transition-colors group">
 <td class="px-lg py-md font-data-mono">Oct 23, 2023</td>
-<td class="px-lg py-md font-medium">Tax Consultation</td>
+<td class="px-lg py-md font-medium">0526</td>
 <td class="px-lg py-md">Vertex Global</td>
 <td class="px-lg py-md text-on-surface-variant">Initial strategy call regarding R&amp;D tax credits for FY23.</td>
-<td class="px-lg py-md text-right font-medium">1.2</td>
+<td class="px-lg py-md text-right font-medium">1.2</td><td class="px-lg py-md font-data-mono">ST</td>
 <td class="px-lg py-md">
-<span class="inline-flex items-center px-sm py-xs rounded-full bg-secondary-container/10 text-on-secondary-container font-label-md text-[11px] font-bold">
-                                    INVOICED
-                                </span>
+<span class="inline-flex items-center px-sm py-xs rounded-full bg-secondary-container/10 text-on-secondary-container font-label-md text-[11px] font-bold">#INV-88219</span>
 </td>
 <td class="px-lg py-md text-right opacity-0 group-hover:opacity-100 transition-opacity">
 <button class="p-xs text-outline hover:text-primary"><span class="material-symbols-outlined">edit</span></button>
@@ -302,14 +292,12 @@
 <!-- Row 3 -->
 <tr class="hover:bg-surface-container-low transition-colors group">
 <td class="px-lg py-md font-data-mono">Oct 23, 2023</td>
-<td class="px-lg py-md font-medium">Cloud Infrastructure</td>
+<td class="px-lg py-md font-medium">0527</td>
 <td class="px-lg py-md">Lumina Tech</td>
 <td class="px-lg py-md text-on-surface-variant">Azure cost optimization and ledger integration review.</td>
-<td class="px-lg py-md text-right font-medium">6.0</td>
+<td class="px-lg py-md text-right font-medium">6.0</td><td class="px-lg py-md font-data-mono">OT</td>
 <td class="px-lg py-md">
-<span class="inline-flex items-center px-sm py-xs rounded-full bg-surface-container-highest text-on-surface-variant font-label-md text-[11px] font-bold">
-                                    DRAFT
-                                </span>
+<span class="inline-flex items-center px-sm py-xs rounded-full bg-surface-container-highest text-on-surface-variant font-label-md text-[11px] font-bold"></span>
 </td>
 <td class="px-lg py-md text-right opacity-0 group-hover:opacity-100 transition-opacity">
 <button class="p-xs text-outline hover:text-primary"><span class="material-symbols-outlined">edit</span></button>
@@ -318,14 +306,12 @@
 <!-- Row 4 -->
 <tr class="bg-surface-container-lowest/50 hover:bg-surface-container-low transition-colors group">
 <td class="px-lg py-md font-data-mono">Oct 22, 2023</td>
-<td class="px-lg py-md font-medium">Compliance Review</td>
+<td class="px-lg py-md font-medium">0528</td>
 <td class="px-lg py-md">Apex Logistics</td>
 <td class="px-lg py-md text-on-surface-variant">On-site audit of inventory tracking systems.</td>
-<td class="px-lg py-md text-right font-medium">8.0</td>
+<td class="px-lg py-md text-right font-medium">8.0</td><td class="px-lg py-md font-data-mono">ST</td>
 <td class="px-lg py-md">
-<span class="inline-flex items-center px-sm py-xs rounded-full bg-primary-container/10 text-primary-container font-label-md text-[11px] font-bold">
-                                    BILLABLE
-                                </span>
+<span class="inline-flex items-center px-sm py-xs rounded-full bg-primary-container/10 text-primary-container font-label-md text-[11px] font-bold"></span>
 </td>
 <td class="px-lg py-md text-right opacity-0 group-hover:opacity-100 transition-opacity">
 <button class="p-xs text-outline hover:text-primary"><span class="material-symbols-outlined">edit</span></button>
@@ -334,14 +320,12 @@
 <!-- Row 5 -->
 <tr class="hover:bg-surface-container-low transition-colors group">
 <td class="px-lg py-md font-data-mono">Oct 21, 2023</td>
-<td class="px-lg py-md font-medium">Payroll Setup</td>
+<td class="px-lg py-md font-medium">0529</td>
 <td class="px-lg py-md">Nova Retail</td>
 <td class="px-lg py-md text-on-surface-variant">Configuring international payroll for UK/EU expansion.</td>
-<td class="px-lg py-md text-right font-medium">3.5</td>
+<td class="px-lg py-md text-right font-medium">3.5</td><td class="px-lg py-md font-data-mono">TT</td>
 <td class="px-lg py-md">
-<span class="inline-flex items-center px-sm py-xs rounded-full bg-secondary-container/10 text-on-secondary-container font-label-md text-[11px] font-bold">
-                                    INVOICED
-                                </span>
+<span class="inline-flex items-center px-sm py-xs rounded-full bg-secondary-container/10 text-on-secondary-container font-label-md text-[11px] font-bold">#INV-88220</span>
 </td>
 <td class="px-lg py-md text-right opacity-0 group-hover:opacity-100 transition-opacity">
 <button class="p-xs text-outline hover:text-primary"><span class="material-symbols-outlined">edit</span></button>
@@ -366,20 +350,7 @@
 </div>
 </div>
 <!-- Contextual Help / Feature Card -->
-<div class="bg-primary-container/5 rounded-xl p-lg border border-primary/20 flex items-center justify-between">
-<div class="flex items-start gap-lg">
-<div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-<span class="material-symbols-outlined">auto_awesome</span>
-</div>
-<div>
-<h3 class="font-headline-sm text-headline-sm text-primary mb-xs">Automated Time Entry</h3>
-<p class="font-body-md text-body-md text-on-surface-variant max-w-lg">Enable the smart-timer desktop app to automatically categorize your billable hours based on active project files. Save up to 4 hours of manual logging per week.</p>
-</div>
-</div>
-<button class="text-primary font-label-md text-label-md border border-primary px-lg py-md rounded-lg hover:bg-primary hover:text-on-primary transition-all">
-                    Learn More
-                </button>
-</div>
+
 </div>
 </main>
 <!-- Floating Action Button for quick timer -->
@@ -423,4 +394,20 @@
             }
         });
     </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </body></html>

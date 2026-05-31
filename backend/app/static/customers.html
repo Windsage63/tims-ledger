@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Winds Ledger Customers</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Work+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        background: "#f5efe2",
+                        surface: "#fffaf3",
+                        ink: "#1f1b16",
+                        muted: "#6a6257",
+                        line: "#d8cabb",
+                        brand: "#155e52",
+                        branddeep: "#0f433a",
+                        sand: "#d0b189",
+                        panel: "#efe6d7",
+                        forest: "#1d332f",
+                        danger: "#a84432",
+                        warn: "#a66a11",
+                        calm: "#375a7f"
+                    },
+                    fontFamily: {
+                        sans: ["Inter", "sans-serif"],
+                        display: ["Work Sans", "sans-serif"],
+                        mono: ["JetBrains Mono", "monospace"]
+                    },
+                    boxShadow: {
+                        soft: "0 24px 60px rgba(56, 37, 16, 0.12)"
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.72),transparent_24%),linear-gradient(145deg,#f6f0e4_0%,#ebddca_48%,#d5c7b0_100%)] font-sans text-ink">
+    <div class="min-h-screen lg:grid lg:grid-cols-[18rem_minmax(0,1fr)]">
+        <aside class="flex flex-col justify-between gap-8 border-b border-white/10 bg-[linear-gradient(180deg,rgba(23,29,28,0.96),rgba(22,70,62,0.96))] px-5 py-6 text-stone-100 lg:min-h-screen lg:border-b-0 lg:border-r lg:border-r-white/10 lg:px-6">
+            <div>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-stone-300/80">Local Accounting Workflow</p>
+                <a class="mt-2 inline-block font-display text-3xl font-bold tracking-tight text-stone-50" href="./index.html">Winds Ledger</a>
+                <p class="mt-3 max-w-xs text-sm leading-6 text-stone-200/75">The first working module surface: searchable customer browse view plus a draft editor backed by FastAPI and SQLite.</p>
+            </div>
+
+            <nav class="side-nav grid gap-2" aria-label="Primary">
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./index.html">Overview</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./customers.html">Customers</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./projects.html">Projects</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./time.html">Time</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./expenses.html">Expenses</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./invoices.html">Invoices</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./payments.html">Payments</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="#queue">Exports</a>
+            </nav>
+
+            <div class="rounded-3xl border border-white/10 bg-white/8 p-4 backdrop-blur-sm">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-stone-300/80">Customers Module</p>
+                <p class="mt-2 text-2xl font-display font-bold text-stone-50" id="customer-mode">Loading...</p>
+                <p class="mt-2 text-sm leading-6 text-stone-200/75">This module now loads customer records from the backend so the first screen is exercising the real database path.</p>
+            </div>
+        </aside>
+
+        <main class="px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+            <section class="rounded-[2rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur md:p-8">
+                <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+                    <div class="max-w-4xl">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted">Customers Directory</p>
+                        <h1 class="mt-3 font-display text-4xl font-extrabold leading-none text-ink sm:text-5xl xl:text-6xl">Customer browse view, filters, and draft editing in one file-based screen.</h1>
+                        <p class="mt-4 max-w-3xl text-base leading-7 text-muted sm:text-lg">This browse surface keeps the customer master record focused on contact details and ledger-facing balance summaries, without a separate active or inactive lifecycle flag.</p>
+                    </div>
+
+                    <div class="flex flex-wrap gap-3">
+                        <button class="inline-flex min-w-44 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" id="new-customer-button" type="button">New Customer</button>
+                        <button class="inline-flex min-w-44 items-center justify-center rounded-full border border-brand/20 bg-white/40 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70" id="reset-filters-button" type="button">Reset Filters</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Customer summary metrics">
+                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Visible Customers</p>
+                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-visible-customers">-</p>
+                </article>
+                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Open A/R</p>
+                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-open-ar">-</p>
+                </article>
+                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Net Balance</p>
+                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-net-balance">-</p>
+                </article>
+                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Customers with Balance</p>
+                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-with-balance">-</p>
+                </article>
+            </section>
+
+            <section class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(22rem,0.95fr)]">
+                <article class="rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
+                    <div class="flex flex-col gap-4 border-b border-line/80 pb-5 lg:flex-row lg:items-end lg:justify-between">
+                        <div>
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Browse Surface</p>
+                            <h2 class="mt-2 font-display text-3xl font-bold text-ink">Search and review customer summaries.</h2>
+                        </div>
+
+                        <div class="w-full max-w-xl">
+                            <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="customer-search">Search</label>
+                            <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="customer-search" placeholder="Search name, contact, email, phone, or city" type="search">
+                        </div>
+                    </div>
+
+                    <div class="mt-5 flex flex-wrap gap-2" id="status-filter-group">
+                        <button class="status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-status-filter="all" type="button">All</button>
+                        <button class="status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-status-filter="open" type="button">Open Balance</button>
+                        <button class="status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-status-filter="clear" type="button">Clear</button>
+                    </div>
+
+                    <div class="mt-5 grid gap-4 md:grid-cols-2" id="customer-card-list"></div>
+
+                    <div class="mt-5 hidden rounded-[1.4rem] border border-dashed border-line bg-panel/40 p-8 text-center" id="empty-state">
+                        <p class="font-display text-2xl font-bold text-ink">No customers match the current filter.</p>
+                        <p class="mt-2 text-sm leading-6 text-muted">Try a different balance filter, clear the search, or create a new customer draft.</p>
+                    </div>
+                </article>
+
+                <article class="rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
+                    <div class="mb-5 flex items-start justify-between gap-4">
+                        <div>
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Customer Record</p>
+                            <h2 class="mt-2 font-display text-3xl font-bold text-ink" id="editor-title">Select a customer</h2>
+                        </div>
+                        <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]" id="editor-status-chip">Draft</span>
+                    </div>
+
+                    <div class="mb-5 rounded-[1.2rem] border border-line bg-panel/45 p-4">
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <div>
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Open A/R</p>
+                                <p class="mt-2 font-mono text-sm text-ink" id="detail-open-ar">$0.00</p>
+                            </div>
+                            <div>
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Net Balance</p>
+                                <p class="mt-2 font-mono text-sm text-ink" id="detail-net-balance">$0.00</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form class="grid gap-4" id="customer-form">
+                        <input id="customer-id" type="hidden">
+
+                        <div>
+                            <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="customer-name">Customer Name</label>
+                            <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="customer-name" name="customer_name" required type="text">
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="contact-name">Contact Name</label>
+                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="contact-name" name="contact_name" required type="text">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="phone">Phone</label>
+                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="phone" name="phone" required type="text">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="email">Email</label>
+                            <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="email" name="email" required type="email">
+                        </div>
+
+                        <div>
+                            <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="street-address">Street Address</label>
+                            <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="street-address" name="street_address" required type="text">
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_6rem_7rem]">
+                            <div>
+                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="city">City</label>
+                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="city" name="city" required type="text">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="state">State</label>
+                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="state" maxlength="2" name="state" required type="text">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="zip">ZIP</label>
+                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="zip" name="zip" required type="text">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="notes">Notes</label>
+                            <textarea class="mt-2 min-h-28 w-full rounded-[1.4rem] border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="notes" name="notes"></textarea>
+                        </div>
+
+                        <div class="flex flex-wrap gap-3 pt-2">
+                            <button class="inline-flex min-w-40 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" type="submit">Save Customer</button>
+                            <button class="inline-flex min-w-32 items-center justify-center rounded-full border border-brand/20 bg-white/40 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70" id="duplicate-customer-button" type="button">Duplicate</button>
+                            <button class="inline-flex min-w-32 items-center justify-center rounded-full border border-line bg-panel/50 px-5 py-3 text-sm font-semibold text-ink transition hover:bg-white" id="clear-form-button" type="button">Clear Form</button>
+                        </div>
+                    </form>
+                </article>
+            </section>
+
+            <section class="mt-4 rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7" id="queue">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Sequence</p>
+                <h2 class="mt-2 font-display text-3xl font-bold text-ink">Customer workflow is the first concrete slice.</h2>
+                <div class="mt-4 grid gap-3 md:grid-cols-3">
+                    <div class="rounded-[1.2rem] border border-line bg-panel/45 p-4">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Now</p>
+                        <p class="mt-2 text-sm leading-6 text-ink">Searchable browse view, record selection, and draft editing in a single file-based screen.</p>
+                    </div>
+                    <div class="rounded-[1.2rem] border border-line bg-panel/45 p-4">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Next</p>
+                        <p class="mt-2 text-sm leading-6 text-ink">API bootstrap and mutation wiring for customers, projects, time, expenses, invoices, and payments.</p>
+                    </div>
+                    <div class="rounded-[1.2rem] border border-line bg-panel/45 p-4">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Later</p>
+                        <p class="mt-2 text-sm leading-6 text-ink">Exports, statements, and document output after the prototype data flows through FastAPI and SQLite.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="./customers.js" defer></script>
+</body>
+</html>

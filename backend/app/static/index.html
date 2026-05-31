@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Winds Ledger</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Work+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        background: "#f5efe2",
+                        surface: "#fffaf3",
+                        ink: "#1f1b16",
+                        muted: "#6a6257",
+                        line: "#d8cabb",
+                        brand: "#155e52",
+                        branddeep: "#0f433a",
+                        sand: "#d0b189",
+                        panel: "#efe6d7",
+                        forest: "#1d332f"
+                    },
+                    fontFamily: {
+                        sans: ["Inter", "sans-serif"],
+                        display: ["Work Sans", "sans-serif"],
+                        mono: ["JetBrains Mono", "monospace"]
+                    },
+                    boxShadow: {
+                        soft: "0 24px 60px rgba(56, 37, 16, 0.12)"
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.72),transparent_24%),linear-gradient(145deg,#f6f0e4_0%,#ebddca_48%,#d5c7b0_100%)] font-sans text-ink">
+    <div class="min-h-screen lg:grid lg:grid-cols-[18rem_minmax(0,1fr)]">
+        <aside class="flex flex-col justify-between gap-8 border-b border-white/10 bg-[linear-gradient(180deg,rgba(23,29,28,0.96),rgba(22,70,62,0.96))] px-5 py-6 text-stone-100 lg:min-h-screen lg:border-b-0 lg:border-r lg:border-r-white/10 lg:px-6">
+            <div>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-stone-300/80">Local Accounting Workflow</p>
+                <a class="mt-2 inline-block font-display text-3xl font-bold tracking-tight text-stone-50" href="./index.html">Winds Ledger</a>
+                <p class="mt-3 max-w-xs text-sm leading-6 text-stone-200/75">A database-backed dashboard for customer, project, time, expense, invoice, and payment work served through FastAPI.</p>
+            </div>
+
+            <nav class="side-nav grid gap-2" aria-label="Primary">
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./index.html">Overview</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./customers.html">Customers</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./projects.html">Projects</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./time.html">Time</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./expenses.html">Expenses</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./invoices.html">Invoices</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./payments.html">Payments</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="#exports">Exports</a>
+            </nav>
+
+            <div class="rounded-3xl border border-white/10 bg-white/8 p-4 backdrop-blur-sm">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-stone-300/80">Overview</p>
+                <p class="mt-2 text-2xl font-display font-bold text-stone-50" id="app-mode">Loading...</p>
+                <p class="mt-2 text-sm leading-6 text-stone-200/75">This screen now summarizes the persisted ledger instead of describing the prototype shell.</p>
+            </div>
+        </aside>
+
+        <main class="px-4 py-4 sm:px-6 sm:py-6 lg:px-8" id="overview">
+            <section class="rounded-[2rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur md:p-8">
+                <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+                    <div class="max-w-4xl">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted">Overview</p>
+                        <h1 class="mt-3 max-w-[13ch] font-display text-4xl font-extrabold leading-none text-ink sm:text-5xl xl:text-7xl">Real workflow totals and ledger balances, surfaced from the database in one landing page.</h1>
+                        <p class="mt-4 max-w-3xl text-base leading-7 text-muted sm:text-lg">This page now summarizes the persisted workflow: customer and project volume, issued receivables, unbilled work, customer balance detail, and the audit export utility.</p>
+                    </div>
+
+                    <div class="flex flex-wrap gap-3">
+                        <a class="inline-flex min-w-44 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" href="./customers.html">Open Customers</a>
+                        <a class="inline-flex min-w-44 items-center justify-center rounded-full border border-brand/20 bg-white/40 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70" href="#exports">Open Reporting</a>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Overview metrics">
+                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Customers</p>
+                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-sections">-</p>
+                </article>
+                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Projects</p>
+                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-mode">-</p>
+                </article>
+                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Open Receivables</p>
+                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-next">-</p>
+                </article>
+                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Unbilled Work</p>
+                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-assets">-</p>
+                </article>
+            </section>
+
+            <section class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(20rem,0.9fr)]">
+                <article class="rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
+                    <div class="mb-5">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Workflow Surface</p>
+                        <h2 class="mt-2 font-display text-3xl font-bold text-ink">Every operational screen now persists through the same SQLite-backed workflow.</h2>
+                    </div>
+
+                    <div class="grid gap-3">
+                        <section class="grid gap-3 border-t border-line/80 py-4 first:border-t-0 first:pt-0 md:grid-cols-[10rem_minmax(0,1fr)]" id="customers" data-module-section>
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Customer Master</p>
+                            <div>
+                                <h3 class="font-display text-xl font-bold text-ink">Customers anchor every downstream workflow.</h3>
+                                <p class="mt-2 text-sm leading-7 text-muted">Track billing identity, mailing details, and account status from one durable record instead of scattered spreadsheet tabs.</p>
+                            </div>
+                        </section>
+
+                        <section class="grid gap-3 border-t border-line/80 py-4 md:grid-cols-[10rem_minmax(0,1fr)]" id="projects" data-module-section>
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Project Setup</p>
+                            <div>
+                                <h3 class="font-display text-xl font-bold text-ink">Project numbers and rate tables stay explicit.</h3>
+                                <p class="mt-2 text-sm leading-7 text-muted">Built-in ST, OT, and TT rates sit beside project-specific custom rates so invoice math stays predictable and auditable. The browse-plus-editor projects prototype is now live.</p>
+                            </div>
+                        </section>
+
+                        <section class="grid gap-3 border-t border-line/80 py-4 md:grid-cols-[10rem_minmax(0,1fr)]" id="time" data-module-section>
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Time Entry</p>
+                            <div>
+                                <h3 class="font-display text-xl font-bold text-ink">Time billability comes from the selected rate.</h3>
+                                <p class="mt-2 text-sm leading-7 text-muted">A zero-rate time row stays non-billable. A custom one-hour rate can represent a fixed fee without inventing manual invoice lines.</p>
+                            </div>
+                        </section>
+
+                        <section class="grid gap-3 border-t border-line/80 py-4 md:grid-cols-[10rem_minmax(0,1fr)]" id="expenses" data-module-section>
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Expense Entry</p>
+                            <div>
+                                <h3 class="font-display text-xl font-bold text-ink">Expenses remain source records with an explicit billable flag.</h3>
+                                <p class="mt-2 text-sm leading-7 text-muted">That keeps reimbursements and internal-only costs in the same ledger while preserving a clean invoice-eligibility rule.</p>
+                            </div>
+                        </section>
+
+                        <section class="grid gap-3 border-t border-line/80 py-4 md:grid-cols-[10rem_minmax(0,1fr)]" id="invoices" data-module-section>
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Invoice Builder</p>
+                            <div>
+                                <h3 class="font-display text-xl font-bold text-ink">Invoices are assembled from stored source rows.</h3>
+                                <p class="mt-2 text-sm leading-7 text-muted">The long-term shell keeps the printable invoice experience, but the bookkeeping truth stays in linked time and expense records.</p>
+                            </div>
+                        </section>
+
+                        <section class="grid gap-3 border-t border-line/80 py-4 md:grid-cols-[10rem_minmax(0,1fr)]" id="payments" data-module-section>
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Payment Ledger</p>
+                            <div>
+                                <h3 class="font-display text-xl font-bold text-ink">Receivables stay derived and explainable.</h3>
+                                <p class="mt-2 text-sm leading-7 text-muted">Open balances, unapplied credit, and customer totals come from invoices plus payment applications, not hand-maintained balance fields.</p>
+                            </div>
+                        </section>
+                    </div>
+                </article>
+
+                <article class="rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7" id="prototype">
+                    <div class="mb-5">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">System Notes</p>
+                        <h2 class="mt-2 font-display text-3xl font-bold text-ink">Current database-backed status.</h2>
+                    </div>
+
+                    <dl class="grid gap-4">
+                        <div class="border-b border-line/80 pb-4">
+                            <dt class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Database Path</dt>
+                            <dd class="mt-2 break-all font-mono text-sm leading-6 text-muted" id="status-page-path">Loading...</dd>
+                        </div>
+                        <div class="border-b border-line/80 pb-4">
+                            <dt class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Data Source</dt>
+                            <dd class="mt-2 text-sm leading-6 text-muted" id="status-data-source">Loading...</dd>
+                        </div>
+                        <div>
+                            <dt class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Next Target</dt>
+                            <dd class="mt-2 text-sm leading-6 text-muted" id="status-next-target">Loading...</dd>
+                        </div>
+                    </dl>
+                </article>
+            </section>
+
+            <section class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(20rem,0.9fr)]" id="exports">
+                <article class="rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Accounts Receivable</p>
+                            <h2 class="mt-2 font-display text-3xl font-bold text-ink">Derived customer balances and statement detail.</h2>
+                            <p class="mt-3 max-w-3xl text-sm leading-7 text-muted">Open AR, overdue exposure, and unapplied credits are read from the ledger views so each balance stays explainable from invoices and payment applications.</p>
+                        </div>
+                        <a class="inline-flex min-w-52 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" download href="/api/exports/audit.xlsx" id="audit-export-link">Download XLSX Audit Export</a>
+                    </div>
+
+                    <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                        <article class="rounded-[1.2rem] border border-line/80 bg-panel/35 p-4">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Total Open AR</p>
+                            <p class="mt-2 font-display text-3xl font-bold text-ink" id="ar-total-open">-</p>
+                        </article>
+                        <article class="rounded-[1.2rem] border border-line/80 bg-panel/35 p-4">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Unapplied Credit</p>
+                            <p class="mt-2 font-display text-3xl font-bold text-ink" id="ar-total-credit">-</p>
+                        </article>
+                        <article class="rounded-[1.2rem] border border-line/80 bg-panel/35 p-4">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Net Receivables</p>
+                            <p class="mt-2 font-display text-3xl font-bold text-ink" id="ar-total-net">-</p>
+                        </article>
+                        <article class="rounded-[1.2rem] border border-line/80 bg-panel/35 p-4">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Overdue Exposure</p>
+                            <p class="mt-2 font-display text-3xl font-bold text-ink" id="ar-total-overdue">-</p>
+                        </article>
+                    </div>
+
+                    <div class="mt-6 overflow-hidden rounded-[1.4rem] border border-line/80 bg-white/60">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-line/80 text-left">
+                                <thead class="bg-panel/50 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">
+                                    <tr>
+                                        <th class="px-4 py-3">Customer</th>
+                                        <th class="px-4 py-3">Open AR</th>
+                                        <th class="px-4 py-3">Unapplied</th>
+                                        <th class="px-4 py-3">Net</th>
+                                        <th class="px-4 py-3">Open Invoices</th>
+                                        <th class="px-4 py-3">Overdue</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-line/70 text-sm text-ink" id="ar-customers-body">
+                                    <tr>
+                                        <td class="px-4 py-4 text-muted" colspan="6">Loading accounts receivable report...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
+                    <div class="mb-5">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Customer Statement</p>
+                        <h2 class="mt-2 font-display text-3xl font-bold text-ink" id="statement-customer-name">Loading...</h2>
+                        <p class="mt-3 text-sm leading-7 text-muted" id="statement-customer-meta">Statement detail will load from the reporting endpoint.</p>
+                    </div>
+
+                    <div class="grid gap-4 sm:grid-cols-3">
+                        <article class="rounded-[1.2rem] border border-line/80 bg-panel/35 p-4">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Open AR</p>
+                            <p class="mt-2 font-display text-2xl font-bold text-ink" id="statement-open-ar">-</p>
+                        </article>
+                        <article class="rounded-[1.2rem] border border-line/80 bg-panel/35 p-4">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Unapplied Credit</p>
+                            <p class="mt-2 font-display text-2xl font-bold text-ink" id="statement-unapplied-credit">-</p>
+                        </article>
+                        <article class="rounded-[1.2rem] border border-line/80 bg-panel/35 p-4">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Net Balance</p>
+                            <p class="mt-2 font-display text-2xl font-bold text-ink" id="statement-net-balance">-</p>
+                        </article>
+                    </div>
+
+                    <div class="mt-6">
+                        <div class="flex items-center justify-between gap-3">
+                            <h3 class="font-display text-xl font-bold text-ink">Issued Invoices</h3>
+                            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-muted" id="statement-generated-at">-</p>
+                        </div>
+                        <div class="mt-3 grid gap-3" id="statement-invoices-list">
+                            <p class="rounded-2xl border border-line/80 bg-panel/35 px-4 py-4 text-sm text-muted">Loading invoices...</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <h3 class="font-display text-xl font-bold text-ink">Unapplied Payments</h3>
+                        <div class="mt-3 grid gap-3" id="statement-payments-list">
+                            <p class="rounded-2xl border border-line/80 bg-panel/35 px-4 py-4 text-sm text-muted">Loading unapplied payments...</p>
+                        </div>
+                    </div>
+                </article>
+            </section>
+        </main>
+    </div>
+
+    <script src="./app.js" defer></script>
+</body>
+</html>
