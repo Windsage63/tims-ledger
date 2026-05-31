@@ -195,7 +195,7 @@ Design note:
 
 ### payments
 
-Purpose: payment and advance records.
+Purpose: customer payment records, including unapplied balances awaiting allocation.
 
 Columns:
 
@@ -203,14 +203,12 @@ Columns:
 2. `customer_id`: `INTEGER NOT NULL`
    Constraints: foreign key to `customers(id)`.
 3. `payment_date`: `TEXT NOT NULL`
-4. `payment_type`: `TEXT NOT NULL CHECK (payment_type IN ('payment','advance'))`
-   Notes: keep v1 narrow.
-5. `reference_number`: `TEXT NULL`
+4. `reference_number`: `TEXT NULL`
    Notes: check number, ACH id, or note.
-6. `amount_cents`: `INTEGER NOT NULL CHECK (amount_cents > 0)`
-7. `notes`: `TEXT NULL`
-8. `created_at`: `TEXT NOT NULL`
-9. `updated_at`: `TEXT NOT NULL`
+5. `amount_cents`: `INTEGER NOT NULL CHECK (amount_cents > 0)`
+6. `notes`: `TEXT NULL`
+7. `created_at`: `TEXT NOT NULL`
+8. `updated_at`: `TEXT NOT NULL`
 
 ### payment_applications
 
@@ -342,5 +340,5 @@ These do not need to be physical tables in v1, but the backend should provide co
 
 1. Should `customer_name` be globally unique, or only treated as a display field.
 2. Should `customer_id` remain cached on time and expense rows, or be removed in favor of joins only.
-3. Should payment types stay limited to `payment` and `advance` in v1, or should `refund` be modeled from the start.
+3. Should refunds be modeled as negative payments, separate adjustment records, or left out of v1 entirely.
 4. Should invoice PDFs be tracked by a relative file path, file name, or generated artifact identifier.

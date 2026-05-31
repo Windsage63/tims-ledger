@@ -185,7 +185,7 @@ function renderAccountsReceivable() {
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div>
                             <p class="font-display text-lg font-bold text-ink">${payment.reference_number || `Payment ${payment.id}`}</p>
-                            <p class="mt-1 text-sm text-muted">${payment.payment_date} · ${payment.payment_type}</p>
+                            <p class="mt-1 text-sm text-muted">${payment.payment_date}</p>
                         </div>
                         <div class="text-right">
                             <p class="font-mono text-sm text-ink">${currency(payment.unapplied_amount_cents)}</p>

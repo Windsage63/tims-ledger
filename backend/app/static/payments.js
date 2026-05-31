@@ -229,7 +229,7 @@ function filteredPayments() {
         const matchesCustomer = paymentsState.customerFilter === "all" || String(payment.customer_id) === paymentsState.customerFilter;
         const paymentYear = String(payment.payment_date).slice(0, 4);
         const matchesYear = paymentsState.yearFilter === "all" || paymentYear === paymentsState.yearFilter;
-        const haystack = [payment.customer_name, payment.reference_number, payment.payment_type, payment.notes || ""].join(" ").toLowerCase();
+        const haystack = [payment.customer_name, payment.reference_number, payment.notes || ""].join(" ").toLowerCase();
         const matchesQuery = !query || haystack.includes(query);
         return matchesStatus && matchesCustomer && matchesYear && matchesQuery;
     });
@@ -280,13 +280,12 @@ function renderMetrics(payments) {
     const visibleReceipts = payments.reduce((sum, payment) => sum + payment.amount_cents, 0);
     const appliedAmount = payments.reduce((sum, payment) => sum + payment.applied_amount_cents, 0);
     const unappliedAmount = payments.reduce((sum, payment) => sum + payment.unapplied_amount_cents, 0);
-    const advanceCount = payments.filter((payment) => payment.payment_type === "advance").length;
 
     setText("payments-mode", paymentsState.isLoading ? "Loading" : "Served Mode");
     setText("metric-visible-receipts", currency(visibleReceipts));
     setText("metric-applied-amount", currency(appliedAmount));
     setText("metric-unapplied-amount", currency(unappliedAmount));
-    setText("metric-credit-count", String(advanceCount));
+    setText("metric-payment-count", String(payments.length));
 }
 
 function renderStatusFilters() {
@@ -337,7 +336,6 @@ function renderPaymentRows(payments) {
                 <td class="px-4 py-4 align-top font-mono text-sm text-ink">${payment.payment_date}</td>
                 <td class="px-4 py-4 align-top text-sm text-ink">${payment.customer_name}</td>
                 <td class="px-4 py-4 align-top font-mono text-sm text-ink">${payment.reference_number}</td>
-                <td class="px-4 py-4 align-top text-sm text-ink">${payment.payment_type}</td>
                 <td class="px-4 py-4 align-top text-right font-mono text-sm text-ink">${currency(payment.amount_cents)}</td>
                 <td class="px-4 py-4 align-top text-right font-mono text-sm text-ink">${currency(payment.unapplied_amount_cents)}</td>
                 <td class="px-4 py-4 align-top"><span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${status.classes}">${status.label}</span></td>
@@ -433,12 +431,11 @@ function updateEditor(payment) {
 
     document.getElementById("payment-customer").value = String(payment.customer_id);
     document.getElementById("payment-date").value = payment.payment_date;
-    document.getElementById("payment-type").value = payment.payment_type;
     document.getElementById("payment-reference").value = payment.reference_number;
     document.getElementById("payment-amount").value = dollarsInput(payment.amount_cents);
     document.getElementById("payment-notes").value = payment.notes || "";
 
-    ["payment-customer", "payment-date", "payment-type", "payment-reference", "payment-amount", "payment-notes"].forEach((id) => {
+    ["payment-customer", "payment-date", "payment-reference", "payment-amount", "payment-notes"].forEach((id) => {
         const element = document.getElementById(id);
         if (element) {
             element.disabled = paymentsState.isSaving;
@@ -460,7 +457,6 @@ function paymentPayloadFromForm(currentPayment) {
     return {
         customer_id: Number(document.getElementById("payment-customer")?.value || currentPayment?.customer_id || 0),
         payment_date: String(document.getElementById("payment-date")?.value || currentPayment?.payment_date || TODAY),
-        payment_type: String(document.getElementById("payment-type")?.value || currentPayment?.payment_type || "payment"),
         reference_number: String(document.getElementById("payment-reference")?.value || currentPayment?.reference_number || "").trim(),
         amount_cents: centsFromInput(document.getElementById("payment-amount")?.value || dollarsInput(currentPayment?.amount_cents || 0)),
         notes: String(document.getElementById("payment-notes")?.value || currentPayment?.notes || "")
@@ -479,7 +475,6 @@ function syncSelectedPaymentFromForm(clearApplicationsOnCustomerChange = false) 
     payment.customer_id = payload.customer_id;
     payment.customer_name = customer?.customer_name || payment.customer_name;
     payment.payment_date = payload.payment_date;
-    payment.payment_type = payload.payment_type;
     payment.reference_number = payload.reference_number;
     payment.amount_cents = payload.amount_cents;
     payment.notes = payload.notes;
@@ -502,7 +497,6 @@ async function createDraftPayment(sourcePayment = null) {
     const payload = {
         customer_id: customer.id,
         payment_date: TODAY,
-        payment_type: sourcePayment?.payment_type || "payment",
         reference_number: sourcePayment ? `${sourcePayment.reference_number}-COPY` : `PAY-${String((paymentsState.payments[0]?.id || 75) + 1).padStart(4, "0")}`,
         amount_cents: sourcePayment?.amount_cents || 0,
         notes: sourcePayment?.notes || ""

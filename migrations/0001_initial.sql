@@ -101,7 +101,6 @@ CREATE TABLE payments (
     id INTEGER PRIMARY KEY,
     customer_id INTEGER NOT NULL,
     payment_date TEXT NOT NULL,
-    payment_type TEXT NOT NULL CHECK (payment_type IN ('payment', 'advance')),
     reference_number TEXT,
     amount_cents INTEGER NOT NULL CHECK (amount_cents > 0),
     notes TEXT,
@@ -192,7 +191,6 @@ WITH payment_totals AS (
     SELECT
         p.id AS payment_id,
         p.customer_id,
-        p.payment_type,
         p.amount_cents,
         COALESCE((
             SELECT SUM(pa.applied_amount_cents)
@@ -204,7 +202,6 @@ WITH payment_totals AS (
 SELECT
     payment_id,
     customer_id,
-    payment_type,
     amount_cents,
     applied_amount_cents,
     amount_cents - applied_amount_cents AS unapplied_amount_cents

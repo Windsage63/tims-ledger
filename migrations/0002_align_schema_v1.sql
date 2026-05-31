@@ -189,7 +189,6 @@ WITH payment_totals AS (
     SELECT
         p.id AS payment_id,
         p.customer_id,
-        p.payment_type,
         p.amount_cents,
         COALESCE((
             SELECT SUM(pa.applied_amount_cents)
@@ -201,7 +200,6 @@ WITH payment_totals AS (
 SELECT
     payment_id,
     customer_id,
-    payment_type,
     amount_cents,
     applied_amount_cents,
     amount_cents - applied_amount_cents AS unapplied_amount_cents

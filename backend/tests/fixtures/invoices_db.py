@@ -113,13 +113,12 @@ def load_invoices_db(connection: sqlite3.Connection) -> int:
             id,
             customer_id,
             payment_date,
-            payment_type,
             reference_number,
             amount_cents,
             notes,
             created_at,
             updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO NOTHING
         """,
         [
@@ -127,7 +126,6 @@ def load_invoices_db(connection: sqlite3.Connection) -> int:
                 row["id"],
                 row["customer_id"],
                 row["payment_date"],
-                row["payment_type"],
                 row["reference_number"],
                 row["amount_cents"],
                 row["notes"],

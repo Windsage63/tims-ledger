@@ -58,7 +58,7 @@ This document is a companion reference to the primary PRD in `docs/winds_ledger_
 
 ## 6. User Records and Applies a Payment
 
-1. User records a payment or advance for a customer.
+1. User records a payment for a customer.
 2. System creates a payment record with the full amount initially unapplied.
 3. User applies some or all of that payment to one or more open invoices.
 4. System prevents over-application and updates both invoice open balances and the payment's remaining unapplied amount.

@@ -11,7 +11,6 @@ from .projects import customer_lookup
 class PaymentWrite(BaseModel):
     customer_id: int
     payment_date: str
-    payment_type: str
     reference_number: str
     amount_cents: int
     notes: str | None = None
@@ -35,13 +34,6 @@ class PaymentWrite(BaseModel):
     def require_text(cls, value: str) -> str:
         if not value:
             raise ValueError("This field is required.")
-        return value
-
-    @field_validator("payment_type")
-    @classmethod
-    def valid_payment_type(cls, value: str) -> str:
-        if value not in {"payment", "advance"}:
-            raise ValueError("Payment type must be payment or advance.")
         return value
 
     @field_validator("amount_cents")
@@ -95,7 +87,6 @@ def payment_select_sql() -> str:
         p.customer_id,
         c.customer_name,
         p.payment_date,
-        p.payment_type,
         p.reference_number,
         p.amount_cents,
         p.notes,
@@ -116,7 +107,6 @@ def row_to_payment(row: sqlite3.Row) -> dict[str, object]:
         "customer_id": row["customer_id"],
         "customer_name": row["customer_name"],
         "payment_date": row["payment_date"],
-        "payment_type": row["payment_type"],
         "reference_number": row["reference_number"],
         "amount_cents": amount_cents,
         "applied_amount_cents": applied_amount_cents,
@@ -248,18 +238,16 @@ def create_payment(connection: sqlite3.Connection, payload: PaymentWrite) -> dic
         INSERT INTO payments (
             customer_id,
             payment_date,
-            payment_type,
             reference_number,
             amount_cents,
             notes,
             created_at,
             updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
         (
             payload.customer_id,
             payload.payment_date,
-            payload.payment_type,
             payload.reference_number,
             payload.amount_cents,
             payload.notes,
@@ -291,7 +279,6 @@ def update_payment(connection: sqlite3.Connection, payment_id: int, payload: Pay
         SET
             customer_id = ?,
             payment_date = ?,
-            payment_type = ?,
             reference_number = ?,
             amount_cents = ?,
             notes = ?,
@@ -301,7 +288,6 @@ def update_payment(connection: sqlite3.Connection, payment_id: int, payload: Pay
         (
             payload.customer_id,
             payload.payment_date,
-            payload.payment_type,
             payload.reference_number,
             payload.amount_cents,
             payload.notes,

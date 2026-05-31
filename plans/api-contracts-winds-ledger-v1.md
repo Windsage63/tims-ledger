@@ -168,7 +168,6 @@ Invoice due date is derived from `invoice_date + terms_days` when the UI needs t
   "customer_id": 12,
   "customer_name": "Acme Corp.",
   "payment_date": "2026-05-28",
-  "payment_type": "payment",
   "reference_number": "CHK-8122",
   "amount_cents": 50000,
   "applied_amount_cents": 20000,
@@ -501,7 +500,6 @@ Request body:
 {
   "customer_id": 12,
   "payment_date": "2026-05-28",
-  "payment_type": "payment",
   "reference_number": "CHK-8122",
   "amount_cents": 50000,
   "notes": "Partial payment"
@@ -534,7 +532,6 @@ Example response:
       "customer_id": 12,
       "customer_name": "Acme Corp.",
       "payment_date": "2026-05-28",
-      "payment_type": "payment",
       "reference_number": "CHK-8122",
       "amount_cents": 50000,
       "applied_amount_cents": 20000,

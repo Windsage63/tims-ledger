@@ -124,7 +124,6 @@ def fetch_statement_unapplied_payments(connection: sqlite3.Connection, customer_
         SELECT
             p.id,
             p.payment_date,
-            p.payment_type,
             p.reference_number,
             p.amount_cents,
             COALESCE(puv.applied_amount_cents, 0) AS applied_amount_cents,
@@ -142,7 +141,6 @@ def fetch_statement_unapplied_payments(connection: sqlite3.Connection, customer_
         {
             "id": row["id"],
             "payment_date": row["payment_date"],
-            "payment_type": row["payment_type"],
             "reference_number": row["reference_number"],
             "amount_cents": int(row["amount_cents"] or 0),
             "applied_amount_cents": int(row["applied_amount_cents"] or 0),
@@ -278,13 +276,12 @@ def build_workbook_sheets(connection: sqlite3.Connection) -> list[tuple[str, lis
                 [
                     "payment_id",
                     "customer_id",
-                    "payment_type",
                     "amount_cents",
                     "applied_amount_cents",
                     "unapplied_amount_cents",
                 ],
                 *[
-                    row_values(row, ["payment_id", "customer_id", "payment_type", "amount_cents", "applied_amount_cents", "unapplied_amount_cents"])
+                    row_values(row, ["payment_id", "customer_id", "amount_cents", "applied_amount_cents", "unapplied_amount_cents"])
                     for row in rows_as_dicts(connection, "SELECT * FROM payment_unapplied_view ORDER BY customer_id, payment_id")
                 ],
             ],

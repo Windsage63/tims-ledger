@@ -23,7 +23,7 @@ Stitch uses placeholder product names such as LedgerFlow and Acme Ledger in seve
 4. User enters expenses against the project and flags whether each expense is billable.
 5. User creates or edits an invoice by selecting eligible unbilled time and expenses.
 6. Invoices are issued and kept in a ledger and applied to customer accounts.
-7. User records payments, deposits, advances, or refunds and applies them to customer balances.
+7. User records payments and applies them to customer balances, leaving any excess receipt unapplied until it is allocated.
 
 ## 4. Core Data Model And Invariants
 
@@ -107,7 +107,7 @@ Invoice lines derived from time and expenses must remain traceable back to their
 
 Payments must support:
 
-1. payment and advance record types
+1. ordinary payment records with unapplied balance at creation
 2. full unapplied amount at creation
 3. partial or full application across one or more open invoices
 4. over-application prevention

@@ -18,9 +18,9 @@ class PaymentsApiTests(ApiTestCase):
         self.assertEqual(payload["meta"]["screen"], "payments")
         self.assertEqual(len(payload["data"]["payments"]), 6)
         self.assertEqual(len(payload["data"]["customers"]), 6)
-        advance_payment = next(payment for payment in payload["data"]["payments"] if payment["id"] == 71)
-        self.assertEqual(advance_payment["payment_type"], "advance")
-        self.assertEqual(advance_payment["application_status"], "unapplied")
+        unapplied_payment = next(payment for payment in payload["data"]["payments"] if payment["id"] == 71)
+        self.assertEqual(unapplied_payment["application_status"], "unapplied")
+        self.assertEqual(unapplied_payment["unapplied_amount_cents"], 120000)
         partial_payment = next(payment for payment in payload["data"]["payments"] if payment["id"] == 75)
         self.assertEqual(partial_payment["applied_amount_cents"], 18500)
         self.assertEqual(partial_payment["unapplied_amount_cents"], 21500)
@@ -44,7 +44,6 @@ class PaymentsApiTests(ApiTestCase):
             json={
                 "customer_id": 24,
                 "payment_date": "2026-05-31",
-                "payment_type": "payment",
                 "reference_number": "WIRE-303",
                 "amount_cents": 15000,
                 "notes": "Applied after invoice review.",
@@ -61,16 +60,14 @@ class PaymentsApiTests(ApiTestCase):
             json={
                 "customer_id": 24,
                 "payment_date": "2026-05-31",
-                "payment_type": "advance",
                 "reference_number": "WIRE-303A",
                 "amount_cents": 16000,
-                "notes": "Held as advance until owner confirmation.",
+                "notes": "Held unapplied until owner confirmation.",
             },
         )
 
         self.assertEqual(update_response.status_code, 200)
         updated_payment = update_response.json()["data"]["payment"]
-        self.assertEqual(updated_payment["payment_type"], "advance")
         self.assertEqual(updated_payment["reference_number"], "WIRE-303A")
 
         applications_response = self.client.post(
@@ -99,7 +96,6 @@ class PaymentsApiTests(ApiTestCase):
             json={
                 "customer_id": 24,
                 "payment_date": "not-a-date",
-                "payment_type": "payment",
                 "reference_number": "WIRE-303",
                 "amount_cents": 15000,
                 "notes": "Applied after invoice review.",

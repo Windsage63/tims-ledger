@@ -338,18 +338,17 @@ Candidate fields:
 
 #### payments
 
-Purpose: payment and advance records.
+Purpose: customer payment records, including unapplied balances awaiting allocation.
 
 Candidate fields:
 
 1. `id`
 2. `customer_id`
 3. `payment_date`
-4. `payment_type`
-5. `reference_number` nullable
-6. `amount`
-7. `notes` nullable
-8. `created_at`
+4. `reference_number` nullable
+5. `amount`
+6. `notes` nullable
+7. `created_at`
 9. `updated_at`
 
 #### payment_applications
