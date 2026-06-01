@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path
+from datetime import timedelta
+from html import escape
 import sqlite3
 
 from pydantic import BaseModel, ConfigDict, field_validator
@@ -53,17 +54,6 @@ class InvoiceSelectionWrite(BaseModel):
     time_entry_ids: list[int] = []
     expense_ids: list[int] = []
 
-def slugify_invoice_number(invoice_number: str) -> str:
-    return invoice_number.lower().replace(" ", "-")
-
-
-def invoice_pdf_directory(data_dir: Path) -> Path:
-    return data_dir / "invoices"
-
-
-def pdf_escape(value: str) -> str:
-    return value.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
-
 
 def currency(cents: int) -> str:
     return f"${cents / 100:,.2f}"
@@ -73,99 +63,410 @@ def terms_label(terms_days: int) -> str:
     return "Due on receipt" if terms_days <= 0 else f"Net {terms_days}"
 
 
-def line_for_time_entry(entry: dict[str, object]) -> str:
-    return f"{entry['entry_date']}  {entry['rate_code']}  {entry['minutes']} min  {currency(int(entry['line_total_cents']))}  {entry['description']}"
+def format_print_date(value: str) -> str:
+    return parse_iso_date(value).strftime("%m/%d/%Y")
 
 
-def line_for_expense(expense: dict[str, object]) -> str:
-    return f"{expense['entry_date']}  {expense['category']}  {currency(int(expense['line_total_cents']))}  {expense['vendor']} - {expense['description']}"
+def format_due_date(invoice_date: str, terms_days: int) -> str:
+    due_date = parse_iso_date(invoice_date) + timedelta(days=max(terms_days, 0))
+    return due_date.strftime("%m/%d/%Y")
 
 
-def build_invoice_pdf_bytes(payload: dict[str, object]) -> bytes:
+def invoice_terms_notice(terms_days: int) -> str:
+    if terms_days <= 0:
+        return "Payment due on receipt. Overdue accounts subject to a service charge of 1% per month."
+    return f"Total due in {terms_days} days. Overdue accounts subject to a service charge of 1% per month."
+
+
+def html_line_breaks(lines: list[str]) -> str:
+    return "<br>".join(escape(line) for line in lines if line)
+
+
+def render_invoice_table_rows(payload: dict[str, object]) -> str:
     invoice = payload["invoice"]
-    summary = payload["summary"]
-    lines = [
-        "Winds Ledger Invoice",
-        f"Invoice: {invoice['invoice_number']}",
-        f"Customer: {invoice['customer_name']}",
-        f"Project: {invoice['project_number']}",
-        f"Invoice Date: {invoice['invoice_date']}",
-        f"Terms: {terms_label(int(invoice['terms_days']))}",
-        f"PO Number: {invoice['po_number'] or 'None'}",
-        "",
-        "Time Charges",
-    ]
-
     selected_time_entries = payload["selected_time_entries"]
     selected_expenses = payload["selected_expenses"]
+    rows: list[str] = []
+
     if selected_time_entries:
-        lines.extend(line_for_time_entry(entry)[:110] for entry in selected_time_entries)
-    else:
-        lines.append("No time charges selected.")
+        rows.append(
+            '<tr class="section-row"><td colspan="6">Services</td></tr>'
+        )
+        for entry in selected_time_entries:
+            quantity = int(entry["minutes"]) / 60
+            rows.append(
+                """
+                <tr>
+                    <td>{date}</td>
+                    <td>{project}</td>
+                    <td>{description}</td>
+                    <td class="numeric">{quantity:.2f}</td>
+                    <td class="numeric">{unit_price}</td>
+                    <td class="numeric">{line_total}</td>
+                </tr>
+                """.format(
+                    date=escape(format_print_date(str(entry["entry_date"]))),
+                    project=escape(str(invoice["project_number"])),
+                    description=escape(str(entry["description"])),
+                    quantity=quantity,
+                    unit_price=escape(currency(int(entry["rate_cents"]))),
+                    line_total=escape(currency(int(entry["line_total_cents"]))),
+                ).strip()
+            )
+        rows.append(
+            """
+            <tr class="subtotal-row">
+                <td colspan="5">Sub-Total Service</td>
+                <td class="numeric">{subtotal}</td>
+            </tr>
+            """.format(subtotal=escape(currency(int(payload["summary"]["time_total_cents"]))))
+        )
 
-    lines.extend([
-        "",
-        "Expense Charges",
-    ])
     if selected_expenses:
-        lines.extend(line_for_expense(expense)[:110] for expense in selected_expenses)
-    else:
-        lines.append("No expense charges selected.")
+        rows.append(
+            '<tr class="section-row"><td colspan="6">Expenses</td></tr>'
+        )
+        for expense in selected_expenses:
+            description = " - ".join(part for part in [str(expense["vendor"]), str(expense["description"])] if part and part != "None")
+            rows.append(
+                """
+                <tr>
+                    <td>{date}</td>
+                    <td>{project}</td>
+                    <td>{description}</td>
+                    <td class="numeric">1.00</td>
+                    <td class="numeric">{unit_price}</td>
+                    <td class="numeric">{line_total}</td>
+                </tr>
+                """.format(
+                    date=escape(format_print_date(str(expense["entry_date"]))),
+                    project=escape(str(invoice["project_number"])),
+                    description=escape(description),
+                    unit_price=escape(currency(int(expense["line_total_cents"]))),
+                    line_total=escape(currency(int(expense["line_total_cents"]))),
+                ).strip()
+            )
+        rows.append(
+            """
+            <tr class="subtotal-row">
+                <td colspan="5">Sub-Total Expenses</td>
+                <td class="numeric">{subtotal}</td>
+            </tr>
+            """.format(subtotal=escape(currency(int(payload["summary"]["expense_total_cents"]))))
+        )
 
-    lines.extend([
-        "",
-        f"Time Total: {currency(int(summary['time_total_cents']))}",
-        f"Expense Total: {currency(int(summary['expense_total_cents']))}",
-        f"Invoice Total: {currency(int(summary['invoice_total_cents']))}",
-        f"Prior Balance: {currency(int(summary['prior_balance_cents']))}",
-        f"Unapplied Credit: {currency(int(summary['unapplied_credit_cents']))}",
-        f"Open Balance After Issue: {currency(int(summary['open_balance_after_issue_cents']))}",
-    ])
-    if invoice.get("notes"):
-        lines.extend(["", f"Notes: {str(invoice['notes'])[:110]}"])
+    if not rows:
+        rows.append('<tr><td colspan="6" class="empty-row">No billable items selected.</td></tr>')
 
-    content_lines = ["BT", "/F1 11 Tf", "72 780 Td", "14 TL"]
-    for index, line in enumerate(lines[:45]):
-        escaped = pdf_escape(line)
-        if index == 0:
-            content_lines.append(f"({escaped}) Tj")
-        else:
-            content_lines.append(f"T* ({escaped}) Tj")
-    content_lines.append("ET")
-    stream = "\n".join(content_lines).encode("latin-1", errors="replace")
-
-    objects = [
-        b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
-        b"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
-        b"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>\nendobj\n",
-        b"4 0 obj\n<< /Length " + str(len(stream)).encode("ascii") + b" >>\nstream\n" + stream + b"\nendstream\nendobj\n",
-        b"5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
-    ]
-
-    output = bytearray(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
-    offsets = [0]
-    for obj in objects:
-        offsets.append(len(output))
-        output.extend(obj)
-    xref_offset = len(output)
-    output.extend(f"xref\n0 {len(offsets)}\n".encode("ascii"))
-    output.extend(b"0000000000 65535 f \n")
-    for offset in offsets[1:]:
-        output.extend(f"{offset:010d} 00000 n \n".encode("ascii"))
-    output.extend(
-        f"trailer\n<< /Size {len(offsets)} /Root 1 0 R >>\nstartxref\n{xref_offset}\n%%EOF\n".encode("ascii")
-    )
-    return bytes(output)
+    return "\n".join(rows)
 
 
-def write_invoice_pdf(data_dir: Path, payload: dict[str, object]) -> Path:
+def build_invoice_print_html(payload: dict[str, object]) -> str:
     invoice = payload["invoice"]
-    pdf_dir = invoice_pdf_directory(data_dir)
-    pdf_dir.mkdir(parents=True, exist_ok=True)
-    pdf_file_name = str(invoice["pdf_file_name"] or f"{slugify_invoice_number(str(invoice['invoice_number']))}.pdf")
-    pdf_path = pdf_dir / pdf_file_name
-    pdf_path.write_bytes(build_invoice_pdf_bytes(payload))
-    return pdf_path
+    summary = payload["summary"]
+    customer_lines = [
+        str(invoice["customer_name"]),
+        str(invoice["street_address"]),
+        f"{invoice['city']}, {invoice['state']} {invoice['zip']}",
+        f"Phone: {invoice['phone']}",
+        f"Email: {invoice['email']}",
+    ]
+    notes_block = ""
+    if invoice.get("notes"):
+        notes_block = """
+        <section class="notes-card">
+            <h3>Notes</h3>
+            <p>{notes}</p>
+        </section>
+        """.format(notes=escape(str(invoice["notes"])))
+
+    return """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Invoice {invoice_number}</title>
+    <style>
+        :root {{
+            color-scheme: light;
+            --paper: #ffffff;
+            --ink: #1f2933;
+            --muted: #5f6c7b;
+            --border: #d6d9de;
+            --accent: #214f7a;
+            --accent-soft: #eaf1f7;
+            --surface: #eef2f5;
+        }}
+        * {{ box-sizing: border-box; }}
+        body {{
+            margin: 0;
+            background: var(--surface);
+            color: var(--ink);
+            font-family: "Segoe UI", Arial, sans-serif;
+            line-height: 1.35;
+        }}
+        .toolbar {{
+            position: sticky;
+            top: 0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 16px 24px;
+            background: rgba(238, 242, 245, 0.96);
+            border-bottom: 1px solid var(--border);
+        }}
+        .toolbar button {{
+            border: 1px solid var(--accent);
+            background: var(--accent);
+            color: #fff;
+            border-radius: 999px;
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }}
+        .page {{
+            width: 8.5in;
+            min-height: 11in;
+            margin: 24px auto;
+            padding: 0.65in;
+            background: var(--paper);
+            box-shadow: 0 12px 40px rgba(31, 41, 51, 0.12);
+        }}
+        .header {{
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 28px;
+            margin-bottom: 28px;
+        }}
+        .company-block h1 {{
+            margin: 0 0 8px;
+            font-size: 30px;
+            letter-spacing: 0.02em;
+        }}
+        .company-block p,
+        .meta-card p,
+        .bill-card p,
+        .summary-table td,
+        .notes-card p,
+        .footer p {{
+            margin: 0;
+        }}
+        .company-block .detail {{
+            color: var(--muted);
+            font-size: 14px;
+        }}
+        .invoice-heading {{ text-align: right; }}
+        .invoice-heading h2 {{
+            margin: 0 0 10px;
+            font-size: 34px;
+            color: var(--accent);
+            letter-spacing: 0.08em;
+        }}
+        .invoice-number {{
+            font-size: 16px;
+            font-weight: 700;
+        }}
+        .top-grid {{
+            display: grid;
+            grid-template-columns: 1.25fr 0.95fr;
+            gap: 20px;
+            margin-bottom: 28px;
+        }}
+        .bill-card,
+        .meta-card,
+        .notes-card {{
+            border: 1px solid var(--border);
+            background: #fff;
+        }}
+        .bill-card {{ padding: 18px 20px; }}
+        .bill-card h3,
+        .notes-card h3 {{
+            margin: 0 0 12px;
+            font-size: 12px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }}
+        .bill-card .name {{
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }}
+        .bill-card .detail {{ color: var(--muted); font-size: 14px; }}
+        .meta-card {{ padding: 10px 16px; }}
+        .meta-row {{
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }}
+        .meta-row:last-child {{ border-bottom: none; }}
+        .meta-label {{
+            color: var(--muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 11px;
+        }}
+        .meta-value {{ text-align: right; font-weight: 600; }}
+        table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+        }}
+        thead th {{
+            padding: 12px 10px;
+            background: var(--accent-soft);
+            border-top: 2px solid var(--accent);
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 11px;
+            color: var(--muted);
+        }}
+        tbody td {{
+            padding: 11px 10px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+            font-size: 14px;
+        }}
+        .numeric {{ text-align: right; white-space: nowrap; }}
+        .section-row td {{
+            background: #f8fafc;
+            color: var(--accent);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 11px;
+        }}
+        .subtotal-row td {{ font-weight: 700; background: #fcfcfd; }}
+        .empty-row {{ text-align: center; color: var(--muted); }}
+        .summary-wrap {{
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 22px;
+        }}
+        .summary-table {{ width: 320px; }}
+        .summary-table td {{
+            padding: 9px 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }}
+        .summary-table tr:last-child td {{
+            border-top: 2px solid var(--accent);
+            border-bottom: none;
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--accent);
+        }}
+        .notes-card {{ margin: 0 0 18px; padding: 18px 20px; }}
+        .footer {{
+            margin-top: 28px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 13px;
+        }}
+        .footer p + p {{ margin-top: 6px; }}
+        @page {{ size: letter; margin: 0.45in; }}
+        @media print {{
+            body {{ background: #fff; }}
+            .toolbar {{ display: none; }}
+            .page {{
+                margin: 0;
+                width: auto;
+                min-height: auto;
+                box-shadow: none;
+                padding: 0;
+            }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <button type="button" onclick="window.print()">Print Invoice</button>
+    </div>
+    <main class="page">
+        <header class="header">
+            <div class="company-block">
+                <h1>Air Advantage, Inc.</h1>
+                <p class="detail">2850 Lake Silver Rd<br>Crestview, FL 32536</p>
+                <p class="detail" style="margin-top: 10px;">Email: tmallory@outlook.com<br>Phone: 850-774-3283</p>
+            </div>
+            <div class="invoice-heading">
+                <h2>INVOICE</h2>
+                <p class="invoice-number">Invoice #: {invoice_number}</p>
+            </div>
+        </header>
+        <section class="top-grid">
+            <div class="bill-card">
+                <h3>Bill To</h3>
+                <p class="name">{customer_name}</p>
+                <p class="detail">{customer_block}</p>
+            </div>
+            <div class="meta-card">
+                <div class="meta-row"><span class="meta-label">Invoice Date</span><span class="meta-value">{invoice_date}</span></div>
+                <div class="meta-row"><span class="meta-label">Due Date</span><span class="meta-value">{due_date}</span></div>
+                <div class="meta-row"><span class="meta-label">Terms</span><span class="meta-value">{terms}</span></div>
+                <div class="meta-row"><span class="meta-label">Project</span><span class="meta-value">{project_number}</span></div>
+                <div class="meta-row"><span class="meta-label">P.O. Number</span><span class="meta-value">{po_number}</span></div>
+            </div>
+        </section>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Project</th>
+                    <th>Description</th>
+                    <th class="numeric">Qty</th>
+                    <th class="numeric">Unit Price</th>
+                    <th class="numeric">Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                {table_rows}
+            </tbody>
+        </table>
+        <div class="summary-wrap">
+            <table class="summary-table">
+                <tbody>
+                    <tr><td>Sub-Total Invoice</td><td class="numeric">{invoice_total}</td></tr>
+                    <tr><td>Prior Balance</td><td class="numeric">{prior_balance}</td></tr>
+                    <tr><td>Unapplied Credit</td><td class="numeric">{unapplied_credit}</td></tr>
+                    <tr><td>Total Due</td><td class="numeric">{open_balance}</td></tr>
+                </tbody>
+            </table>
+        </div>
+        {notes_block}
+        <footer class="footer">
+            <p>{terms_notice}</p>
+            <p>Make all checks payable to Air Advantage, Inc.</p>
+        </footer>
+    </main>
+</body>
+</html>
+""".format(
+        invoice_number=escape(str(invoice["invoice_number"])),
+        customer_name=escape(str(invoice["customer_name"])),
+        customer_block=html_line_breaks(customer_lines[1:]),
+        invoice_date=escape(format_print_date(str(invoice["invoice_date"]))),
+        due_date=escape(str(invoice["due_date"])),
+        terms=escape(terms_label(int(invoice["terms_days"]))),
+        project_number=escape(str(invoice["project_number"])),
+        po_number=escape(str(invoice["po_number"] or "-")),
+        table_rows=render_invoice_table_rows(payload),
+        invoice_total=escape(currency(int(summary["invoice_total_cents"]))),
+        prior_balance=escape(currency(int(summary["prior_balance_cents"]))),
+        unapplied_credit=escape(currency(int(summary["unapplied_credit_cents"]))),
+        open_balance=escape(currency(int(summary["open_balance_after_issue_cents"]))),
+        notes_block=notes_block,
+        terms_notice=escape(invoice_terms_notice(int(invoice["terms_days"]))),
+    )
 
 
 def next_invoice_number(connection: sqlite3.Connection, invoice_date: str) -> str:
@@ -189,6 +490,13 @@ def invoice_select_sql() -> str:
         p.project_number,
         i.customer_id,
         c.customer_name,
+        c.street_address,
+        c.city,
+        c.state,
+        c.zip,
+        c.contact_name,
+        c.email,
+        c.phone,
         i.invoice_date,
         i.terms_days,
         i.po_number,
@@ -228,10 +536,11 @@ def derive_invoice_status(invoice: dict[str, object]) -> str:
         return "draft"
     if int(invoice["invoice_amount_cents"] or 0) > 0 and int(invoice["open_balance_cents"] or 0) <= 0:
         return "paid"
-    return "pending"
+    return "printed"
 
 
 def row_to_invoice(connection: sqlite3.Connection, row: sqlite3.Row) -> dict[str, object]:
+    due_date = format_due_date(str(row["invoice_date"]), int(row["terms_days"]))
     invoice = {
         "id": row["id"],
         "invoice_number": row["invoice_number"],
@@ -239,11 +548,18 @@ def row_to_invoice(connection: sqlite3.Connection, row: sqlite3.Row) -> dict[str
         "project_number": row["project_number"],
         "customer_id": row["customer_id"],
         "customer_name": row["customer_name"],
+        "street_address": row["street_address"],
+        "city": row["city"],
+        "state": row["state"],
+        "zip": row["zip"],
+        "contact_name": row["contact_name"],
+        "email": row["email"],
+        "phone": row["phone"],
         "invoice_date": row["invoice_date"],
+        "due_date": due_date,
         "terms_days": row["terms_days"],
         "po_number": row["po_number"],
         "notes": row["notes"],
-        "pdf_file_name": row["pdf_file_name"],
         "issued_at": row["issued_at"],
         "paid_amount_cents": row["paid_amount_cents"],
         "invoice_amount_cents": row["invoice_amount_cents"],
@@ -339,7 +655,7 @@ def invoice_editor_payload(connection: sqlite3.Connection, invoice_id: int) -> d
 
 def invoice_bootstrap_payload(connection: sqlite3.Connection, year: str | None = None) -> dict[str, object]:
     invoices = fetch_invoices(connection, year=year)
-    status_counts = {"all": len(invoices), "draft": 0, "pending": 0, "paid": 0}
+    status_counts = {"all": len(invoices), "draft": 0, "printed": 0, "paid": 0}
     for invoice in invoices:
         status_counts[invoice["status"]] += 1
     return {
@@ -373,11 +689,10 @@ def create_invoice(connection: sqlite3.Connection, payload: InvoiceWrite) -> dic
             terms_days,
             po_number,
             notes,
-            pdf_file_name,
             issued_at,
             created_at,
             updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             invoice_number,
@@ -387,7 +702,6 @@ def create_invoice(connection: sqlite3.Connection, payload: InvoiceWrite) -> dic
             payload.terms_days,
             payload.po_number,
             payload.notes,
-            None,
             None,
             timestamp,
             timestamp,
@@ -410,7 +724,7 @@ def update_invoice(connection: sqlite3.Connection, invoice_id: int, payload: Inv
     if existing is None:
         return None
     if existing["issued_at"]:
-        raise ValueError("Issued invoices are read-only.")
+        raise ValueError("Printed invoices are read-only.")
 
     project = resolve_project(connection, payload.project_id)
     if project is None:
@@ -446,6 +760,19 @@ def update_invoice(connection: sqlite3.Connection, invoice_id: int, payload: Inv
     )
     connection.commit()
     return fetch_invoice(connection, invoice_id)
+
+
+def delete_invoice(connection: sqlite3.Connection, invoice_id: int) -> bool:
+    existing = fetch_invoice(connection, invoice_id)
+    if existing is None:
+        return False
+    if existing["issued_at"]:
+        raise ValueError("Printed invoices cannot be deleted.")
+
+    clear_invoice_selection(connection, invoice_id)
+    connection.execute("DELETE FROM invoices WHERE id = ?", (invoice_id,))
+    connection.commit()
+    return True
 
 
 def validate_selection_rows(
@@ -491,7 +818,7 @@ def replace_invoice_selection(
     if invoice is None:
         return None
     if invoice["issued_at"]:
-        raise ValueError("Issued invoices are read-only.")
+        raise ValueError("Printed invoices are read-only.")
 
     time_entry_ids = list(dict.fromkeys(payload.time_entry_ids))
     expense_ids = list(dict.fromkeys(payload.expense_ids))
@@ -522,43 +849,28 @@ def replace_invoice_selection(
     return invoice_editor_payload(connection, invoice_id)
 
 
-def issue_invoice(connection: sqlite3.Connection, invoice_id: int, data_dir: Path) -> dict[str, object] | None:
+def mark_invoice_printed(connection: sqlite3.Connection, invoice_id: int) -> dict[str, object] | None:
     invoice = fetch_invoice(connection, invoice_id)
     if invoice is None:
         return None
     if invoice["issued_at"]:
-        raise ValueError("Invoice has already been issued.")
+        return invoice
     if int(invoice["invoice_amount_cents"]) <= 0:
-        raise ValueError("Select at least one billable row before issuing the invoice.")
+        raise ValueError("Select at least one billable row before printing the invoice.")
 
-    pdf_file_name = f"{slugify_invoice_number(str(invoice['invoice_number']))}.pdf"
     connection.execute(
-        "UPDATE invoices SET issued_at = ?, pdf_file_name = ?, updated_at = ? WHERE id = ?",
-        (utc_now(), pdf_file_name, utc_now(), invoice_id),
+        "UPDATE invoices SET issued_at = ?, updated_at = ? WHERE id = ?",
+        (utc_now(), utc_now(), invoice_id),
     )
     connection.commit()
+    return fetch_invoice(connection, invoice_id)
 
+
+def build_invoice_print_document(connection: sqlite3.Connection, invoice_id: int) -> str | None:
+    printed_invoice = mark_invoice_printed(connection, invoice_id)
+    if printed_invoice is None:
+        return None
     payload = invoice_editor_payload(connection, invoice_id)
     if payload is None:
         return None
-    pdf_path = write_invoice_pdf(data_dir, payload)
-    payload["pdf_reference"] = {
-        "file_name": pdf_file_name,
-        "download_path": f"/api/invoices/{invoice_id}/pdf",
-        "file_path": str(pdf_path),
-    }
-    return payload
-
-
-def ensure_invoice_pdf(connection: sqlite3.Connection, invoice_id: int, data_dir: Path) -> Path | None:
-    payload = invoice_editor_payload(connection, invoice_id)
-    if payload is None:
-        return None
-    invoice = payload["invoice"]
-    if not invoice["issued_at"]:
-        raise ValueError("Invoice PDF is not available until the invoice is issued.")
-    pdf_file_name = str(invoice["pdf_file_name"] or f"{slugify_invoice_number(str(invoice['invoice_number']))}.pdf")
-    pdf_path = invoice_pdf_directory(data_dir) / pdf_file_name
-    if not pdf_path.exists():
-        pdf_path = write_invoice_pdf(data_dir, payload)
-    return pdf_path
+    return build_invoice_print_html(payload)

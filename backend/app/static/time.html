@@ -77,8 +77,8 @@
                 <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
                     <div class="max-w-4xl">
                         <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted">Time Tracking</p>
-                        <h1 class="mt-3 font-display text-4xl font-extrabold leading-none text-ink sm:text-5xl xl:text-6xl">Browse work entries by project and rate code, then edit minutes and billing logic from one place.</h1>
-                        <p class="mt-4 max-w-3xl text-base leading-7 text-muted sm:text-lg">This follows the time contract: date, project, derived customer, description, minutes, rate code, derived rate cents, line total, and invoice linkage. Time with a resolved rate of zero is non-billable by rule.</p>
+                        <h1 class="mt-3 font-display text-4xl font-extrabold leading-none text-ink sm:text-5xl xl:text-6xl">Browse work entries by project and rate code, then edit hours and billing logic from one place.</h1>
+                        <p class="mt-4 max-w-3xl text-base leading-7 text-muted sm:text-lg">This follows the time contract: date, project, derived customer, description, hours, rate code, derived rate cents, line total, and invoice linkage. Time with a resolved rate of zero is non-billable by rule.</p>
                     </div>
 
                     <div class="flex flex-wrap gap-3">
@@ -199,8 +199,8 @@
 
                         <div class="grid gap-4 sm:grid-cols-[9rem_9rem]">
                             <div>
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="time-minutes">Minutes</label>
-                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="time-minutes" min="1" name="minutes" required step="15" type="number">
+                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="time-hours">Hours</label>
+                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="time-hours" min="0.25" name="hours" required step="0.25" type="number">
                             </div>
                             <div>
                                 <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="time-rate-code">Rate Code</label>

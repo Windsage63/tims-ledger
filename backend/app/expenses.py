@@ -207,7 +207,7 @@ def update_expense(
     if existing is None:
         return None
     if existing["invoice_id"] is not None and existing["issued_at"] is not None:
-        raise ValueError("Expenses on issued invoices are read-only.")
+        raise ValueError("Expenses on printed invoices are read-only.")
 
     project_row = resolve_project_customer(connection, payload.project_id)
     if project_row is None:

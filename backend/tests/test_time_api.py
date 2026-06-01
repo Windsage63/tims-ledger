@@ -84,7 +84,7 @@ class TimeApiTests(ApiTestCase):
         self.assertEqual(response.status_code, 422)
         self.assertIn("valid ISO date", response.text)
 
-    def test_cannot_update_time_entry_on_issued_invoice(self) -> None:
+    def test_cannot_update_time_entry_on_printed_invoice(self) -> None:
         before_response = self.client.get("/api/invoices/201/editor")
         before_total = before_response.json()["data"]["summary"]["invoice_total_cents"]
 
@@ -100,7 +100,7 @@ class TimeApiTests(ApiTestCase):
         )
 
         self.assertEqual(response.status_code, 422)
-        self.assertEqual(response.json()["detail"], "Time entries on issued invoices are read-only.")
+        self.assertEqual(response.json()["detail"], "Time entries on printed invoices are read-only.")
 
         after_response = self.client.get("/api/invoices/201/editor")
         after_total = after_response.json()["data"]["summary"]["invoice_total_cents"]

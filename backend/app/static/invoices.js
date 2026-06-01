@@ -93,14 +93,58 @@ function invoiceStatusMeta(invoice) {
     if (status === "paid") {
         return { key: status, label: "Paid", classes: "bg-brand/10 text-brand border border-brand/20" };
     }
-    if (status === "pending") {
-        return { key: status, label: "Pending", classes: "bg-warn/10 text-warn border border-warn/20" };
+    if (status === "printed") {
+        return { key: status, label: "Printed", classes: "bg-warn/10 text-warn border border-warn/20" };
     }
     return { key: status, label: "Draft", classes: "bg-stone-200/70 text-stone-700 border border-stone-300" };
 }
 
 function selectedInvoice() {
     return invoicesState.invoices.find((invoice) => invoice.id === invoicesState.selectedInvoiceId) || invoicesState.editor.invoice || null;
+}
+
+function emptyInvoiceDraft(sourceInvoice = null) {
+    const sourceProject = sourceInvoice ? projectById(sourceInvoice.project_id) : invoicesState.projects[0] || null;
+    return {
+        id: null,
+        invoice_number: sourceInvoice?.invoice_number || "",
+        project_id: sourceProject?.id || 0,
+        project_number: sourceProject?.project_number || "",
+        customer_id: sourceProject?.customer_id || null,
+        customer_name: sourceProject?.customer_name || "None",
+        invoice_date: sourceInvoice?.invoice_date || TODAY,
+        terms_days: sourceInvoice?.terms_days ?? 30,
+        po_number: sourceInvoice?.po_number || null,
+        notes: sourceInvoice?.notes || "Thank you for your business.",
+        issued_at: null,
+        paid_amount_cents: 0,
+        invoice_amount_cents: 0,
+        open_balance_cents: 0,
+        prior_balance_cents: 0,
+        unapplied_credit_cents: 0,
+        updated_at: new Date().toISOString(),
+        status: "draft"
+    };
+}
+
+function setEditorDraft(sourceInvoice = null) {
+    const draft = emptyInvoiceDraft(sourceInvoice);
+    invoicesState.selectedInvoiceId = null;
+    invoicesState.editor = {
+        invoice: draft,
+        selected_time_entries: [],
+        selected_expenses: [],
+        eligible_time_entries: [],
+        eligible_expenses: [],
+        summary: {
+            time_total_cents: 0,
+            expense_total_cents: 0,
+            invoice_total_cents: 0,
+            prior_balance_cents: 0,
+            unapplied_credit_cents: 0,
+            open_balance_after_issue_cents: 0
+        }
+    };
 }
 
 function upsertInvoice(invoice) {
@@ -237,12 +281,12 @@ function renderYearOptions() {
 
 function renderMetrics(invoices) {
     const openReceivables = invoices.reduce((sum, invoice) => sum + (deriveInvoiceStatus(invoice) !== "paid" ? (invoice.open_balance_cents || 0) : 0), 0);
-    const pendingAmount = invoices.reduce((sum, invoice) => sum + (deriveInvoiceStatus(invoice) === "pending" ? (invoice.open_balance_cents || 0) : 0), 0);
+    const printedAmount = invoices.reduce((sum, invoice) => sum + (deriveInvoiceStatus(invoice) === "printed" ? (invoice.open_balance_cents || 0) : 0), 0);
     const paidAmount = invoices.reduce((sum, invoice) => sum + (invoice.paid_amount_cents || 0), 0);
     const draftAmount = invoices.reduce((sum, invoice) => sum + (deriveInvoiceStatus(invoice) === "draft" ? (invoice.invoice_amount_cents || 0) : 0), 0);
     setText("invoices-mode", invoicesState.isLoading ? "Loading" : "Served Mode");
     setText("metric-open-receivables", currency(openReceivables));
-    setText("metric-pending-amount", currency(pendingAmount));
+    setText("metric-pending-amount", currency(printedAmount));
     setText("metric-paid-amount", currency(paidAmount));
     setText("metric-draft-amount", currency(draftAmount));
 }
@@ -343,7 +387,7 @@ function updateEditorSummary(invoice, summary) {
         chip.className = `rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${status.classes}`;
         chip.textContent = status.label;
     }
-    setText("invoice-editor-title", `${invoice.invoice_number} · ${invoice.project_number}`);
+    setText("invoice-editor-title", invoice.id ? `${invoice.invoice_number} · ${invoice.project_number}` : "New Invoice Draft");
     setText("invoice-detail-customer", invoice.customer_name);
     setText("invoice-detail-total", currency(summary.invoice_total_cents));
     setText("invoice-detail-open-balance", currency(invoice.open_balance_cents || 0));
@@ -431,11 +475,12 @@ function renderEditor(invoice) {
             </label>`
     );
 
-    const issueButton = document.getElementById("issue-invoice-button");
-    if (issueButton) {
-        issueButton.disabled = isLocked || invoicesState.isSaving;
-        issueButton.classList.toggle("opacity-60", isLocked);
-        issueButton.textContent = isLocked ? "Already Issued" : "Issue Invoice";
+    const printButton = document.getElementById("print-invoice-button");
+    if (printButton) {
+        const cannotPrint = invoicesState.isSaving || !invoice;
+        printButton.disabled = cannotPrint;
+        printButton.classList.toggle("opacity-60", cannotPrint);
+        printButton.textContent = isLocked ? "Reprint Invoice" : "Print Invoice";
     }
     const saveButton = document.getElementById("save-invoice-button");
     if (saveButton) {
@@ -443,13 +488,12 @@ function renderEditor(invoice) {
         saveButton.classList.toggle("opacity-60", isLocked || invoicesState.isSaving);
         saveButton.textContent = invoicesState.isSaving ? "Saving..." : "Save Invoice";
     }
-    const pdfButton = document.getElementById("view-invoice-pdf-button");
-    if (pdfButton) {
-        const canViewPdf = Boolean(invoice.issued_at);
-        pdfButton.href = canViewPdf ? `/api/invoices/${invoice.id}/pdf` : "#";
-        pdfButton.classList.toggle("opacity-60", !canViewPdf);
-        pdfButton.classList.toggle("pointer-events-none", !canViewPdf);
-        pdfButton.textContent = canViewPdf ? "View PDF" : "PDF Unavailable";
+    const deleteButton = document.getElementById("delete-invoice-button");
+    if (deleteButton) {
+        const cannotDelete = isLocked || invoicesState.isSaving;
+        deleteButton.disabled = cannotDelete;
+        deleteButton.classList.toggle("opacity-60", cannotDelete);
+        deleteButton.textContent = invoice.id ? "Delete Draft" : "Discard Draft";
     }
 }
 
@@ -531,42 +575,12 @@ async function toggleSelection(type, itemId, checked) {
 }
 
 async function createDraftInvoice(sourceInvoice = null) {
-    const sourceProject = sourceInvoice ? projectById(sourceInvoice.project_id) : invoicesState.projects[0];
-    if (!sourceProject || invoicesState.isSaving) {
+    if (invoicesState.isSaving || invoicesState.projects.length === 0) {
         return;
     }
-    const payload = {
-        project_id: sourceProject.id,
-        invoice_date: TODAY,
-        terms_days: sourceInvoice?.terms_days ?? 30,
-        po_number: sourceInvoice?.po_number || null,
-        notes: sourceInvoice?.notes || "Thank you for your business."
-    };
-
-    invoicesState.isSaving = true;
+    setEditorDraft(sourceInvoice);
+    invoicesState.loadError = "";
     render();
-    try {
-        const data = await requestJson(
-            "",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            },
-            "Unable to create invoice draft."
-        );
-        if (data.invoice) {
-            upsertInvoice(data.invoice);
-            invoicesState.selectedInvoiceId = data.invoice.id;
-            await loadEditor(data.invoice.id);
-        }
-        invoicesState.loadError = "";
-    } catch (error) {
-        invoicesState.loadError = extractErrorMessage(error, "Unable to create invoice draft.");
-    } finally {
-        invoicesState.isSaving = false;
-        render();
-    }
 }
 
 async function saveDraftInvoice() {
@@ -578,10 +592,11 @@ async function saveDraftInvoice() {
     invoicesState.isSaving = true;
     render();
     try {
+        const isNewInvoice = !invoice.id;
         const data = await requestJson(
-            `/${invoice.id}`,
+            isNewInvoice ? "" : `/${invoice.id}`,
             {
-                method: "PUT",
+                method: isNewInvoice ? "POST" : "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(invoicePayloadFromForm(invoice))
             },
@@ -600,41 +615,110 @@ async function saveDraftInvoice() {
     }
 }
 
-async function issueInvoice() {
+async function deleteDraftInvoice() {
     const invoice = selectedInvoice();
     if (!invoice || invoice.issued_at || invoicesState.isSaving) {
         return;
     }
 
-    await saveDraftInvoice();
-    if (invoicesState.loadError) {
+    if (!invoice.id) {
+        invoicesState.editor = {
+            invoice: null,
+            selected_time_entries: [],
+            selected_expenses: [],
+            eligible_time_entries: [],
+            eligible_expenses: [],
+            summary: {}
+        };
+        invoicesState.selectedInvoiceId = invoicesState.invoices[0]?.id || null;
+        if (invoicesState.selectedInvoiceId) {
+            await loadEditor(invoicesState.selectedInvoiceId);
+            return;
+        }
+        render();
         return;
     }
 
     invoicesState.isSaving = true;
     render();
     try {
-        const data = await requestJson(
-            `/${invoice.id}/issue`,
+        await requestJson(
+            `/${invoice.id}`,
             {
-                method: "POST"
+                method: "DELETE"
             },
-            "Unable to issue invoice."
+            "Unable to delete invoice draft."
         );
-        invoicesState.editor = {
-            invoice: data.invoice || null,
-            selected_time_entries: Array.isArray(data.selected_time_entries) ? data.selected_time_entries : [],
-            selected_expenses: Array.isArray(data.selected_expenses) ? data.selected_expenses : [],
-            eligible_time_entries: Array.isArray(data.eligible_time_entries) ? data.eligible_time_entries : [],
-            eligible_expenses: Array.isArray(data.eligible_expenses) ? data.eligible_expenses : [],
-            summary: data.summary || {}
-        };
-        if (data.invoice) {
-            upsertInvoice(data.invoice);
+        invoicesState.invoices = invoicesState.invoices.filter((currentInvoice) => currentInvoice.id !== invoice.id);
+        invoicesState.selectedInvoiceId = invoicesState.invoices[0]?.id || null;
+        invoicesState.loadError = "";
+        if (invoicesState.selectedInvoiceId) {
+            await loadEditor(invoicesState.selectedInvoiceId);
+            return;
         }
+        invoicesState.editor = {
+            invoice: null,
+            selected_time_entries: [],
+            selected_expenses: [],
+            eligible_time_entries: [],
+            eligible_expenses: [],
+            summary: {}
+        };
+    } catch (error) {
+        invoicesState.loadError = extractErrorMessage(error, "Unable to delete invoice draft.");
+    } finally {
+        invoicesState.isSaving = false;
+        render();
+    }
+}
+
+async function printInvoice() {
+    let invoice = selectedInvoice();
+    if (!invoice || invoicesState.isSaving) {
+        return;
+    }
+
+    const printWindow = window.open("about:blank", "_blank", "noopener");
+    if (!printWindow) {
+        invoicesState.loadError = "Allow pop-ups to print the invoice.";
+        render();
+        return;
+    }
+
+    await saveDraftInvoice();
+    if (invoicesState.loadError) {
+        printWindow.close();
+        return;
+    }
+
+    invoice = selectedInvoice();
+    if (!invoice || !invoice.id) {
+        printWindow.close();
+        return;
+    }
+
+    invoicesState.isSaving = true;
+    render();
+    try {
+        const response = await fetch(invoicesUrl(`/${invoice.id}/print`), {
+            headers: {
+                Accept: "text/html"
+            }
+        });
+        const documentHtml = await response.text();
+        if (!response.ok) {
+            throw new Error(documentHtml || "Unable to print invoice.");
+        }
+        printWindow.document.open();
+        printWindow.document.write(documentHtml);
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+        await loadEditor(invoice.id);
         invoicesState.loadError = "";
     } catch (error) {
-        invoicesState.loadError = extractErrorMessage(error, "Unable to issue invoice.");
+        printWindow.close();
+        invoicesState.loadError = extractErrorMessage(error, "Unable to print invoice.");
     } finally {
         invoicesState.isSaving = false;
         render();
@@ -659,11 +743,13 @@ function bindEvents() {
     document.getElementById("new-invoice-button")?.addEventListener("click", () => {
         void createDraftInvoice(null);
     });
-    document.getElementById("duplicate-invoice-button")?.addEventListener("click", () => {
-        void createDraftInvoice(selectedInvoice());
+    document.getElementById("delete-invoice-button")?.addEventListener("click", () => {
+        void deleteDraftInvoice();
     });
     document.getElementById("save-invoice-button")?.addEventListener("click", saveDraftInvoice);
-    document.getElementById("issue-invoice-button")?.addEventListener("click", issueInvoice);
+    document.getElementById("print-invoice-button")?.addEventListener("click", () => {
+        void printInvoice();
+    });
     document.getElementById("reset-invoice-filters-button")?.addEventListener("click", () => {
         invoicesState.searchQuery = "";
         invoicesState.yearFilter = "all";

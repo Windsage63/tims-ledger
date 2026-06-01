@@ -12,6 +12,8 @@ const timeState = {
     loadError: ""
 };
 
+const TIME_BOOTSTRAP_TIMEOUT_MS = 8000;
+
 function timeUrl(path = "") {
     return `/api/time${path}`;
 }
@@ -24,8 +26,22 @@ function currency(cents) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format((cents || 0) / 100);
 }
 
+function formatHours(hours) {
+    const rounded = Math.round((hours || 0) * 100) / 100;
+    return String(rounded).replace(/\.0+$/, "").replace(/(\.\d*[1-9])0+$/, "$1");
+}
+
 function hoursFromMinutes(minutes) {
-    return ((minutes || 0) / 60).toFixed(2);
+    return formatHours((minutes || 0) / 60);
+}
+
+function minutesFromHours(hoursValue) {
+    const hours = Number(hoursValue || 0);
+    if (!Number.isFinite(hours) || hours <= 0) {
+        return 0;
+    }
+
+    return Math.round(hours * 4) * 15;
 }
 
 function setText(id, value) {
@@ -46,6 +62,18 @@ function setEmptyState(title, message) {
         <p class="font-display text-2xl font-bold text-ink">${title}</p>
         <p class="mt-2 text-sm leading-6 text-muted">${message}</p>
     `;
+}
+
+function timeBootstrapErrorMessage(error) {
+    if (error?.name === "AbortError") {
+        return "Timed out waiting for the time API. Confirm the FastAPI server is running, then reload the page.";
+    }
+
+    if (error instanceof TypeError) {
+        return "The time API is unavailable from this page. Open the app through FastAPI at /static/time.html instead of loading the HTML file directly.";
+    }
+
+    return error instanceof Error ? error.message : "Unable to load time entries.";
 }
 
 function extractErrorMessage(payload, fallback) {
@@ -105,6 +133,26 @@ function emptyTimeDraft(overrides = {}) {
         invoice_number: null,
         updated_at: new Date().toISOString(),
         ...overrides
+    };
+}
+
+function normalizedTimeDraft(entry) {
+    const fallback = emptyTimeDraft();
+    const project = projectById(entry?.project_id) || timeState.projects[0] || null;
+    const rate = rateForProject(project?.id, entry?.rate_code) || project?.rates?.[0] || null;
+    const minutes = Number(entry?.minutes || fallback.minutes);
+
+    return {
+        ...fallback,
+        ...entry,
+        project_id: project?.id || fallback.project_id,
+        project_number: project?.project_number || fallback.project_number,
+        customer_id: project?.customer_id || fallback.customer_id,
+        customer_name: project?.customer_name || fallback.customer_name,
+        rate_code: rate?.rate_code || fallback.rate_code,
+        rate_cents: rate?.rate_cents || 0,
+        minutes,
+        line_total_cents: Math.round((minutes * (rate?.rate_cents || 0)) / 60)
     };
 }
 
@@ -297,12 +345,12 @@ function renderEditor(entry) {
         return;
     }
 
-    const current = entry || emptyTimeDraft();
+    const current = normalizedTimeDraft(entry || emptyTimeDraft());
     document.getElementById("time-entry-id").value = current.id;
     document.getElementById("time-entry-date").value = current.entry_date;
     document.getElementById("time-project").value = String(current.project_id || "");
     document.getElementById("time-description").value = current.description;
-    document.getElementById("time-minutes").value = current.minutes;
+    document.getElementById("time-hours").value = hoursFromMinutes(current.minutes);
     renderRateOptions(current.project_id, current.rate_code);
     document.getElementById("time-rate-code").value = current.rate_code;
     updateDerivedPreview(current);
@@ -313,7 +361,7 @@ function syncDraftFromForm() {
     const rateCode = String(document.getElementById("time-rate-code")?.value || "");
     const project = projectById(projectId);
     const rate = rateForProject(projectId, rateCode);
-    const minutes = Number(document.getElementById("time-minutes")?.value || 0);
+    const minutes = minutesFromHours(document.getElementById("time-hours")?.value);
     const source = timeState.draftEntry || selectedEntry() || emptyTimeDraft();
     timeState.draftEntry = {
         ...source,
@@ -359,8 +407,28 @@ async function loadEntries() {
     timeState.loadError = "";
     render();
 
+    if (window.location.protocol === "file:") {
+        timeState.projects = [];
+        timeState.entries = [];
+        timeState.selectedId = null;
+        timeState.isLoading = false;
+        timeState.loadError = "The time screen needs the FastAPI backend. Open http://127.0.0.1:8004/static/time.html or start the app with startup.bat.";
+        render();
+        return;
+    }
+
+    let timeoutId = null;
+
     try {
-        const response = await fetch(timeUrl("/bootstrap"));
+        const supportsAbortController = typeof window.AbortController === "function";
+        const controller = supportsAbortController ? new window.AbortController() : null;
+        const requestOptions = controller ? { signal: controller.signal } : {};
+
+        if (controller) {
+            timeoutId = window.setTimeout(() => controller.abort(), TIME_BOOTSTRAP_TIMEOUT_MS);
+        }
+
+        const response = await fetch(timeUrl("/bootstrap"), requestOptions);
         const payload = await response.json();
 
         if (!response.ok) {
@@ -372,6 +440,9 @@ async function loadEntries() {
 
         timeState.projects = hydrateProjects(projects, ratesByProject);
         timeState.entries = Array.isArray(payload?.data?.entries) ? payload.data.entries.map((entry) => ({ ...entry })) : [];
+        if (timeState.draftEntry) {
+            timeState.draftEntry = normalizedTimeDraft(timeState.draftEntry);
+        }
 
         if (timeState.selectedId && !timeState.entries.some((entry) => entry.id === timeState.selectedId)) {
             timeState.selectedId = null;
@@ -384,8 +455,11 @@ async function loadEntries() {
         timeState.projects = [];
         timeState.entries = [];
         timeState.selectedId = null;
-        timeState.loadError = error instanceof Error ? error.message : "Unable to load time entries.";
+        timeState.loadError = timeBootstrapErrorMessage(error);
     } finally {
+        if (timeoutId !== null) {
+            window.clearTimeout(timeoutId);
+        }
         timeState.isLoading = false;
         render();
     }
@@ -511,7 +585,7 @@ function bindEvents() {
         syncDraftFromForm();
     });
     document.getElementById("time-rate-code")?.addEventListener("change", syncDraftFromForm);
-    document.getElementById("time-minutes")?.addEventListener("input", syncDraftFromForm);
+    document.getElementById("time-hours")?.addEventListener("input", syncDraftFromForm);
     document.getElementById("time-entry-date")?.addEventListener("input", syncDraftFromForm);
     document.getElementById("time-description")?.addEventListener("input", syncDraftFromForm);
 }

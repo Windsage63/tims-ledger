@@ -204,7 +204,7 @@ def update_time_entry(
     if existing_invoice is None:
         return None
     if existing_invoice["invoice_id"] is not None and existing_invoice["issued_at"] is not None:
-        raise ValueError("Time entries on issued invoices are read-only.")
+        raise ValueError("Time entries on printed invoices are read-only.")
 
     project_row, rate = resolve_project_rate(connection, payload.project_id, payload.rate_code)
     if project_row is None or rate is None:

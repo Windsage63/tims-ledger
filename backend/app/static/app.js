@@ -140,7 +140,7 @@ function renderAccountsReceivable() {
         setText("statement-unapplied-credit", "-");
         setText("statement-net-balance", "-");
         setText("statement-generated-at", "-");
-        setHtml("statement-invoices-list", '<p class="rounded-2xl border border-line/80 bg-panel/35 px-4 py-4 text-sm text-muted">No issued invoices are available for this customer.</p>');
+        setHtml("statement-invoices-list", '<p class="rounded-2xl border border-line/80 bg-panel/35 px-4 py-4 text-sm text-muted">No printed invoices are available for this customer.</p>');
         setHtml("statement-payments-list", '<p class="rounded-2xl border border-line/80 bg-panel/35 px-4 py-4 text-sm text-muted">No unapplied payments are available for this customer.</p>');
         return;
     }
@@ -175,7 +175,7 @@ function renderAccountsReceivable() {
                         <span>Credit ${currency(invoice.unapplied_credit_cents)}</span>
                     </div>
                 </article>`).join("")
-            : '<p class="rounded-2xl border border-line/80 bg-panel/35 px-4 py-4 text-sm text-muted">No issued invoices are available for this customer.</p>'
+            : '<p class="rounded-2xl border border-line/80 bg-panel/35 px-4 py-4 text-sm text-muted">No printed invoices are available for this customer.</p>'
     );
     setHtml(
         "statement-payments-list",

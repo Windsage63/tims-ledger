@@ -102,7 +102,7 @@ class ExpensesApiTests(ApiTestCase):
         self.assertEqual(response.status_code, 422)
         self.assertIn("valid ISO date", response.text)
 
-    def test_cannot_update_expense_on_issued_invoice(self) -> None:
+    def test_cannot_update_expense_on_printed_invoice(self) -> None:
         response = self.client.put(
             "/api/expenses/813",
             json={
@@ -118,7 +118,7 @@ class ExpensesApiTests(ApiTestCase):
         )
 
         self.assertEqual(response.status_code, 422)
-        self.assertEqual(response.json()["detail"], "Expenses on issued invoices are read-only.")
+        self.assertEqual(response.json()["detail"], "Expenses on printed invoices are read-only.")
 
 
 if __name__ == "__main__":

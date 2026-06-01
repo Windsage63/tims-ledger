@@ -13,7 +13,6 @@ CREATE TABLE customers (
     email TEXT NOT NULL,
     phone TEXT NOT NULL,
     notes TEXT,
-    is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -24,7 +23,6 @@ CREATE TABLE projects (
     customer_id INTEGER NOT NULL,
     description TEXT NOT NULL,
     default_rate_cents INTEGER NOT NULL CHECK (default_rate_cents >= 0),
-    is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE RESTRICT
@@ -48,7 +46,7 @@ CREATE TABLE invoices (
     project_id INTEGER NOT NULL,
     customer_id INTEGER NOT NULL,
     invoice_date TEXT NOT NULL,
-    due_date TEXT,
+    terms_days INTEGER NOT NULL DEFAULT 0 CHECK (terms_days >= 0),
     po_number TEXT,
     notes TEXT,
     pdf_file_name TEXT,
@@ -145,10 +143,6 @@ CREATE INDEX idx_time_entries_unbilled_nonzero_rate
 CREATE INDEX idx_expenses_unbilled_billable
     ON expenses(project_id, entry_date)
     WHERE invoice_id IS NULL AND is_billable = 1;
-
-CREATE INDEX idx_invoices_issued_date
-    ON invoices(customer_id, due_date)
-    WHERE issued_at IS NOT NULL;
 
 CREATE VIEW invoice_balance_view AS
 WITH invoice_totals AS (

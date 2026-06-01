@@ -349,7 +349,7 @@ Candidate fields:
 5. `amount`
 6. `notes` nullable
 7. `created_at`
-9. `updated_at`
+8. `updated_at`
 
 #### payment_applications
 

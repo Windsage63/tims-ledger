@@ -94,7 +94,7 @@
                     <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-open-receivables">-</p>
                 </article>
                 <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Pending Amount</p>
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Printed Amount</p>
                     <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-pending-amount">-</p>
                 </article>
                 <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
@@ -130,7 +130,7 @@
                     <div class="mt-5 flex flex-wrap gap-2" id="invoice-status-filter-group">
                         <button class="invoice-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-invoice-status-filter="all" type="button">All</button>
                         <button class="invoice-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-invoice-status-filter="draft" type="button">Draft</button>
-                        <button class="invoice-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-invoice-status-filter="pending" type="button">Pending</button>
+                        <button class="invoice-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-invoice-status-filter="printed" type="button">Printed</button>
                         <button class="invoice-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-invoice-status-filter="paid" type="button">Paid</button>
                     </div>
 
@@ -246,7 +246,7 @@
                                 <p class="mt-1 font-mono text-sm text-ink" id="invoice-summary-credit">$0.00</p>
                             </div>
                             <div>
-                                <p class="text-[11px] uppercase tracking-[0.16em] text-muted">Open Balance After Issue</p>
+                                <p class="text-[11px] uppercase tracking-[0.16em] text-muted">Open Balance After Print</p>
                                 <p class="mt-1 font-mono text-sm text-ink" id="invoice-summary-open-after-issue">$0.00</p>
                             </div>
                         </div>
@@ -271,9 +271,8 @@
 
                     <div class="mt-5 flex flex-wrap gap-3">
                         <button class="inline-flex min-w-40 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" id="save-invoice-button" type="button">Save Invoice</button>
-                        <button class="inline-flex min-w-40 items-center justify-center rounded-full border border-brand/20 bg-white/40 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70" id="duplicate-invoice-button" type="button">Duplicate</button>
-                        <button class="inline-flex min-w-40 items-center justify-center rounded-full border border-brand/20 bg-panel/70 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/80" id="issue-invoice-button" type="button">Issue Invoice</button>
-                        <a class="inline-flex min-w-40 items-center justify-center rounded-full border border-brand/20 bg-white/40 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70 opacity-60 pointer-events-none" id="view-invoice-pdf-button" href="#" rel="noopener noreferrer" target="_blank">View PDF</a>
+                        <button class="inline-flex min-w-40 items-center justify-center rounded-full border border-danger/20 bg-white/50 px-5 py-3 text-sm font-semibold text-danger transition hover:border-danger/35 hover:bg-white/80" id="delete-invoice-button" type="button">Delete Draft</button>
+                        <button class="inline-flex min-w-40 items-center justify-center rounded-full border border-brand/20 bg-panel/70 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/80" id="print-invoice-button" type="button">Print Invoice</button>
                     </div>
                 </article>
             </section>
@@ -284,11 +283,11 @@
                 <div class="mt-4 grid gap-3 md:grid-cols-3">
                     <div class="rounded-[1.2rem] border border-line bg-panel/45 p-4">
                         <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Now</p>
-                        <p class="mt-2 text-sm leading-6 text-ink">Invoice ledger rows, source-linked time and expense selection, draft totals, and issue-state visibility now backed by FastAPI and SQLite.</p>
+                        <p class="mt-2 text-sm leading-6 text-ink">Invoice ledger rows, source-linked time and expense selection, draft totals, and print-state visibility now backed by FastAPI and SQLite.</p>
                     </div>
                     <div class="rounded-[1.2rem] border border-line bg-panel/45 p-4">
                         <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Next</p>
-                        <p class="mt-2 text-sm leading-6 text-ink">Payments will build on these persisted invoice balances and issued document references.</p>
+                        <p class="mt-2 text-sm leading-6 text-ink">Payments will build on these persisted invoice balances and printed invoice records.</p>
                     </div>
                     <div class="rounded-[1.2rem] border border-line bg-panel/45 p-4">
                         <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Later</p>
@@ -299,6 +298,6 @@
         </main>
     </div>
 
-    <script src="./invoices.js" defer></script>
+    <script src="./invoices.js?v=20260531-4" defer></script>
 </body>
 </html>
