@@ -47,7 +47,7 @@
 </head>
 <body class="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.72),transparent_24%),linear-gradient(145deg,#f6f0e4_0%,#ebddca_48%,#d5c7b0_100%)] font-sans text-ink">
     <div class="min-h-screen lg:grid lg:grid-cols-[18rem_minmax(0,1fr)]">
-        <aside class="flex flex-col justify-between gap-8 border-b border-white/10 bg-[linear-gradient(180deg,rgba(23,29,28,0.96),rgba(22,70,62,0.96))] px-5 py-6 text-stone-100 lg:min-h-screen lg:border-b-0 lg:border-r lg:border-r-white/10 lg:px-6">
+        <aside class="flex flex-col gap-8 border-b border-white/10 bg-[linear-gradient(180deg,rgba(23,29,28,0.96),rgba(22,70,62,0.96))] px-5 py-6 text-stone-100 lg:sticky lg:top-0 lg:h-screen lg:min-h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r lg:border-r-white/10 lg:px-6">
             <div>
                 <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-stone-300/80">Local Accounting Workflow</p>
                 <a class="mt-2 inline-block font-display text-3xl font-bold tracking-tight text-stone-50" href="./index.html">Winds Ledger</a>
@@ -65,7 +65,7 @@
                 <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./index.html#exports">Exports</a>
             </nav>
 
-            <div class="rounded-3xl border border-white/10 bg-white/8 p-4 backdrop-blur-sm">
+            <div class="rounded-3xl border border-white/10 bg-white/8 p-4 backdrop-blur-sm lg:mt-auto">
                 <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-stone-300/80">Invoices Module</p>
                 <p class="mt-2 text-2xl font-display font-bold text-stone-50" id="invoices-mode">Loading...</p>
                 <p class="mt-2 text-sm leading-6 text-stone-200/75">This module now exercises the real invoice ledger, selection, and issue workflow against the database.</p>
