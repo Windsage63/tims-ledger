@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "test": "npm run test:backend",
-    "test:backend": "C:\\SDai\\SDai\\windsage-ledger\\.venv\\Scripts\\python.exe -m unittest discover -v -s backend/tests -p test_*.py",
+    "test:backend": "cd backend && ..\\.venv\\Scripts\\python.exe -m unittest discover -v -s tests -p test_*.py",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed"
   },

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 import sqlite3
+from typing import Iterator
 
 from .config import Settings
 
@@ -25,11 +27,15 @@ class DatabaseStatus:
     view_count: int
 
 
-def connect(database_path: Path) -> sqlite3.Connection:
+@contextmanager
+def connect(database_path: Path) -> Iterator[sqlite3.Connection]:
     connection = sqlite3.connect(database_path)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
-    return connection
+    try:
+        yield connection
+    finally:
+        connection.close()
 
 
 def ensure_database_parent(database_path: Path) -> None:

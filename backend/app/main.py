@@ -11,7 +11,7 @@ from .config import Settings, load_settings
 from .customers import CustomerWrite, create_customer, fetch_customers, update_customer
 from .db import apply_pending_migrations, connect, get_database_status
 from .expenses import ExpenseWrite, create_expense, expense_bootstrap_payload, update_expense
-from .invoices import InvoiceSelectionWrite, InvoiceWrite, create_invoice, delete_invoice, invoice_bootstrap_payload, invoice_editor_payload, replace_invoice_selection, save_invoice_print_document, update_invoice
+from .invoices import InvoiceSavePrintWrite, InvoiceSelectionWrite, InvoiceWrite, create_invoice, delete_invoice, fetch_saved_invoice_document, invoice_bootstrap_payload, invoice_editor_payload, invoice_new_editor_payload, replace_invoice_selection, save_print_invoice, update_invoice
 from .overview import overview_bootstrap_payload
 from .payments import PaymentApplicationsReplace, PaymentWrite, create_payment, payment_editor_payload, payments_bootstrap_payload, replace_payment_applications, update_payment
 from .projects import ProjectWrite, create_project, customer_lookup, fetch_projects, update_project
@@ -40,6 +40,17 @@ def project_integrity_http_error(exc: sqlite3.IntegrityError) -> HTTPException:
     if "project_number" in detail and "unique" in detail:
         return HTTPException(status_code=409, detail="Project number must be unique.")
     return HTTPException(status_code=422, detail="Project payload violates database constraints.")
+
+
+def with_auto_print_script(document: str) -> str:
+    auto_print_script = (
+        "<script>"
+        "window.addEventListener('load', () => {"
+        "window.requestAnimationFrame(() => { window.focus(); window.print(); });"
+        "});"
+        "</script>"
+    )
+    return document.replace("</body>", f"{auto_print_script}</body>")
 
 
 def create_lifespan(settings: Settings):
@@ -294,6 +305,29 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
 
         return response_envelope(payload, screen="invoices")
 
+    @app.get("/api/invoices/new/editor")
+    def invoices_new_editor(
+        request: Request,
+        project_id: int,
+        invoice_date: str,
+        terms_days: int = 30,
+    ) -> dict[str, object]:
+        try:
+            with connect(request.app.state.settings.database_path) as connection:
+                payload = invoice_new_editor_payload(
+                    connection,
+                    project_id=project_id,
+                    invoice_date=invoice_date,
+                    terms_days=terms_days,
+                )
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+        if payload is None:
+            raise HTTPException(status_code=404, detail="Project not found.")
+
+        return response_envelope(payload, screen="invoice_editor")
+
     @app.get("/api/invoices/{invoice_id}/editor")
     def invoices_editor(invoice_id: int, request: Request) -> dict[str, object]:
         with connect(request.app.state.settings.database_path) as connection:
@@ -304,29 +338,46 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
 
         return response_envelope(payload, screen="invoice_editor")
 
-    @app.get("/api/invoices/{invoice_id}/print", response_class=HTMLResponse)
-    def invoices_print(invoice_id: int, request: Request) -> HTMLResponse:
+    @app.post("/api/invoices/save-print")
+    def invoices_save_print(payload: InvoiceSavePrintWrite, request: Request) -> dict[str, object]:
         try:
             with connect(request.app.state.settings.database_path) as connection:
-                result = save_invoice_print_document(connection, invoice_id, request.app.state.settings.data_dir)
+                result = save_print_invoice(connection, payload, request.app.state.settings.data_dir)
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except sqlite3.IntegrityError as exc:
+            raise HTTPException(status_code=409, detail="Invoice number must be unique.") from exc
 
         if result is None:
             raise HTTPException(status_code=404, detail="Invoice not found.")
 
-        document, _ = result
+        return response_envelope(result, screen="invoice_editor")
+
+    @app.get("/api/invoices/{invoice_id}/document", response_class=HTMLResponse)
+    def invoices_document(invoice_id: int, request: Request) -> HTMLResponse:
+        with connect(request.app.state.settings.database_path) as connection:
+            document = fetch_saved_invoice_document(connection, invoice_id, request.app.state.settings.data_dir)
+
+        if document is None:
+            raise HTTPException(status_code=404, detail="Saved invoice document not found.")
 
         auto_print = request.query_params.get("autoprint") in {"1", "true", "yes"}
         if auto_print:
-            auto_print_script = (
-                "<script>"
-                "window.addEventListener('load', () => {"
-                "window.requestAnimationFrame(() => { window.focus(); window.print(); });"
-                "});"
-                "</script>"
-            )
-            document = document.replace("</body>", f"{auto_print_script}</body>")
+            document = with_auto_print_script(document)
+
+        return HTMLResponse(content=document)
+
+    @app.get("/api/invoices/{invoice_id}/print", response_class=HTMLResponse)
+    def invoices_print(invoice_id: int, request: Request) -> HTMLResponse:
+        with connect(request.app.state.settings.database_path) as connection:
+            document = fetch_saved_invoice_document(connection, invoice_id, request.app.state.settings.data_dir)
+
+        if document is None:
+            raise HTTPException(status_code=404, detail="Saved invoice document not found.")
+
+        auto_print = request.query_params.get("autoprint") in {"1", "true", "yes"}
+        if auto_print:
+            document = with_auto_print_script(document)
 
         return HTMLResponse(content=document)
 

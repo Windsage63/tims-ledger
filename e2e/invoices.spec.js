@@ -30,8 +30,13 @@ test("issued invoice page supports checkbox edits, save, and stored HTML print",
     await expect(page.locator("#invoice-summary-expense")).toHaveText("$185.00");
 
     await page.locator("#invoice-po-number").fill("PO-BROWSER-SMOKE");
+    const popupPromise = page.waitForEvent("popup");
     await page.locator("#save-invoice-button").click();
-    await expect(page.locator("#save-invoice-button")).toHaveText("Save Invoice");
+    const popup = await popupPromise;
+    await popup.waitForLoadState("domcontentloaded");
+    await expect(popup).toHaveTitle(/Invoice INV-2026-014/);
+    await expect(popup.locator("body")).toContainText("PO-BROWSER-SMOKE");
+    await expect(page.locator("#save-invoice-button")).toHaveText("Save/Print Invoice");
 
     await page.locator('[data-invoice-select="301"]').click();
     await expect(page.locator("#invoice-number")).toHaveValue("INV-2026-023");
@@ -39,14 +44,7 @@ test("issued invoice page supports checkbox edits, save, and stored HTML print",
     await expect(page.locator("#invoice-po-number")).toHaveValue("PO-BROWSER-SMOKE");
     await expect(page.locator('#eligible-expenses-list input[data-selection-id="815"]')).toBeChecked();
 
-    const popupPromise = page.waitForEvent("popup");
-    await page.locator("#print-invoice-button").click();
-    const popup = await popupPromise;
-    await popup.waitForLoadState("domcontentloaded");
-    await expect(popup).toHaveTitle(/Invoice INV-2026-014/);
-    await expect(popup.locator("body")).toContainText("PO-BROWSER-SMOKE");
-
-    const invoiceFile = path.join(process.env.WINDS_LEDGER_E2E_DATA_DIR, "invoices", "INV-2026-014.html");
+    const invoiceFile = path.join(process.env.WINDS_LEDGER_E2E_DATA_DIR, "invoices", "invoice-201-INV-2026-014.html");
     await expect.poll(async () => {
         try {
             await fs.access(invoiceFile);

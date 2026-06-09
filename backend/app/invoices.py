@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 import sqlite3
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .date_utils import parse_iso_date, utc_now, validate_iso_date
 from .expenses import expense_select_sql
@@ -53,8 +53,18 @@ class InvoiceWrite(BaseModel):
 
 
 class InvoiceSelectionWrite(BaseModel):
-    time_entry_ids: list[int] = []
-    expense_ids: list[int] = []
+    time_entry_ids: list[int] = Field(default_factory=list)
+    expense_ids: list[int] = Field(default_factory=list)
+
+
+class InvoiceSavePrintInvoiceWrite(InvoiceWrite):
+    id: int | None = None
+
+
+class InvoiceSavePrintWrite(BaseModel):
+    invoice: InvoiceSavePrintInvoiceWrite
+    time_entry_ids: list[int] = Field(default_factory=list)
+    expense_ids: list[int] = Field(default_factory=list)
 
 
 def currency(cents: int) -> str:
@@ -656,6 +666,85 @@ def invoice_editor_payload(connection: sqlite3.Connection, invoice_id: int) -> d
     }
 
 
+def invoice_new_editor_payload(
+    connection: sqlite3.Connection,
+    *,
+    project_id: int,
+    invoice_date: str,
+    terms_days: int = 30,
+) -> dict[str, object] | None:
+    project = connection.execute(
+        """
+        SELECT
+            p.id AS project_id,
+            p.project_number,
+            c.id AS customer_id,
+            c.customer_name,
+            c.street_address,
+            c.city,
+            c.state,
+            c.zip,
+            c.contact_name,
+            c.email,
+            c.phone
+        FROM projects p
+        JOIN customers c ON c.id = p.customer_id
+        WHERE p.id = ?
+        """,
+        (project_id,),
+    ).fetchone()
+    if project is None:
+        return None
+
+    invoice_date = validate_iso_date(invoice_date, label="Invoice date")
+    invoice = {
+        "id": None,
+        "invoice_number": next_invoice_number(connection, invoice_date),
+        "project_id": project["project_id"],
+        "project_number": project["project_number"],
+        "customer_id": project["customer_id"],
+        "customer_name": project["customer_name"],
+        "street_address": project["street_address"],
+        "city": project["city"],
+        "state": project["state"],
+        "zip": project["zip"],
+        "contact_name": project["contact_name"],
+        "email": project["email"],
+        "phone": project["phone"],
+        "invoice_date": invoice_date,
+        "due_date": format_due_date(invoice_date, terms_days),
+        "terms_days": terms_days,
+        "po_number": None,
+        "notes": "Thank you for your business.",
+        "pdf_file_name": None,
+        "issued_at": None,
+        "paid_amount_cents": 0,
+        "invoice_amount_cents": 0,
+        "open_balance_cents": 0,
+        "prior_balance_cents": prior_balance_cents(connection, project["customer_id"], 0),
+        "unapplied_credit_cents": 0,
+        "updated_at": utc_now(),
+        "status": "new",
+    }
+    eligible_time_entries = fetch_eligible_time_entries(connection, invoice)
+    eligible_expenses = fetch_eligible_expenses(connection, invoice)
+    return {
+        "invoice": invoice,
+        "selected_time_entries": [],
+        "selected_expenses": [],
+        "eligible_time_entries": eligible_time_entries,
+        "eligible_expenses": eligible_expenses,
+        "summary": {
+            "time_total_cents": 0,
+            "expense_total_cents": 0,
+            "invoice_total_cents": 0,
+            "prior_balance_cents": invoice["prior_balance_cents"],
+            "unapplied_credit_cents": 0,
+            "open_balance_after_issue_cents": int(invoice["prior_balance_cents"]),
+        },
+    }
+
+
 def invoice_bootstrap_payload(connection: sqlite3.Connection, year: str | None = None) -> dict[str, object]:
     invoices = fetch_invoices(connection, year=year)
     status_counts = {"all": len(invoices), "draft": 0, "printed": 0, "paid": 0}
@@ -991,10 +1080,10 @@ def mark_invoice_printed(connection: sqlite3.Connection, invoice_id: int) -> dic
     return fetch_invoice(connection, invoice_id)
 
 
-def stored_invoice_file_name(invoice_number: str) -> str:
+def stored_invoice_file_name(invoice_id: int, invoice_number: str) -> str:
     safe_number = re.sub(r"[^A-Za-z0-9._-]+", "-", invoice_number).strip("-._")
     safe_number = safe_number or "invoice"
-    return f"{safe_number}.html"
+    return f"invoice-{invoice_id}-{safe_number}.html"
 
 
 def ensure_invoice_output_dir(data_dir: Path) -> Path:
@@ -1018,7 +1107,7 @@ def save_invoice_print_document(
     invoice = payload["invoice"]
     document_html = build_invoice_print_html(payload)
     output_dir = ensure_invoice_output_dir(data_dir)
-    file_name = stored_invoice_file_name(str(invoice["invoice_number"]))
+    file_name = stored_invoice_file_name(int(invoice["id"]), str(invoice["invoice_number"]))
     file_path = output_dir / file_name
     relative_path = f"invoices/{file_name}"
 
@@ -1035,3 +1124,215 @@ def save_invoice_print_document(
     )
     connection.commit()
     return document_html, file_path
+
+
+def create_invoice_without_commit(connection: sqlite3.Connection, payload: InvoiceWrite) -> int:
+    project = resolve_project(connection, payload.project_id)
+    if project is None:
+        raise ValueError("Project not found.")
+
+    timestamp = utc_now()
+    invoice_number = payload.invoice_number or next_invoice_number(connection, payload.invoice_date)
+    cursor = connection.execute(
+        """
+        INSERT INTO invoices (
+            invoice_number,
+            project_id,
+            customer_id,
+            invoice_date,
+            terms_days,
+            po_number,
+            notes,
+            issued_at,
+            created_at,
+            updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            invoice_number,
+            payload.project_id,
+            project["customer_id"],
+            payload.invoice_date,
+            payload.terms_days,
+            payload.po_number,
+            payload.notes,
+            None,
+            timestamp,
+            timestamp,
+        ),
+    )
+    return int(cursor.lastrowid)
+
+
+def update_invoice_without_commit(
+    connection: sqlite3.Connection,
+    invoice_id: int,
+    payload: InvoiceWrite,
+) -> bool:
+    existing = fetch_invoice(connection, invoice_id)
+    if existing is None:
+        return False
+
+    project = resolve_project(connection, payload.project_id)
+    if project is None:
+        raise ValueError("Project not found.")
+
+    connection.execute(
+        """
+        UPDATE invoices
+        SET
+            invoice_number = ?,
+            project_id = ?,
+            customer_id = ?,
+            invoice_date = ?,
+            terms_days = ?,
+            po_number = ?,
+            notes = ?,
+            updated_at = ?
+        WHERE id = ?
+        """,
+        (
+            payload.invoice_number or existing["invoice_number"],
+            payload.project_id,
+            project["customer_id"],
+            payload.invoice_date,
+            payload.terms_days,
+            payload.po_number,
+            payload.notes,
+            utc_now(),
+            invoice_id,
+        ),
+    )
+    return True
+
+
+def replace_invoice_selection_without_commit(
+    connection: sqlite3.Connection,
+    invoice_id: int,
+    payload: InvoiceSelectionWrite,
+) -> None:
+    invoice = fetch_invoice(connection, invoice_id)
+    if invoice is None:
+        raise ValueError("Invoice not found.")
+
+    time_entry_ids = list(dict.fromkeys(payload.time_entry_ids))
+    expense_ids = list(dict.fromkeys(payload.expense_ids))
+    if not time_entry_ids and not expense_ids:
+        raise ValueError("Select at least one billable row before saving the invoice.")
+
+    validate_selection_rows(connection, invoice, time_entry_ids, expense_ids)
+    clear_invoice_selection(connection, invoice_id)
+
+    if time_entry_ids:
+        connection.execute(
+            f"UPDATE time_entries SET invoice_id = ? WHERE id IN ({', '.join('?' for _ in time_entry_ids)})",
+            (invoice_id, *time_entry_ids),
+        )
+    if expense_ids:
+        connection.execute(
+            f"UPDATE expenses SET invoice_id = ? WHERE id IN ({', '.join('?' for _ in expense_ids)})",
+            (invoice_id, *expense_ids),
+        )
+
+
+def save_invoice_html_without_commit(
+    connection: sqlite3.Connection,
+    invoice_id: int,
+    data_dir: Path,
+) -> tuple[dict[str, object], dict[str, object], Path]:
+    invoice = fetch_invoice(connection, invoice_id)
+    if invoice is None:
+        raise ValueError("Invoice not found.")
+
+    timestamp = utc_now()
+    if not invoice["issued_at"]:
+        connection.execute(
+            "UPDATE invoices SET issued_at = ?, updated_at = ? WHERE id = ?",
+            (timestamp, timestamp, invoice_id),
+        )
+
+    payload = invoice_editor_payload(connection, invoice_id)
+    if payload is None:
+        raise ValueError("Invoice not found.")
+
+    invoice = payload["invoice"]
+    if int(invoice["invoice_amount_cents"]) <= 0:
+        raise ValueError("Select at least one billable row before saving the invoice.")
+
+    document_html = build_invoice_print_html(payload)
+    output_dir = ensure_invoice_output_dir(data_dir)
+    file_name = stored_invoice_file_name(int(invoice["id"]), str(invoice["invoice_number"]))
+    file_path = output_dir / file_name
+    relative_path = f"invoices/{file_name}"
+
+    previous_path = invoice.get("pdf_file_name")
+    if previous_path and previous_path != relative_path:
+        old_file_path = data_dir / str(previous_path)
+        if old_file_path.exists() and old_file_path.is_file():
+            old_file_path.unlink()
+
+    file_path.write_text(document_html, encoding="utf-8")
+    connection.execute(
+        "UPDATE invoices SET pdf_file_name = ?, updated_at = ? WHERE id = ?",
+        (relative_path, utc_now(), invoice_id),
+    )
+
+    refreshed_payload = invoice_editor_payload(connection, invoice_id)
+    if refreshed_payload is None:
+        raise ValueError("Invoice not found.")
+    return refreshed_payload["invoice"], refreshed_payload, file_path
+
+
+def save_print_invoice(
+    connection: sqlite3.Connection,
+    payload: InvoiceSavePrintWrite,
+    data_dir: Path,
+) -> dict[str, object] | None:
+    invoice_payload = InvoiceWrite(**payload.invoice.model_dump(exclude={"id"}))
+    invoice_id = payload.invoice.id
+    if invoice_id is None:
+        invoice_id = create_invoice_without_commit(connection, invoice_payload)
+    else:
+        updated = update_invoice_without_commit(connection, invoice_id, invoice_payload)
+        if not updated:
+            return None
+
+    replace_invoice_selection_without_commit(
+        connection,
+        invoice_id,
+        InvoiceSelectionWrite(
+            time_entry_ids=payload.time_entry_ids,
+            expense_ids=payload.expense_ids,
+        ),
+    )
+    invoice, editor_payload, _file_path = save_invoice_html_without_commit(connection, invoice_id, data_dir)
+    connection.commit()
+    return {
+        "invoice": invoice,
+        "editor": editor_payload,
+        "printable_url": f"/api/invoices/{invoice_id}/document",
+    }
+
+
+def fetch_saved_invoice_document(
+    connection: sqlite3.Connection,
+    invoice_id: int,
+    data_dir: Path,
+) -> str | None:
+    invoice = fetch_invoice(connection, invoice_id)
+    if invoice is None:
+        return None
+    saved_path = invoice.get("pdf_file_name")
+    if not saved_path:
+        return None
+    file_path = data_dir / str(saved_path)
+    try:
+        resolved_file = file_path.resolve()
+        resolved_data_dir = data_dir.resolve()
+    except OSError:
+        return None
+    if resolved_data_dir not in resolved_file.parents:
+        return None
+    if not resolved_file.exists() or not resolved_file.is_file():
+        return None
+    return resolved_file.read_text(encoding="utf-8")
