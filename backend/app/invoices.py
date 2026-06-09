@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from datetime import timedelta
 from html import escape
+from pathlib import Path
+import re
 import sqlite3
 
 from pydantic import BaseModel, ConfigDict, field_validator
@@ -560,6 +562,7 @@ def row_to_invoice(connection: sqlite3.Connection, row: sqlite3.Row) -> dict[str
         "terms_days": row["terms_days"],
         "po_number": row["po_number"],
         "notes": row["notes"],
+        "pdf_file_name": row["pdf_file_name"],
         "issued_at": row["issued_at"],
         "paid_amount_cents": row["paid_amount_cents"],
         "invoice_amount_cents": row["invoice_amount_cents"],
@@ -719,12 +722,126 @@ def clear_invoice_selection(connection: sqlite3.Connection, invoice_id: int) -> 
     connection.execute("UPDATE expenses SET invoice_id = NULL WHERE invoice_id = ?", (invoice_id,))
 
 
+def invoice_payment_applications(connection: sqlite3.Connection, invoice_id: int) -> list[dict[str, int | str]]:
+    rows = connection.execute(
+        """
+        SELECT
+            pa.id,
+            pa.payment_id,
+            pa.applied_amount_cents,
+            pa.applied_at,
+            p.amount_cents,
+            COALESCE((
+                SELECT SUM(other.applied_amount_cents)
+                FROM payment_applications other
+                WHERE other.payment_id = pa.payment_id AND other.id != pa.id
+            ), 0) AS other_applied_amount_cents
+        FROM payment_applications pa
+        JOIN payments p ON p.id = pa.payment_id
+        WHERE pa.invoice_id = ?
+        ORDER BY pa.applied_at DESC, pa.id DESC
+        """,
+        (invoice_id,),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def touch_payments(connection: sqlite3.Connection, payment_ids: set[int], timestamp: str) -> None:
+    for payment_id in payment_ids:
+        connection.execute(
+            "UPDATE payments SET updated_at = ? WHERE id = ?",
+            (timestamp, payment_id),
+        )
+
+
+def reconcile_invoice_payment_applications(
+    connection: sqlite3.Connection,
+    invoice_id: int,
+    *,
+    preserve_paid_status: bool,
+) -> None:
+    invoice = fetch_invoice(connection, invoice_id)
+    if invoice is None or not invoice["issued_at"]:
+        return
+
+    target_amount_cents = int(invoice["invoice_amount_cents"])
+    applied_amount_cents = int(invoice["paid_amount_cents"])
+    should_reconcile = applied_amount_cents > target_amount_cents or preserve_paid_status
+    if not should_reconcile or applied_amount_cents == target_amount_cents:
+        return
+
+    applications = invoice_payment_applications(connection, invoice_id)
+    if not applications:
+        return
+
+    affected_payment_ids: set[int] = set()
+    timestamp = utc_now()
+    delta_cents = target_amount_cents - applied_amount_cents
+
+    if delta_cents < 0:
+        remaining_cents = -delta_cents
+        for application in applications:
+            current_amount = int(application["applied_amount_cents"])
+            reduction_cents = min(current_amount, remaining_cents)
+            new_amount = current_amount - reduction_cents
+            if new_amount > 0:
+                connection.execute(
+                    "UPDATE payment_applications SET applied_amount_cents = ?, applied_at = ? WHERE id = ?",
+                    (new_amount, timestamp, application["id"]),
+                )
+            else:
+                connection.execute(
+                    "DELETE FROM payment_applications WHERE id = ?",
+                    (application["id"],),
+                )
+            affected_payment_ids.add(int(application["payment_id"]))
+            remaining_cents -= reduction_cents
+            if remaining_cents <= 0:
+                break
+    else:
+        remaining_cents = delta_cents
+        for application in applications:
+            current_amount = int(application["applied_amount_cents"])
+            available_cents = max(
+                0,
+                int(application["amount_cents"])
+                - int(application["other_applied_amount_cents"])
+                - current_amount,
+            )
+            if available_cents <= 0:
+                continue
+            increase_cents = min(remaining_cents, available_cents)
+            connection.execute(
+                "UPDATE payment_applications SET applied_amount_cents = ?, applied_at = ? WHERE id = ?",
+                (current_amount + increase_cents, timestamp, application["id"]),
+            )
+            application["applied_amount_cents"] = current_amount + increase_cents
+            affected_payment_ids.add(int(application["payment_id"]))
+            remaining_cents -= increase_cents
+            if remaining_cents <= 0:
+                break
+
+        if remaining_cents > 0:
+            primary_application = applications[0]
+            new_applied_amount = int(primary_application["applied_amount_cents"]) + remaining_cents
+            new_payment_amount = int(primary_application["other_applied_amount_cents"]) + new_applied_amount
+            connection.execute(
+                "UPDATE payment_applications SET applied_amount_cents = ?, applied_at = ? WHERE id = ?",
+                (new_applied_amount, timestamp, primary_application["id"]),
+            )
+            connection.execute(
+                "UPDATE payments SET amount_cents = ?, updated_at = ? WHERE id = ?",
+                (new_payment_amount, timestamp, primary_application["payment_id"]),
+            )
+            affected_payment_ids.add(int(primary_application["payment_id"]))
+
+    touch_payments(connection, affected_payment_ids, timestamp)
+
+
 def update_invoice(connection: sqlite3.Connection, invoice_id: int, payload: InvoiceWrite) -> dict[str, object] | None:
     existing = fetch_invoice(connection, invoice_id)
     if existing is None:
         return None
-    if existing["issued_at"]:
-        raise ValueError("Printed invoices are read-only.")
 
     project = resolve_project(connection, payload.project_id)
     if project is None:
@@ -757,6 +874,11 @@ def update_invoice(connection: sqlite3.Connection, invoice_id: int, payload: Inv
             utc_now(),
             invoice_id,
         ),
+    )
+    reconcile_invoice_payment_applications(
+        connection,
+        invoice_id,
+        preserve_paid_status=existing["status"] == "paid",
     )
     connection.commit()
     return fetch_invoice(connection, invoice_id)
@@ -817,8 +939,6 @@ def replace_invoice_selection(
     invoice = fetch_invoice(connection, invoice_id)
     if invoice is None:
         return None
-    if invoice["issued_at"]:
-        raise ValueError("Printed invoices are read-only.")
 
     time_entry_ids = list(dict.fromkeys(payload.time_entry_ids))
     expense_ids = list(dict.fromkeys(payload.expense_ids))
@@ -845,6 +965,11 @@ def replace_invoice_selection(
             (invoice_id, *expense_ids),
         )
 
+    reconcile_invoice_payment_applications(
+        connection,
+        invoice_id,
+        preserve_paid_status=invoice["status"] == "paid",
+    )
     connection.commit()
     return invoice_editor_payload(connection, invoice_id)
 
@@ -853,10 +978,10 @@ def mark_invoice_printed(connection: sqlite3.Connection, invoice_id: int) -> dic
     invoice = fetch_invoice(connection, invoice_id)
     if invoice is None:
         return None
-    if invoice["issued_at"]:
-        return invoice
     if int(invoice["invoice_amount_cents"]) <= 0:
         raise ValueError("Select at least one billable row before printing the invoice.")
+    if invoice["issued_at"]:
+        return invoice
 
     connection.execute(
         "UPDATE invoices SET issued_at = ?, updated_at = ? WHERE id = ?",
@@ -866,11 +991,47 @@ def mark_invoice_printed(connection: sqlite3.Connection, invoice_id: int) -> dic
     return fetch_invoice(connection, invoice_id)
 
 
-def build_invoice_print_document(connection: sqlite3.Connection, invoice_id: int) -> str | None:
+def stored_invoice_file_name(invoice_number: str) -> str:
+    safe_number = re.sub(r"[^A-Za-z0-9._-]+", "-", invoice_number).strip("-._")
+    safe_number = safe_number or "invoice"
+    return f"{safe_number}.html"
+
+
+def ensure_invoice_output_dir(data_dir: Path) -> Path:
+    output_dir = data_dir / "invoices"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    return output_dir
+
+
+def save_invoice_print_document(
+    connection: sqlite3.Connection,
+    invoice_id: int,
+    data_dir: Path,
+) -> tuple[str, Path] | None:
     printed_invoice = mark_invoice_printed(connection, invoice_id)
     if printed_invoice is None:
         return None
     payload = invoice_editor_payload(connection, invoice_id)
     if payload is None:
         return None
-    return build_invoice_print_html(payload)
+
+    invoice = payload["invoice"]
+    document_html = build_invoice_print_html(payload)
+    output_dir = ensure_invoice_output_dir(data_dir)
+    file_name = stored_invoice_file_name(str(invoice["invoice_number"]))
+    file_path = output_dir / file_name
+    relative_path = f"invoices/{file_name}"
+
+    previous_path = invoice.get("pdf_file_name")
+    if previous_path and previous_path != relative_path:
+        old_file_path = data_dir / str(previous_path)
+        if old_file_path.exists() and old_file_path.is_file():
+            old_file_path.unlink()
+
+    file_path.write_text(document_html, encoding="utf-8")
+    connection.execute(
+        "UPDATE invoices SET pdf_file_name = ?, updated_at = ? WHERE id = ?",
+        (relative_path, utc_now(), invoice_id),
+    )
+    connection.commit()
+    return document_html, file_path

@@ -27,8 +27,8 @@ This document is a companion reference to the primary PRD in `docs/winds_ledger_
 2. User selects the project by project number. The system derives the customer and available rates from the project.
 3. User enters work description, duration, and rate code. There is no separate time billable toggle. Time with a selected rate of `0` is non-billable.
 4. System stores the time entry as a source record, snapshots the selected rate, and calculates the line total.
-5. Invoice linkage is empty until the time entry is selected into an invoice.
-6. Unbilled time with a non-zero rate is eligible for invoice building. When selected into an invoice, the time entry is stamped to that invoice immediately. When unselected, the invoice linkage is cleared immediately.
+5. Invoice linkage is empty until Save/Print succeeds for an invoice that includes the time entry.
+6. Unbilled time with a non-zero rate is eligible for invoice building. In the invoice editor, checking or unchecking time is browser-local until Save/Print. When Save/Print succeeds, checked time entries are stamped to the invoice and unchecked prior entries have their invoice linkage cleared.
 7. Fixed-fee billing is represented by a one-hour time entry that uses a custom rate equal to the fixed fee. There are no separate manual invoice lines.
 
 ## 4. User Enters Expense
@@ -37,24 +37,26 @@ This document is a companion reference to the primary PRD in `docs/winds_ledger_
 2. User selects the project by project number. The system derives the customer from the project.
 3. User enters vendor, description, quantity, unit cost, category, and billable flag.
 4. System stores the expense as a source record and calculates the line total.
-5. Invoice linkage is empty until the expense is selected into an invoice.
-6. Unbilled billable expenses are eligible for invoice building. When selected into an invoice, the expense is stamped to that invoice immediately. When unselected, the invoice linkage is cleared immediately.
+5. Invoice linkage is empty until Save/Print succeeds for an invoice that includes the expense.
+6. Unbilled billable expenses are eligible for invoice building. In the invoice editor, checking or unchecking expenses is browser-local until Save/Print. When Save/Print succeeds, checked expenses are stamped to the invoice and unchecked prior expenses have their invoice linkage cleared.
 7. Non-billable expenses remain available for internal cost tracking and must not appear as invoice charges.
 
-## 5. User Creates an Invoice
+## 5. User Creates Or Edits An Invoice
 
-1. User enters the invoice date, a unique invoice number, and a project number.
-2. System validates that the invoice number is unique.
-3. System lists all eligible unbilled time for the project, showing date, description, duration, rate, total, and an `invoice?` checkbox.
-4. System lists all eligible unbilled expenses for the project, showing date, description, category, unit cost, total, and an `invoice?` checkbox.
-5. If the project bills a fixed fee, that amount appears through the one-hour custom-rate time entry that represents the fee. There are no separate HD, non-hourly, or manual billing lines.
-6. User selects the time and expense source records to assign to the invoice.
-7. As each source record is selected, the system stamps that record to the invoice immediately and recalculates invoice totals.
-8. Prior customer balance is shown separately from the current invoice charges. Unapplied credits may be displayed and optionally applied through payment application logic, not by rewriting invoice lines.
-9. User may review, add, or remove eligible source records. Removing a selected record clears its invoice linkage immediately and returns it to the unbilled pool.
-10. When the user issues the invoice, the system updates the invoice listing, generates the PDF, and stores or overwrites the current invoice PDF.
-11. Existing issued invoices may be viewed, printed, edited, and reissued by invoice number.
-12. If the user edits an issued invoice, the same source-linked checkbox workflow applies: added records are stamped immediately, removed records are unstamped immediately, and reissuing updates the current PDF.
+1. User enters or edits the invoice date, unique invoice number, project number, terms, PO number, and notes.
+2. For a new invoice, the editor may hold the invoice in browser state until Save/Print. No invoice database row is required before Save/Print.
+3. For an existing invoice, the system loads the saved invoice, its selected rows, eligible rows, and totals, then closes the database connection.
+4. System lists all eligible unbilled time for the project, showing date, description, duration, rate, total, and an `invoice?` checkbox.
+5. System lists all eligible unbilled expenses for the project, showing date, description, category, unit cost, total, and an `invoice?` checkbox.
+6. If the project bills a fixed fee, that amount appears through the one-hour custom-rate time entry that represents the fee. There are no separate HD, non-hourly, or manual billing lines.
+7. User checks and unchecks time and expense source records in the browser editor.
+8. Checkbox changes update browser-side preview totals only. They do not write to the database until Save/Print.
+9. Prior customer balance is shown separately from the current invoice charges. Unapplied credits may be displayed and optionally applied through payment application logic, not by rewriting invoice lines.
+10. When the user clicks Save/Print, the system creates or updates the invoice, replaces all selected time and expense links, generates or overwrites the current invoice HTML, and opens the saved HTML for browser printing.
+11. Checked time entries are saved with the invoice ID. Unchecked prior time entries have their invoice linkage cleared and return to the unbilled pool.
+12. Checked expenses are saved with the invoice ID. Unchecked prior expenses have their invoice linkage cleared and return to the unbilled pool.
+13. Existing issued invoices may be viewed, edited, saved, and reprinted by invoice number.
+14. Editing and reissuing an invoice intentionally changes accounting history. This application does not require an immutable invoice audit trail.
 
 ## 6. User Records and Applies a Payment
 

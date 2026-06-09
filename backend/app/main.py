@@ -11,7 +11,7 @@ from .config import Settings, load_settings
 from .customers import CustomerWrite, create_customer, fetch_customers, update_customer
 from .db import apply_pending_migrations, connect, get_database_status
 from .expenses import ExpenseWrite, create_expense, expense_bootstrap_payload, update_expense
-from .invoices import InvoiceSelectionWrite, InvoiceWrite, build_invoice_print_document, create_invoice, delete_invoice, invoice_bootstrap_payload, invoice_editor_payload, replace_invoice_selection, update_invoice
+from .invoices import InvoiceSelectionWrite, InvoiceWrite, create_invoice, delete_invoice, invoice_bootstrap_payload, invoice_editor_payload, replace_invoice_selection, save_invoice_print_document, update_invoice
 from .overview import overview_bootstrap_payload
 from .payments import PaymentApplicationsReplace, PaymentWrite, create_payment, payment_editor_payload, payments_bootstrap_payload, replace_payment_applications, update_payment
 from .projects import ProjectWrite, create_project, customer_lookup, fetch_projects, update_project
@@ -308,12 +308,25 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
     def invoices_print(invoice_id: int, request: Request) -> HTMLResponse:
         try:
             with connect(request.app.state.settings.database_path) as connection:
-                document = build_invoice_print_document(connection, invoice_id)
+                result = save_invoice_print_document(connection, invoice_id, request.app.state.settings.data_dir)
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-        if document is None:
+        if result is None:
             raise HTTPException(status_code=404, detail="Invoice not found.")
+
+        document, _ = result
+
+        auto_print = request.query_params.get("autoprint") in {"1", "true", "yes"}
+        if auto_print:
+            auto_print_script = (
+                "<script>"
+                "window.addEventListener('load', () => {"
+                "window.requestAnimationFrame(() => { window.focus(); window.print(); });"
+                "});"
+                "</script>"
+            )
+            document = document.replace("</body>", f"{auto_print_script}</body>")
 
         return HTMLResponse(content=document)
 

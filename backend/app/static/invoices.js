@@ -351,19 +351,7 @@ function renderInvoiceRows(invoices) {
     });
 }
 
-function renderSourceList(containerId, items, emptyLabel, formatter) {
-    const container = document.getElementById(containerId);
-    if (!container) {
-        return;
-    }
-    if (items.length === 0) {
-        container.innerHTML = `<p class="rounded-xl border border-dashed border-line bg-panel/35 px-3 py-3 text-sm text-muted">${emptyLabel}</p>`;
-        return;
-    }
-    container.innerHTML = items.map(formatter).join("");
-}
-
-function renderSelectableSourceList(containerId, items, type, invoiceId, isLocked, formatter) {
+function renderSelectableSourceList(containerId, items, type, invoiceId, isDisabled, formatter) {
     const container = document.getElementById(containerId);
     if (!container) {
         return;
@@ -372,7 +360,7 @@ function renderSelectableSourceList(containerId, items, type, invoiceId, isLocke
         container.innerHTML = '<p class="rounded-xl border border-dashed border-line bg-panel/35 px-3 py-3 text-sm text-muted">No eligible rows for this invoice.</p>';
         return;
     }
-    container.innerHTML = items.map((item) => formatter(item, type, invoiceId, isLocked)).join("");
+    container.innerHTML = items.map((item) => formatter(item, type, invoiceId, isDisabled)).join("");
     container.querySelectorAll("[data-selection-type]").forEach((input) => {
         input.addEventListener("change", () => {
             toggleSelection(input.dataset.selectionType, Number(input.dataset.selectionId), input.checked);
@@ -407,7 +395,6 @@ function renderEditor(invoice) {
     if (!projectSelect) {
         return;
     }
-    const isLocked = Boolean(invoice.issued_at);
     document.getElementById("invoice-number").value = invoice.invoice_number;
     projectSelect.value = String(invoice.project_id);
     document.getElementById("invoice-date").value = invoice.invoice_date;
@@ -415,29 +402,16 @@ function renderEditor(invoice) {
     document.getElementById("invoice-notes").value = invoice.notes || "";
 
     ["invoice-number", "invoice-project", "invoice-date", "invoice-po-number", "invoice-notes"].forEach((id) => {
-        document.getElementById(id).disabled = isLocked || invoicesState.isSaving;
+        document.getElementById(id).disabled = invoicesState.isSaving;
     });
 
     const summary = invoicesState.editor.summary || {};
     updateEditorSummary(invoice, summary);
 
-    const selectedTime = invoicesState.editor.selected_time_entries || [];
-    const selectedExpenseRows = invoicesState.editor.selected_expenses || [];
+    const selectedTimeIds = new Set((invoicesState.editor.selected_time_entries || []).map((entry) => Number(entry.id)));
+    const selectedExpenseIds = new Set((invoicesState.editor.selected_expenses || []).map((expense) => Number(expense.id)));
     const eligibleTime = invoicesState.editor.eligible_time_entries || [];
     const eligibleExpenseRows = invoicesState.editor.eligible_expenses || [];
-
-    renderSourceList(
-        "selected-time-list",
-        selectedTime,
-        "No time entries selected.",
-        (entry) => `<div class="rounded-xl border border-line bg-panel/40 px-3 py-3"><p class="font-mono text-xs text-ink">${entry.entry_date} · ${timeHours(entry.minutes)}h · ${entry.rate_code}</p><p class="mt-1 text-sm text-ink">${entry.description}</p><p class="mt-1 font-mono text-xs text-muted">${currency(entry.line_total_cents)}</p></div>`
-    );
-    renderSourceList(
-        "selected-expenses-list",
-        selectedExpenseRows,
-        "No expenses selected.",
-        (expense) => `<div class="rounded-xl border border-line bg-panel/40 px-3 py-3"><p class="font-mono text-xs text-ink">${expense.entry_date} · ${expense.category}</p><p class="mt-1 text-sm text-ink">${expense.vendor} · ${expense.description}</p><p class="mt-1 font-mono text-xs text-muted">${currency(expense.line_total_cents)}</p></div>`
-    );
 
     setText("eligible-time-count", `${eligibleTime.length} rows`);
     setText("eligible-expense-count", `${eligibleExpenseRows.length} rows`);
@@ -446,11 +420,11 @@ function renderEditor(invoice) {
         "eligible-time-list",
         eligibleTime,
         "time",
-        invoice.id,
-        isLocked,
-        (entry, type, invoiceId, locked) => `
-            <label class="flex items-start gap-3 rounded-xl border border-line bg-panel/35 px-3 py-3 ${locked ? "opacity-70" : "cursor-pointer hover:bg-white/80"}">
-                <input class="mt-1 rounded border-line text-brand focus:ring-brand/30" data-selection-id="${entry.id}" data-selection-type="${type}" ${entry.invoice_id === invoiceId ? "checked" : ""} ${locked ? "disabled" : ""} type="checkbox">
+        selectedTimeIds,
+        invoicesState.isSaving,
+        (entry, type, selectedIds, disabled) => `
+            <label class="flex items-start gap-3 rounded-xl border border-line bg-panel/35 px-3 py-3 ${disabled ? "opacity-70" : "cursor-pointer hover:bg-white/80"}">
+                <input class="mt-1 rounded border-line text-brand focus:ring-brand/30" data-selection-id="${entry.id}" data-selection-type="${type}" ${selectedIds.has(Number(entry.id)) ? "checked" : ""} ${disabled ? "disabled" : ""} type="checkbox">
                 <div class="min-w-0 flex-1">
                     <p class="font-mono text-xs text-ink">${entry.entry_date} · ${timeHours(entry.minutes)}h · ${entry.rate_code}</p>
                     <p class="mt-1 text-sm text-ink">${entry.description}</p>
@@ -462,11 +436,11 @@ function renderEditor(invoice) {
         "eligible-expenses-list",
         eligibleExpenseRows,
         "expense",
-        invoice.id,
-        isLocked,
-        (expense, type, invoiceId, locked) => `
-            <label class="flex items-start gap-3 rounded-xl border border-line bg-panel/35 px-3 py-3 ${locked ? "opacity-70" : "cursor-pointer hover:bg-white/80"}">
-                <input class="mt-1 rounded border-line text-brand focus:ring-brand/30" data-selection-id="${expense.id}" data-selection-type="${type}" ${expense.invoice_id === invoiceId ? "checked" : ""} ${locked ? "disabled" : ""} type="checkbox">
+        selectedExpenseIds,
+        invoicesState.isSaving,
+        (expense, type, selectedIds, disabled) => `
+            <label class="flex items-start gap-3 rounded-xl border border-line bg-panel/35 px-3 py-3 ${disabled ? "opacity-70" : "cursor-pointer hover:bg-white/80"}">
+                <input class="mt-1 rounded border-line text-brand focus:ring-brand/30" data-selection-id="${expense.id}" data-selection-type="${type}" ${selectedIds.has(Number(expense.id)) ? "checked" : ""} ${disabled ? "disabled" : ""} type="checkbox">
                 <div class="min-w-0 flex-1">
                     <p class="font-mono text-xs text-ink">${expense.entry_date} · ${expense.category}</p>
                     <p class="mt-1 text-sm text-ink">${expense.vendor} · ${expense.description}</p>
@@ -480,17 +454,17 @@ function renderEditor(invoice) {
         const cannotPrint = invoicesState.isSaving || !invoice;
         printButton.disabled = cannotPrint;
         printButton.classList.toggle("opacity-60", cannotPrint);
-        printButton.textContent = isLocked ? "Reprint Invoice" : "Print Invoice";
+        printButton.textContent = "Print Invoice";
     }
     const saveButton = document.getElementById("save-invoice-button");
     if (saveButton) {
-        saveButton.disabled = isLocked || invoicesState.isSaving;
-        saveButton.classList.toggle("opacity-60", isLocked || invoicesState.isSaving);
+        saveButton.disabled = invoicesState.isSaving;
+        saveButton.classList.toggle("opacity-60", invoicesState.isSaving);
         saveButton.textContent = invoicesState.isSaving ? "Saving..." : "Save Invoice";
     }
     const deleteButton = document.getElementById("delete-invoice-button");
     if (deleteButton) {
-        const cannotDelete = isLocked || invoicesState.isSaving;
+        const cannotDelete = Boolean(invoice.issued_at) || invoicesState.isSaving;
         deleteButton.disabled = cannotDelete;
         deleteButton.classList.toggle("opacity-60", cannotDelete);
         deleteButton.textContent = invoice.id ? "Delete Draft" : "Discard Draft";
@@ -529,7 +503,7 @@ function syncSelectedInvoiceFromForm() {
 
 async function toggleSelection(type, itemId, checked) {
     const invoice = selectedInvoice();
-    if (!invoice || invoice.issued_at || invoicesState.isSaving) {
+    if (!invoice || invoicesState.isSaving) {
         return;
     }
     const timeEntryIds = new Set((invoicesState.editor.selected_time_entries || []).map((entry) => entry.id));
@@ -585,7 +559,7 @@ async function createDraftInvoice(sourceInvoice = null) {
 
 async function saveDraftInvoice() {
     const invoice = selectedInvoice();
-    if (!invoice || invoice.issued_at || invoicesState.isSaving) {
+    if (!invoice || invoicesState.isSaving) {
         return;
     }
 
@@ -678,7 +652,7 @@ async function printInvoice() {
         return;
     }
 
-    const printWindow = window.open("about:blank", "_blank", "noopener");
+    const printWindow = window.open("about:blank", "_blank");
     if (!printWindow) {
         invoicesState.loadError = "Allow pop-ups to print the invoice.";
         render();
@@ -700,20 +674,7 @@ async function printInvoice() {
     invoicesState.isSaving = true;
     render();
     try {
-        const response = await fetch(invoicesUrl(`/${invoice.id}/print`), {
-            headers: {
-                Accept: "text/html"
-            }
-        });
-        const documentHtml = await response.text();
-        if (!response.ok) {
-            throw new Error(documentHtml || "Unable to print invoice.");
-        }
-        printWindow.document.open();
-        printWindow.document.write(documentHtml);
-        printWindow.document.close();
-        printWindow.focus();
-        printWindow.print();
+        printWindow.location.replace(invoicesUrl(`/${invoice.id}/print?autoprint=1`));
         await loadEditor(invoice.id);
         invoicesState.loadError = "";
     } catch (error) {

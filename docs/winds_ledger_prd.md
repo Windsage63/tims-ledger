@@ -69,9 +69,9 @@ Each time entry stores:
 4. work description
 5. hours
 6. rate code
-7. invoice linkage, which is empty until selected into an invoice
+7. invoice linkage, which is empty until Save/Print succeeds for an invoice that includes the entry
 
-There is no separate time-entry billable flag. Time with a selected rate of `0` is non-billable. Only unbilled time with a non-zero rate is eligible for invoice building. Fixed-fee-supporting or non-billable time remains available for project tracking but must not be treated automatically as labor revenue.
+There is no separate time-entry billable flag. Time with a selected rate of `0` is non-billable. Only unbilled time with a non-zero rate is eligible for invoice building. In the invoice editor, checking and unchecking time entries is browser-local until Save/Print. On Save/Print, checked time entries receive the invoice linkage and unchecked prior entries have the linkage cleared. Fixed-fee-supporting or non-billable time remains available for project tracking but must not be treated automatically as labor revenue.
 
 ### 4.4 Expense Entries
 
@@ -86,9 +86,9 @@ Each expense entry stores:
 7. unit cost
 8. expense category
 9. billable flag
-10. invoice linkage, which is empty until selected into an invoice
+10. invoice linkage, which is empty until Save/Print succeeds for an invoice that includes the expense
 
-Only expenses flagged as billable are eligible for invoice building. Non-billable expenses remain available for internal cost tracking without being treated as invoiceable lines.
+Only expenses flagged as billable are eligible for invoice building. In the invoice editor, checking and unchecking expenses is browser-local until Save/Print. On Save/Print, checked expenses receive the invoice linkage and unchecked prior expenses have the linkage cleared. Non-billable expenses remain available for internal cost tracking without being treated as invoiceable lines.
 
 ### 4.5 Invoices
 
@@ -99,9 +99,10 @@ Each invoice:
 3. stores invoice date
 4. may store due date, PO number, notes, and printable presentation metadata
 5. is composed from selected time and expense source records
-6. can be issued, viewed, reprinted, edited, and reissued
+6. can be saved, issued, viewed, reprinted, edited, and reissued through a single Save/Print workflow
 
 Invoice lines derived from time and expenses must remain traceable back to their source records.
+Invoices do not need a draft state. New invoice creation may begin in browser state, but the database row and source-record links are created or updated only when the user clicks Save/Print. Existing invoices may be edited and reissued even though that changes accounting history; an immutable invoice audit trail is out of scope for this application.
 
 ### 4.6 Payments And Payment Applications
 
@@ -137,7 +138,7 @@ Customer balance reporting must be explainable from invoices, payments, and paym
 1. Allow time entry by date, project number, work description, hours, and rate code.
 2. Do not ask the user to mark time as billable or non-billable separately; time billability is derived from the selected rate, and a rate of `0` is non-billable.
 3. Derive the customer and available rates from the selected project.
-4. Store invoice linkage on the time entry when selected into an invoice and remove that linkage when unselected.
+4. Store invoice linkage on the time entry when Save/Print is clicked for an invoice that includes that entry, and remove that linkage when Save/Print is clicked after the entry has been unchecked.
 5. Show unbilled status clearly so the user can identify invoice-eligible work.
 6. The Stitch time tracking table and summary cards are usable UI references, but metrics such as total hours or billable amount are secondary to the source-entry workflow.
 
@@ -146,7 +147,7 @@ Customer balance reporting must be explainable from invoices, payments, and paym
 1. Expense management is a core module.
 2. Allow expense entry by date, project number, vendor, description, quantity, unit cost, category, and billable flag.
 3. Derive the customer from the selected project.
-4. Store invoice linkage on the expense record when selected into an invoice and remove that linkage when unselected.
+4. Store invoice linkage on the expense record when Save/Print is clicked for an invoice that includes that expense, and remove that linkage when Save/Print is clicked after the expense has been unchecked.
 5. The Stitch expense list and modal provide a strong UI basis and should be retained with workflow-aligned fields.
 
 ### 5.5 Invoice Creation And Editing
@@ -154,28 +155,29 @@ Customer balance reporting must be explainable from invoices, payments, and paym
 1. Invoice creation must start with invoice date, unique invoice number, and project number.
 2. The system must present eligible unbilled time for that project with checkbox selection.
 3. The system must present eligible unbilled expenses for that project with checkbox selection.
-4. Selecting a line must immediately stamp the source record to the invoice and update totals.
-5. Unselecting a line must immediately clear the invoice linkage and return the source record to the unbilled pool.
+4. Selecting or unselecting a line must update browser-side invoice state and preview totals.
+5. Selecting or unselecting a line must not write source-record invoice linkage until Save/Print.
 6. Prior customer balance must display separately from the current invoice charges.
 7. Unapplied credits may be shown and optionally applied through payment application logic, not by rewriting invoice lines.
-8. Issuing an invoice must update the invoice listing and generate or overwrite the current invoice PDF.
-9. Editing an issued invoice must preserve the same source-linked checkbox workflow.
-10. The printed invoice should present time-derived charges in the upper section and expense-derived charges in a separate lower section.
+8. Save/Print must create or update the invoice, replace source-record invoice links, generate or overwrite the current invoice HTML, and open the saved HTML for browser printing.
+9. Save/Print must clear invoice linkage from unchecked prior rows so those rows return to the unbilled pool and can be assigned to another invoice.
+10. Editing an issued invoice must preserve the same source-linked checkbox workflow and may change accounting history.
+11. The printed invoice should present time-derived charges in the upper section and expense-derived charges in a separate lower section.
 
 The Stitch WYSIWYG invoice screen should be adapted rather than discarded:
 
 1. Keep the printable invoice canvas, customer address display, notes area, and totals layout.
 2. Replace freeform primary line entry with an Add Items action that opens a modal listing eligible unbilled time and expenses with checkboxes.
 3. Group selected invoice content into a time section and an expense section rather than mixing it into a generic line-item editor.
-4. Treat due date and PO number as optional metadata if the business wants them.
+4. Treat due date, terms, and PO number as optional metadata if the business wants them.
 5. Treat tax and discount fields as optional future enhancements until tax policy is defined in the workflow.
 
 ### 5.6 Invoice Ledger
 
-1. Provide an invoice ledger listing issued invoices with search, filtering, and row actions.
+1. Provide an invoice ledger listing saved invoices with search, filtering, and row actions.
 2. Support status views such as All, Paid, Pending, and Overdue.
 3. Derive invoice status from issuance state, open balance, and due date where applicable.
-4. Support viewing and printing invoice PDFs by invoice number.
+4. Support viewing saved invoice HTML documents by invoice number.
 
 The existing Stitch invoice ledger screen is usable with minimal structural change.
 
