@@ -33,12 +33,12 @@ Keep this route read-only.
 
 Loads one invoice for editing:
 
-- invoice header
-- selected time entries
-- selected expenses
-- eligible unbilled time entries for the invoice project
-- eligible unbilled expenses for the invoice project
-- summary totals
+  - invoice header
+  - selected time entries
+  - selected expenses
+  - eligible unbilled time entries for the invoice project
+  - eligible unbilled expenses for the invoice project
+  - summary totals
 
 Keep this route read-only.
 
@@ -88,11 +88,11 @@ Returns the already-saved HTML invoice document.
 
 Rules:
 
-- read-only
-- no `issued_at` updates
-- no file writes
-- returns `404` if no saved HTML exists
-- may support `?autoprint=1` by injecting print script into the returned document, as long as it does not mutate data
+  - read-only
+  - no `issued_at` updates
+  - no file writes
+  - returns `404` if no saved HTML exists
+  - may support `?autoprint=1` by injecting print script into the returned document, as long as it does not mutate data
 
 ## Backend Transaction
 
@@ -104,10 +104,12 @@ Rules:
 4. If invoice ID is missing, insert the invoice.
 5. If invoice ID exists, update the invoice.
 6. Clear current source links for that invoice:
+
    ```sql
    UPDATE time_entries SET invoice_id = NULL WHERE invoice_id = ?;
    UPDATE expenses SET invoice_id = NULL WHERE invoice_id = ?;
    ```
+
 7. Validate selected time entries:
    - every ID exists
    - every row belongs to the invoice project
@@ -119,10 +121,12 @@ Rules:
    - every row is billable
    - every row is currently unassigned or assigned to this invoice
 9. Assign final checked rows:
+
    ```sql
    UPDATE time_entries SET invoice_id = ? WHERE id IN (...);
    UPDATE expenses SET invoice_id = ? WHERE id IN (...);
    ```
+
 10. Set `issued_at` if it is empty. Keep existing `issued_at` when reissuing unless the product later wants a `reissued_at` field.
 11. Generate invoice HTML from the saved invoice and selected rows.
 12. Save the HTML file.
@@ -228,12 +232,12 @@ When the user clicks an invoice row:
 
 Show a clear error if:
 
-- invoice number is missing or duplicate
-- project is missing
-- no time or expense rows are selected
-- a selected row is now assigned to another invoice
-- a selected row is no longer eligible
-- HTML file write fails
+  - invoice number is missing or duplicate
+  - project is missing
+  - no time or expense rows are selected
+  - a selected row is now assigned to another invoice
+  - a selected row is no longer eligible
+  - HTML file write fails
 
 ## HTML Rendering
 
@@ -241,9 +245,9 @@ Continue escaping user data in generated invoice HTML.
 
 Recommended improvement:
 
-- move the invoice HTML into a template file
-- use autoescaping
-- keep date and currency formatting helpers in Python
+  - move the invoice HTML into a template file
+  - use autoescaping
+  - keep date and currency formatting helpers in Python
 
 This is not required for the first Save/Print cleanup, but it will make invoice layout maintenance much easier.
 
@@ -253,16 +257,16 @@ Fix invoice UI stored XSS before or during this workflow change.
 
 Any user-controlled value inserted into the DOM must be escaped or assigned through `textContent`, including:
 
-- invoice number
-- customer name
-- project number
-- PO number
-- notes
-- time descriptions
-- rate codes
-- expense vendor
-- expense category
-- expense description
+  - invoice number
+  - customer name
+  - project number
+  - PO number
+  - notes
+  - time descriptions
+  - rate codes
+  - expense vendor
+  - expense category
+  - expense description
 
 ## Test Plan
 

@@ -11,7 +11,7 @@ from .config import Settings, load_settings
 from .customers import CustomerWrite, create_customer, fetch_customers, update_customer
 from .db import apply_pending_migrations, connect, get_database_status
 from .expenses import ExpenseWrite, create_expense, expense_bootstrap_payload, update_expense
-from .invoices import InvoiceSavePrintWrite, InvoiceSelectionWrite, InvoiceWrite, create_invoice, delete_invoice, fetch_saved_invoice_document, invoice_bootstrap_payload, invoice_editor_payload, invoice_new_editor_payload, replace_invoice_selection, save_print_invoice, update_invoice
+from .invoices import InvoiceSavePrintWrite, fetch_saved_invoice_document, invoice_bootstrap_payload, invoice_editor_payload, invoice_new_editor_payload, save_print_invoice
 from .overview import overview_bootstrap_payload
 from .payments import PaymentApplicationsReplace, PaymentWrite, create_payment, payment_editor_payload, payments_bootstrap_payload, replace_payment_applications, update_payment
 from .projects import ProjectWrite, create_project, customer_lookup, fetch_projects, update_project
@@ -366,73 +366,6 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
             document = with_auto_print_script(document)
 
         return HTMLResponse(content=document)
-
-    @app.get("/api/invoices/{invoice_id}/print", response_class=HTMLResponse)
-    def invoices_print(invoice_id: int, request: Request) -> HTMLResponse:
-        with connect(request.app.state.settings.database_path) as connection:
-            document = fetch_saved_invoice_document(connection, invoice_id, request.app.state.settings.data_dir)
-
-        if document is None:
-            raise HTTPException(status_code=404, detail="Saved invoice document not found.")
-
-        auto_print = request.query_params.get("autoprint") in {"1", "true", "yes"}
-        if auto_print:
-            document = with_auto_print_script(document)
-
-        return HTMLResponse(content=document)
-
-    @app.post("/api/invoices")
-    def invoices_create(payload: InvoiceWrite, request: Request) -> dict[str, object]:
-        try:
-            with connect(request.app.state.settings.database_path) as connection:
-                invoice = create_invoice(connection, payload)
-        except ValueError as exc:
-            raise HTTPException(status_code=422, detail=str(exc)) from exc
-        except sqlite3.IntegrityError as exc:
-            raise HTTPException(status_code=409, detail="Invoice number must be unique.") from exc
-
-        return response_envelope({"invoice": invoice}, screen="invoices")
-
-    @app.put("/api/invoices/{invoice_id}")
-    def invoices_update(invoice_id: int, payload: InvoiceWrite, request: Request) -> dict[str, object]:
-        try:
-            with connect(request.app.state.settings.database_path) as connection:
-                invoice = update_invoice(connection, invoice_id, payload)
-        except ValueError as exc:
-            raise HTTPException(status_code=422, detail=str(exc)) from exc
-        except sqlite3.IntegrityError as exc:
-            raise HTTPException(status_code=409, detail="Invoice number must be unique.") from exc
-
-        if invoice is None:
-            raise HTTPException(status_code=404, detail="Invoice not found.")
-
-        return response_envelope({"invoice": invoice}, screen="invoices")
-
-    @app.delete("/api/invoices/{invoice_id}")
-    def invoices_delete(invoice_id: int, request: Request) -> dict[str, object]:
-        try:
-            with connect(request.app.state.settings.database_path) as connection:
-                deleted = delete_invoice(connection, invoice_id)
-        except ValueError as exc:
-            raise HTTPException(status_code=422, detail=str(exc)) from exc
-
-        if not deleted:
-            raise HTTPException(status_code=404, detail="Invoice not found.")
-
-        return response_envelope({"deleted_id": invoice_id}, screen="invoices")
-
-    @app.post("/api/invoices/{invoice_id}/selection")
-    def invoices_selection(invoice_id: int, payload: InvoiceSelectionWrite, request: Request) -> dict[str, object]:
-        try:
-            with connect(request.app.state.settings.database_path) as connection:
-                editor_payload = replace_invoice_selection(connection, invoice_id, payload)
-        except ValueError as exc:
-            raise HTTPException(status_code=422, detail=str(exc)) from exc
-
-        if editor_payload is None:
-            raise HTTPException(status_code=404, detail="Invoice not found.")
-
-        return response_envelope(editor_payload, screen="invoice_editor")
 
     @app.get("/api/payments/bootstrap")
     def payments_bootstrap(request: Request, year: str | None = None) -> dict[str, object]:
