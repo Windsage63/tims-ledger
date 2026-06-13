@@ -19,33 +19,9 @@ function expensesUrl(path = "") {
     return `/api/expenses${path}`;
 }
 
-function currency(cents) {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format((cents || 0) / 100);
-}
-
 function quantityLabel(quantity) {
     const numericQuantity = Number(quantity || 0);
     return numericQuantity.toFixed(numericQuantity % 1 === 0 ? 0 : 2);
-}
-
-function dollarsInput(cents) {
-    return ((cents || 0) / 100).toFixed(2);
-}
-
-function centsFromInput(value) {
-    return Math.round(Number(value || 0) * 100);
-}
-
-function setText(id, value) {
-    const element = document.getElementById(id);
-    if (!element) {
-        return;
-    }
-    element.textContent = value;
-}
-
-function getCurrentPage() {
-    return window.location.pathname.split("/").pop() || "expenses.html";
 }
 
 function setEmptyState(message) {
@@ -54,27 +30,6 @@ function setEmptyState(message) {
         return;
     }
     element.textContent = message;
-}
-
-function extractErrorMessage(error, fallbackMessage) {
-    if (!error) {
-        return fallbackMessage;
-    }
-    if (typeof error === "string") {
-        return error;
-    }
-    if (error.detail) {
-        if (typeof error.detail === "string") {
-            return error.detail;
-        }
-        if (Array.isArray(error.detail)) {
-            return error.detail.map((item) => item.msg || item.message || String(item)).join(" ");
-        }
-    }
-    if (error.message) {
-        return error.message;
-    }
-    return fallbackMessage;
 }
 
 function projectById(projectId) {
@@ -174,25 +129,6 @@ function filteredExpenses() {
         const haystack = [expense.project_number, expense.customer_name, expense.vendor, expense.description, expense.category, expense.invoice_number || ""].join(" ").toLowerCase();
         const matchesQuery = !query || haystack.includes(query);
         return matchesStatus && matchesProject && matchesYear && matchesCategory && matchesQuery;
-    });
-}
-
-function renderNavState() {
-    const currentPage = getCurrentPage();
-    document.querySelectorAll(".side-nav .nav-link").forEach((link) => {
-        const href = link.getAttribute("href") || "";
-        const isPageLink = href.endsWith(".html");
-        const targetPage = href.replace("./", "");
-        const isActive = isPageLink && currentPage === targetPage;
-        link.classList.toggle("bg-white/10", !isActive);
-        link.classList.toggle("border-white/10", !isActive);
-        link.classList.toggle("text-stone-100", !isActive);
-        link.classList.toggle("bg-gradient-to-r", isActive);
-        link.classList.toggle("from-sand/35", isActive);
-        link.classList.toggle("to-brand/35", isActive);
-        link.classList.toggle("border-sand/50", isActive);
-        link.classList.toggle("text-white", isActive);
-        link.classList.toggle("shadow-lg", isActive);
     });
 }
 

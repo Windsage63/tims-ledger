@@ -23,26 +23,6 @@ function paymentsUrl(path = "") {
     return `/api/payments${path}`;
 }
 
-function currency(cents) {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format((cents || 0) / 100);
-}
-
-function centsFromInput(value) {
-    return Math.round(Number(value || 0) * 100);
-}
-
-function dollarsInput(cents) {
-    return ((cents || 0) / 100).toFixed(2);
-}
-
-function setText(id, value) {
-    const element = document.getElementById(id);
-    if (!element) {
-        return;
-    }
-    element.textContent = value;
-}
-
 function setEmptyState(message) {
     const element = document.getElementById("payment-empty-state");
     if (!element) {
@@ -60,44 +40,8 @@ function setEmptyState(message) {
     }
 }
 
-function extractErrorMessage(error, fallbackMessage) {
-    if (!error) {
-        return fallbackMessage;
-    }
-    if (typeof error === "string") {
-        return error;
-    }
-    if (error.detail) {
-        if (typeof error.detail === "string") {
-            return error.detail;
-        }
-        if (Array.isArray(error.detail)) {
-            return error.detail.map((item) => item.msg || item.message || String(item)).join(" ");
-        }
-    }
-    if (error.message) {
-        return error.message;
-    }
-    return fallbackMessage;
-}
-
 async function requestJson(path, options = {}, fallbackMessage = "Request failed.") {
-    const response = await fetch(paymentsUrl(path), {
-        headers: {
-            Accept: "application/json",
-            ...(options.headers || {})
-        },
-        ...options
-    });
-    const payload = await response.json();
-    if (!response.ok) {
-        throw new Error(extractErrorMessage(payload, fallbackMessage));
-    }
-    return payload.data || {};
-}
-
-function getCurrentPage() {
-    return window.location.pathname.split("/").pop() || "payments.html";
+    return apiRequestJson(paymentsUrl(), path, options, fallbackMessage);
 }
 
 function customerById(customerId) {
@@ -232,25 +176,6 @@ function filteredPayments() {
         const haystack = [payment.customer_name, payment.reference_number, payment.notes || ""].join(" ").toLowerCase();
         const matchesQuery = !query || haystack.includes(query);
         return matchesStatus && matchesCustomer && matchesYear && matchesQuery;
-    });
-}
-
-function renderNavState() {
-    const currentPage = getCurrentPage();
-    document.querySelectorAll(".side-nav .nav-link").forEach((link) => {
-        const href = link.getAttribute("href") || "";
-        const isPageLink = href.endsWith(".html");
-        const targetPage = href.replace("./", "");
-        const isActive = isPageLink && currentPage === targetPage;
-        link.classList.toggle("bg-white/10", !isActive);
-        link.classList.toggle("border-white/10", !isActive);
-        link.classList.toggle("text-stone-100", !isActive);
-        link.classList.toggle("bg-gradient-to-r", isActive);
-        link.classList.toggle("from-sand/35", isActive);
-        link.classList.toggle("to-brand/35", isActive);
-        link.classList.toggle("border-sand/50", isActive);
-        link.classList.toggle("text-white", isActive);
-        link.classList.toggle("shadow-lg", isActive);
     });
 }
 

@@ -14,22 +14,6 @@ function projectsUrl(path = "") {
     return `/api/projects${path}`;
 }
 
-function money(cents) {
-    return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD"
-    }).format((cents || 0) / 100);
-}
-
-function setText(id, value) {
-    const element = document.getElementById(id);
-    if (!element) {
-        return;
-    }
-
-    element.textContent = value;
-}
-
 function setEmptyState(title, message) {
     const emptyState = document.getElementById("projects-empty-state");
     if (!emptyState) {
@@ -40,22 +24,6 @@ function setEmptyState(title, message) {
         <p class="font-display text-2xl font-bold text-ink">${title}</p>
         <p class="mt-2 text-sm leading-6 text-muted">${message}</p>
     `;
-}
-
-function extractErrorMessage(payload, fallback) {
-    if (payload?.errors?.length) {
-        return payload.errors[0].message || fallback;
-    }
-
-    if (typeof payload?.detail === "string") {
-        return payload.detail;
-    }
-
-    if (Array.isArray(payload?.detail) && payload.detail.length > 0) {
-        return payload.detail[0]?.msg || fallback;
-    }
-
-    return fallback;
 }
 
 function upsertProject(project) {
@@ -105,10 +73,6 @@ async function loadProjects() {
         projectState.isLoading = false;
         render();
     }
-}
-
-function getCurrentPage() {
-    return window.location.pathname.split("/").pop() || "projects.html";
 }
 
 function nextRateId() {
@@ -165,27 +129,6 @@ function filteredProjects() {
 
 function selectedProject() {
     return projectState.projects.find((project) => project.id === projectState.selectedId) || null;
-}
-
-function renderNavState() {
-    const currentPage = getCurrentPage();
-
-    document.querySelectorAll(".side-nav .nav-link").forEach((link) => {
-        const href = link.getAttribute("href") || "";
-        const isPageLink = href.endsWith(".html");
-        const targetPage = href.replace("./", "");
-        const isActive = isPageLink && currentPage === targetPage;
-
-        link.classList.toggle("bg-white/10", !isActive);
-        link.classList.toggle("border-white/10", !isActive);
-        link.classList.toggle("text-stone-100", !isActive);
-        link.classList.toggle("bg-gradient-to-r", isActive);
-        link.classList.toggle("from-sand/35", isActive);
-        link.classList.toggle("to-brand/35", isActive);
-        link.classList.toggle("border-sand/50", isActive);
-        link.classList.toggle("text-white", isActive);
-        link.classList.toggle("shadow-lg", isActive);
-    });
 }
 
 function renderCustomerFilterOptions() {

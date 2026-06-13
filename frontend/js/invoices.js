@@ -24,27 +24,6 @@ function invoicesUrl(path = "") {
     return `/api/invoices${path}`;
 }
 
-function escapeHtml(value) {
-    return String(value ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-}
-
-function currency(cents) {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format((cents || 0) / 100);
-}
-
-function setText(id, value) {
-    const element = document.getElementById(id);
-    if (!element) {
-        return;
-    }
-    element.textContent = value;
-}
-
 function setEmptyState(message) {
     const element = document.getElementById("invoice-empty-state");
     if (!element) {
@@ -58,31 +37,6 @@ function setEmptyState(message) {
     if (detail) {
         detail.textContent = invoicesState.loadError ? "Retry after the API is available or correct the reported validation issue." : "Adjust the year or status filter, or create a new invoice.";
     }
-}
-
-function extractErrorMessage(error, fallbackMessage) {
-    if (!error) {
-        return fallbackMessage;
-    }
-    if (typeof error === "string") {
-        return error;
-    }
-    if (error.detail) {
-        if (typeof error.detail === "string") {
-            return error.detail;
-        }
-        if (Array.isArray(error.detail)) {
-            return error.detail.map((item) => item.msg || item.message || String(item)).join(" ");
-        }
-    }
-    if (error.message) {
-        return error.message;
-    }
-    return fallbackMessage;
-}
-
-function getCurrentPage() {
-    return window.location.pathname.split("/").pop() || "invoices.html";
 }
 
 function projectById(projectId) {
@@ -167,18 +121,7 @@ function upsertInvoice(invoice) {
 }
 
 async function requestJson(path, options = {}, fallbackMessage = "Request failed.") {
-    const response = await fetch(invoicesUrl(path), {
-        headers: {
-            Accept: "application/json",
-            ...(options.headers || {})
-        },
-        ...options
-    });
-    const payload = await response.json();
-    if (!response.ok) {
-        throw new Error(extractErrorMessage(payload, fallbackMessage));
-    }
-    return payload.data || {};
+    return apiRequestJson(invoicesUrl(), path, options, fallbackMessage);
 }
 
 async function loadEditor(invoiceId) {
@@ -271,25 +214,6 @@ function filteredInvoices() {
         const haystack = [invoice.invoice_number, invoice.customer_name, invoice.project_number, invoice.notes || ""].join(" ").toLowerCase();
         const matchesQuery = !query || haystack.includes(query);
         return matchesStatus && matchesYear && matchesQuery;
-    });
-}
-
-function renderNavState() {
-    const currentPage = getCurrentPage();
-    document.querySelectorAll(".side-nav .nav-link").forEach((link) => {
-        const href = link.getAttribute("href") || "";
-        const isPageLink = href.endsWith(".html");
-        const targetPage = href.replace("./", "");
-        const isActive = isPageLink && currentPage === targetPage;
-        link.classList.toggle("bg-white/10", !isActive);
-        link.classList.toggle("border-white/10", !isActive);
-        link.classList.toggle("text-stone-100", !isActive);
-        link.classList.toggle("bg-gradient-to-r", isActive);
-        link.classList.toggle("from-sand/35", isActive);
-        link.classList.toggle("to-brand/35", isActive);
-        link.classList.toggle("border-sand/50", isActive);
-        link.classList.toggle("text-white", isActive);
-        link.classList.toggle("shadow-lg", isActive);
     });
 }
 

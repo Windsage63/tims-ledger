@@ -1,34 +1,3 @@
-function setText(id, value) {
-    const element = document.getElementById(id);
-    if (!element) {
-        return;
-    }
-
-    element.textContent = value;
-}
-
-function currency(cents) {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format((cents || 0) / 100);
-}
-
-function setHtml(id, value) {
-    const element = document.getElementById(id);
-    if (!element) {
-        return;
-    }
-
-    element.innerHTML = value;
-}
-
-function escapeHtml(value) {
-    return String(value ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-}
-
 const reportState = {
     summary: {},
     customers: [],
@@ -162,18 +131,7 @@ function renderBackups() {
 }
 
 async function requestBackupJson(path, options = {}) {
-    const response = await fetch(path, {
-        headers: {
-            Accept: "application/json",
-            ...(options.headers || {})
-        },
-        ...options
-    });
-    const payload = await response.json();
-    if (!response.ok) {
-        throw new Error(payload.detail || payload.message || "Backup request failed.");
-    }
-    return payload.data || {};
+    return apiRequestJson("", path, options, "Backup request failed.");
 }
 
 async function loadBackups() {
