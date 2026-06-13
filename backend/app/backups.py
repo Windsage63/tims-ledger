@@ -13,8 +13,8 @@ from pydantic import BaseModel, ConfigDict, field_validator
 from .config import Settings
 
 
-BACKUP_PREFIX = "Winds-Ledger-Backup-"
-SAFETY_BACKUP_PREFIX = "Winds-Ledger-Safety-Backup-"
+BACKUP_PREFIX = "Tims-Ledger-Backup-"
+SAFETY_BACKUP_PREFIX = "Tims-Ledger-Safety-Backup-"
 BACKUP_SUFFIX = ".zip"
 
 

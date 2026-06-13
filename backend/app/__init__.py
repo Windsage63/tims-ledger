@@ -1,1 +1,1 @@
-"""Winds Ledger backend package."""
+"""Tim's Ledger backend package."""

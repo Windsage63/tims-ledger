@@ -1,6 +1,6 @@
 # Core Workflows
 
-This document is a companion reference to the primary PRD in `docs/winds_ledger_prd.md`. When wording differs, the PRD and later explicit product decisions take precedence.
+This document is a companion reference to the primary PRD in `docs/tims_ledger_prd.md`. When wording differs, the PRD and later explicit product decisions take precedence.
 
 ## 1. User Enters Customer
 
@@ -72,8 +72,8 @@ This document is a companion reference to the primary PRD in `docs/winds_ledger_
 
 1. User can download the XLSX audit export from the overview page. This export is for review and audit, not disaster recovery.
 2. User can create a backup from the overview page.
-3. System creates a ZIP backup in `app-data/backups/` named `Winds-Ledger-Backup-{date-timestamp}.zip`.
-4. The backup ZIP contains `winds-ledger.db` and the saved `invoices/` directory when it exists.
+3. System creates a ZIP backup in `app-data/backups/` named `Tims-Ledger-Backup-{date-timestamp}.zip`.
+4. The backup ZIP contains `tims-ledger.db` and the saved `invoices/` directory when it exists.
 5. User can keep an unlimited number of normal backups.
 6. User can select a normal backup from the restore dropdown.
 7. Before restore, system creates a safety backup of the current database and invoice documents in `app-data/backups/safety/`.

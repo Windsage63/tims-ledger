@@ -75,7 +75,7 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
     static_dir = frontend_dir / "html"
 
     app = FastAPI(
-        title="Winds Ledger API",
+        title="Tim's Ledger API",
         version="0.1.0",
         lifespan=create_lifespan(settings),
     )
@@ -156,7 +156,7 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
             content=workbook,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={
-                "Content-Disposition": 'attachment; filename="winds-ledger-audit-export.xlsx"',
+                "Content-Disposition": 'attachment; filename="tims-ledger-audit-export.xlsx"',
             },
         )
 

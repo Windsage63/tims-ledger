@@ -23,8 +23,8 @@ Here is a concise route map of the current API, grouped by function.
   - GET /api/backups
     - Lists normal backup ZIP files from `app-data/backups/`.
   - POST /api/backups
-    - Creates a normal backup ZIP in `app-data/backups/` named `Winds-Ledger-Backup-{date-timestamp}.zip`.
-    - The ZIP contains `winds-ledger.db` and the `invoices/` document directory when it exists.
+    - Creates a normal backup ZIP in `app-data/backups/` named `Tims-Ledger-Backup-{date-timestamp}.zip`.
+    - The ZIP contains `tims-ledger.db` and the `invoices/` document directory when it exists.
   - POST /api/backups/restore
     - Restores a selected normal backup by file name.
     - Before restore, creates a safety backup ZIP in `app-data/backups/safety/` so safety backups do not appear in the normal restore list.

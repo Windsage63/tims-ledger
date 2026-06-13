@@ -1,8 +1,8 @@
-# Product Requirements Document (PRD): Winds Ledger
+# Product Requirements Document (PRD): Tim's Ledger
 
 ## 1. Product Summary
 
-Winds Ledger is a desktop-first accounting workflow for customer-based project billing. The product centers on customer master data, project setup, time entry, expense entry, invoice creation from source records, and payment application against open invoices.
+Tim's Ledger is a desktop-first accounting workflow for customer-based project billing. The product centers on customer master data, project setup, time entry, expense entry, invoice creation from source records, and payment application against open invoices.
 
 This PRD is the primary product reference. The workflow document in [docs/workflows.md](workflows.md) is a companion reference, and explicit product decisions take precedence when wording differs.
 
@@ -122,9 +122,9 @@ Customer balance reporting must be explainable from invoices, payments, and paym
 
 The XLSX export is an audit/readability artifact, not the restore source of truth.
 
-Backups must be ZIP files stored in `app-data/backups/` and named `Winds-Ledger-Backup-{date-timestamp}.zip`. Each backup ZIP must contain:
+Backups must be ZIP files stored in `app-data/backups/` and named `Tims-Ledger-Backup-{date-timestamp}.zip`. Each backup ZIP must contain:
 
-1. `winds-ledger.db`
+1. `tims-ledger.db`
 2. the `invoices/` saved document directory when it exists
 
 Users may keep an unlimited number of normal backups and select one to restore. During restore, the system must first create a safety backup of the current database and invoice documents in `app-data/backups/safety/` so it is not confused with normal restore candidates.
@@ -213,7 +213,7 @@ The invoice editor should preserve the printable invoice experience while keepin
 
 1. Provide a Create Backup action on the overview page near the audit export.
 2. Store normal backups in `app-data/backups/`.
-3. Name normal backups `Winds-Ledger-Backup-{date-timestamp}.zip`.
+3. Name normal backups `Tims-Ledger-Backup-{date-timestamp}.zip`.
 4. Include the SQLite database and saved invoice document directory in each backup.
 5. Let the user keep an unlimited number of normal backups.
 6. Let the user select a normal backup to restore.

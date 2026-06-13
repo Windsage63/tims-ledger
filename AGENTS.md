@@ -1,12 +1,12 @@
-# Winds Ledger - Agent Instructions
+# Tim's Ledger - Agent Instructions
 
 ## Project Overview
 
-Winds Ledger is a local, desktop-first accounting workflow for project billing. It uses a FastAPI backend, vanilla HTML/JavaScript frontend, SQLite persistence, and generated HTML invoice documents.
+Tim's Ledger is a local, desktop-first accounting workflow for project billing. It uses a FastAPI backend, vanilla HTML/JavaScript frontend, SQLite persistence, and generated HTML invoice documents.
 
 The current product reference docs are:
 
-- [docs/winds_ledger_prd.md](docs/winds_ledger_prd.md)
+- [docs/tims_ledger_prd.md](docs/tims_ledger_prd.md)
 - [docs/workflows.md](docs/workflows.md)
 - [docs/API Reference.md](docs/API%20Reference.md)
 
@@ -59,11 +59,11 @@ app-data/          Local runtime data; gitignored
 
 ## Data Safety
 
-`app-data/winds-ledger.db` is the source-of-truth SQLite database. `app-data/invoices/` stores generated invoice HTML documents. Treat both as local production data.
+`app-data/tims-ledger.db` is the source-of-truth SQLite database. `app-data/invoices/` stores generated invoice HTML documents. Treat both as local production data.
 
 Do not wipe, reset, reseed, or replace the database unless the user explicitly asks. Prefer read-only inspection for debugging. If restore behavior is needed, use the application backup/restore path so a safety backup is created first.
 
-Normal backups live in `app-data/backups/` as `Winds-Ledger-Backup-{date-timestamp}.zip`. Restore safety backups live in `app-data/backups/safety/` and should not be listed as normal restore candidates. The XLSX export is for audit/readability, not backup.
+Normal backups live in `app-data/backups/` as `Tims-Ledger-Backup-{date-timestamp}.zip`. Restore safety backups live in `app-data/backups/safety/` and should not be listed as normal restore candidates. The XLSX export is for audit/readability, not backup.
 
 ## Backend Conventions
 

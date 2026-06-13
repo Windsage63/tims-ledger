@@ -3,13 +3,13 @@ setlocal
 
 set "ROOT_DIR=%~dp0"
 set "BACKEND_DIR=%ROOT_DIR%backend"
-set "HOST=%WINDS_LEDGER_HOST%"
-set "PORT=%WINDS_LEDGER_PORT%"
-set "WINDOW_TITLE=%WINDS_LEDGER_WINDOW_TITLE%"
+set "HOST=%TIMS_LEDGER_HOST%"
+set "PORT=%TIMS_LEDGER_PORT%"
+set "WINDOW_TITLE=%TIMS_LEDGER_WINDOW_TITLE%"
 
 if not defined HOST set "HOST=127.0.0.1"
 if not defined PORT set "PORT=8004"
-if not defined WINDOW_TITLE set "WINDOW_TITLE=Winds Ledger Backend"
+if not defined WINDOW_TITLE set "WINDOW_TITLE=Tim's Ledger Backend"
 
 set "APP_URL=http://%HOST%:%PORT%/"
 set "HEALTH_URL=http://%HOST%:%PORT%/api/health"
@@ -26,10 +26,10 @@ if not exist "%BACKEND_DIR%" (
 
 pushd "%BACKEND_DIR%"
 
-echo Starting Winds Ledger backend on %APP_URL%
+echo Starting Tim's Ledger backend on %APP_URL%
 echo Using Python: %PYTHON_EXE%
 
-if /I "%WINDS_LEDGER_FOREGROUND%"=="1" (
+if /I "%TIMS_LEDGER_FOREGROUND%"=="1" (
     "%PYTHON_EXE%" -m uvicorn app.main:app --reload --host %HOST% --port %PORT%
     set "EXIT_CODE=%ERRORLEVEL%"
     popd
@@ -38,7 +38,7 @@ if /I "%WINDS_LEDGER_FOREGROUND%"=="1" (
 
 start "%WINDOW_TITLE%" cmd /k ""%PYTHON_EXE%" -m uvicorn app.main:app --reload --host %HOST% --port %PORT%"
 
-if /I "%WINDS_LEDGER_SKIP_BROWSER%"=="1" (
+if /I "%TIMS_LEDGER_SKIP_BROWSER%"=="1" (
     popd
     exit /b 0
 )

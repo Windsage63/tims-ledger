@@ -16,10 +16,10 @@ class Settings:
 
 def load_settings() -> Settings:
     repo_root = Path(__file__).resolve().parents[2]
-    data_dir = Path(os.getenv("WINDS_LEDGER_DATA_DIR", str(repo_root / "app-data")))
-    database_path = Path(os.getenv("WINDS_LEDGER_DB_PATH", str(data_dir / "winds-ledger.db")))
-    migrations_dir = Path(os.getenv("WINDS_LEDGER_MIGRATIONS_DIR", str(repo_root / "migrations")))
-    skip_startup_migrations = os.getenv("WINDS_LEDGER_SKIP_STARTUP_MIGRATIONS", "0") == "1"
+    data_dir = Path(os.getenv("TIMS_LEDGER_DATA_DIR", str(repo_root / "app-data")))
+    database_path = Path(os.getenv("TIMS_LEDGER_DB_PATH", str(data_dir / "tims-ledger.db")))
+    migrations_dir = Path(os.getenv("TIMS_LEDGER_MIGRATIONS_DIR", str(repo_root / "migrations")))
+    skip_startup_migrations = os.getenv("TIMS_LEDGER_SKIP_STARTUP_MIGRATIONS", "0") == "1"
 
     return Settings(
         repo_root=repo_root,
