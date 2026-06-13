@@ -104,7 +104,6 @@ def render_invoice_table_rows(payload: dict[str, object]) -> str:
     invoice = payload["invoice"]
     selected_time_entries = payload["selected_time_entries"]
     selected_expenses = payload["selected_expenses"]
-    project_label = project_reference(invoice)
     rows: list[str] = []
 
     if selected_time_entries:
@@ -117,7 +116,7 @@ def render_invoice_table_rows(payload: dict[str, object]) -> str:
                 """
                 <tr>
                     <td>{date}</td>
-                    <td>{project}</td>
+                    <td>{category}</td>
                     <td>{description}</td>
                     <td class="numeric">{quantity:.2f}</td>
                     <td class="numeric">{unit_price}</td>
@@ -125,7 +124,7 @@ def render_invoice_table_rows(payload: dict[str, object]) -> str:
                 </tr>
                 """.format(
                     date=escape(format_print_date(str(entry["entry_date"]))),
-                    project=escape(project_label),
+                    category=escape(str(entry["rate_code"])),
                     description=escape(str(entry["description"])),
                     quantity=quantity,
                     unit_price=escape(currency(int(entry["rate_cents"]))),
@@ -151,7 +150,7 @@ def render_invoice_table_rows(payload: dict[str, object]) -> str:
                 """
                 <tr>
                     <td>{date}</td>
-                    <td>{project}</td>
+                    <td>{category}</td>
                     <td>{description}</td>
                     <td class="numeric">1.00</td>
                     <td class="numeric">{unit_price}</td>
@@ -159,7 +158,7 @@ def render_invoice_table_rows(payload: dict[str, object]) -> str:
                 </tr>
                 """.format(
                     date=escape(format_print_date(str(expense["entry_date"]))),
-                    project=escape(project_label),
+                    category=escape(str(expense["category"])),
                     description=escape(description),
                     unit_price=escape(currency(int(expense["line_total_cents"]))),
                     line_total=escape(currency(int(expense["line_total_cents"]))),
@@ -439,7 +438,7 @@ def build_invoice_print_html(payload: dict[str, object]) -> str:
             <thead>
                 <tr>
                     <th>Date</th>
-                    <th>Project</th>
+                    <th>Category</th>
                     <th>Description</th>
                     <th class="numeric">Qty</th>
                     <th class="numeric">Unit Price</th>
