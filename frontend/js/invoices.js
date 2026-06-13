@@ -225,7 +225,6 @@ async function loadNewEditor(projectId, sourceInvoice = null) {
             invoicesState.editor.invoice.invoice_number = sourceInvoice.invoice_number || invoicesState.editor.invoice.invoice_number;
             invoicesState.editor.invoice.invoice_date = sourceInvoice.invoice_date || invoicesState.editor.invoice.invoice_date;
             invoicesState.editor.invoice.terms_days = sourceInvoice.terms_days ?? invoicesState.editor.invoice.terms_days;
-            invoicesState.editor.invoice.po_number = sourceInvoice.po_number || null;
             invoicesState.editor.invoice.notes = sourceInvoice.notes || "";
             invoicesState.editor.invoice.issued_at = sourceInvoice.issued_at || null;
             invoicesState.editor.invoice.paid_amount_cents = sourceInvoice.paid_amount_cents || 0;
@@ -269,7 +268,7 @@ function filteredInvoices() {
         const matchesStatus = invoicesState.statusFilter === "all" || status === invoicesState.statusFilter;
         const year = String(invoice.invoice_date).slice(0, 4);
         const matchesYear = invoicesState.yearFilter === "all" || year === invoicesState.yearFilter;
-        const haystack = [invoice.invoice_number, invoice.customer_name, invoice.project_number, invoice.po_number || "", invoice.notes || ""].join(" ").toLowerCase();
+        const haystack = [invoice.invoice_number, invoice.customer_name, invoice.project_number, invoice.notes || ""].join(" ").toLowerCase();
         const matchesQuery = !query || haystack.includes(query);
         return matchesStatus && matchesYear && matchesQuery;
     });
@@ -299,7 +298,7 @@ function renderProjectOptions() {
     if (!select) {
         return;
     }
-    select.innerHTML = invoicesState.projects.map((project) => `<option value="${project.id}">${escapeHtml(project.project_number)} · ${escapeHtml(project.customer_name)}</option>`).join("");
+    select.innerHTML = invoicesState.projects.map((project) => `<option value="${project.id}">${escapeHtml(project.project_number)} · ${escapeHtml(project.description)}</option>`).join("");
 }
 
 function renderYearOptions() {
@@ -431,10 +430,9 @@ function renderEditor(invoice) {
     document.getElementById("invoice-number").value = invoice.invoice_number;
     projectSelect.value = String(invoice.project_id);
     document.getElementById("invoice-date").value = invoice.invoice_date;
-    document.getElementById("invoice-po-number").value = invoice.po_number || "";
     document.getElementById("invoice-notes").value = invoice.notes || "";
 
-    ["invoice-number", "invoice-project", "invoice-date", "invoice-po-number", "invoice-notes"].forEach((id) => {
+    ["invoice-number", "invoice-project", "invoice-date", "invoice-notes"].forEach((id) => {
         document.getElementById(id).disabled = invoicesState.isSaving;
     });
 
@@ -504,7 +502,6 @@ function invoicePayloadFromForm(currentInvoice) {
         project_id: Number(document.getElementById("invoice-project")?.value || currentInvoice?.project_id || 0),
         invoice_date: invoiceDate,
         terms_days: Number(currentInvoice?.terms_days ?? 30),
-        po_number: String(document.getElementById("invoice-po-number")?.value || "").trim() || null,
         notes: String(document.getElementById("invoice-notes")?.value || "")
     };
 }
@@ -523,7 +520,6 @@ function syncSelectedInvoiceFromForm() {
     invoice.customer_name = project?.customer_name || invoice.customer_name;
     invoice.invoice_date = payload.invoice_date;
     invoice.terms_days = payload.terms_days;
-    invoice.po_number = payload.po_number;
     invoice.notes = payload.notes;
 }
 
@@ -688,10 +684,6 @@ function bindEvents() {
         void loadNewEditor(sourceInvoice.project_id, sourceInvoice);
     });
     document.getElementById("invoice-date")?.addEventListener("input", () => {
-        syncSelectedInvoiceFromForm();
-        render();
-    });
-    document.getElementById("invoice-po-number")?.addEventListener("input", () => {
         syncSelectedInvoiceFromForm();
         render();
     });

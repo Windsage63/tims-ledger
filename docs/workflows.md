@@ -40,10 +40,11 @@ This document is a companion reference to the primary PRD in `docs/winds_ledger_
 5. Invoice linkage is empty until Save/Print succeeds for an invoice that includes the expense.
 6. Unbilled billable expenses are eligible for invoice building. In the invoice editor, checking or unchecking expenses is browser-local until Save/Print. When Save/Print succeeds, checked expenses are stamped to the invoice and unchecked prior expenses have their invoice linkage cleared.
 7. Non-billable expenses remain available for internal cost tracking and must not appear as invoice charges.
+8. Expense categories are limited to `Materials`, `Lodging`, `Airfare`, `Mileage`, `Perdiem`, `Rental Car`, `Gas`, `Parking`, `Tolls`, `Meals`, `Entertainment`, `Gifts`, `Freight`, and `Misc.`.
 
 ## 5. User Creates Or Edits An Invoice
 
-1. User enters or edits the invoice date, unique invoice number, project number, terms, PO number, and notes.
+1. User enters or edits the invoice date, unique invoice number, project, and notes. The project selector shows the project number and project description.
 2. For a new invoice, the editor may hold the invoice in browser state until Save/Print. No invoice database row is required before Save/Print.
 3. For an existing invoice, the system loads the saved invoice, its selected rows, eligible rows, and totals, then closes the database connection.
 4. System lists all eligible unbilled time for the project, showing date, description, duration, rate, total, and an `invoice?` checkbox.
@@ -56,7 +57,8 @@ This document is a companion reference to the primary PRD in `docs/winds_ledger_
 11. Checked time entries are saved with the invoice ID. Unchecked prior time entries have their invoice linkage cleared and return to the unbilled pool.
 12. Checked expenses are saved with the invoice ID. Unchecked prior expenses have their invoice linkage cleared and return to the unbilled pool.
 13. Existing issued invoices may be viewed, edited, saved, and reprinted by invoice number.
-14. Editing and reissuing an invoice intentionally changes accounting history. This application does not require an immutable invoice audit trail.
+14. The printed invoice shows project references as `{project number} - {project description}`.
+15. Editing and reissuing an invoice intentionally changes accounting history. This application does not require an immutable invoice audit trail.
 
 ## 6. User Records and Applies a Payment
 
@@ -65,3 +67,15 @@ This document is a companion reference to the primary PRD in `docs/winds_ledger_
 3. User applies some or all of that payment to one or more open invoices.
 4. System prevents over-application and updates both invoice open balances and the payment's remaining unapplied amount.
 5. Customer balance shows open AR and net balance, each derived from invoices, payments, and payment applications.
+
+## 7. User Exports, Backs Up, Or Restores Data
+
+1. User can download the XLSX audit export from the overview page. This export is for review and audit, not disaster recovery.
+2. User can create a backup from the overview page.
+3. System creates a ZIP backup in `app-data/backups/` named `Winds-Ledger-Backup-{date-timestamp}.zip`.
+4. The backup ZIP contains `winds-ledger.db` and the saved `invoices/` directory when it exists.
+5. User can keep an unlimited number of normal backups.
+6. User can select a normal backup from the restore dropdown.
+7. Before restore, system creates a safety backup of the current database and invoice documents in `app-data/backups/safety/`.
+8. System restores the selected normal backup and refreshes overview/reporting data.
+9. Safety backups are stored separately and are not treated as normal restore candidates.

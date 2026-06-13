@@ -7,6 +7,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
+from .backups import BackupRestoreWrite, create_backup, list_backup_files, restore_backup
 from .config import Settings, load_settings
 from .customers import CustomerWrite, create_customer, fetch_customers, update_customer
 from .db import apply_pending_migrations, connect, get_database_status
@@ -157,6 +158,37 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
             headers={
                 "Content-Disposition": 'attachment; filename="winds-ledger-audit-export.xlsx"',
             },
+        )
+
+    @app.get("/api/backups")
+    def backups_list(request: Request) -> dict[str, object]:
+        backups = list_backup_files(request.app.state.settings)
+        return response_envelope({"backups": backups}, screen="overview")
+
+    @app.post("/api/backups")
+    def backups_create(request: Request) -> dict[str, object]:
+        try:
+            backup = create_backup(request.app.state.settings)
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=f"Unable to create backup: {exc}") from exc
+
+        return response_envelope({"backup": backup, "backups": list_backup_files(request.app.state.settings)}, screen="overview")
+
+    @app.post("/api/backups/restore")
+    def backups_restore(payload: BackupRestoreWrite, request: Request) -> dict[str, object]:
+        try:
+            restored = restore_backup(request.app.state.settings, payload.file_name)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=f"Unable to restore backup: {exc}") from exc
+
+        return response_envelope(
+            {
+                **restored,
+                "backups": list_backup_files(request.app.state.settings),
+            },
+            screen="overview",
         )
 
     @app.get("/api/customers/bootstrap")

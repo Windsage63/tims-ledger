@@ -118,7 +118,7 @@
                         <div class="grid w-full gap-3 lg:grid-cols-[minmax(0,1fr)_10rem]">
                             <div>
                                 <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="invoice-search">Search</label>
-                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="invoice-search" placeholder="Search invoice number, customer, project, or PO number" type="search">
+                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="invoice-search" placeholder="Search invoice number, customer, project, or notes" type="search">
                             </div>
                             <div>
                                 <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="invoice-year-filter">Year</label>
@@ -185,7 +185,7 @@
                     <form class="grid gap-4" id="invoice-form">
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div>
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="invoice-number">Invoice Number</label>
+                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="invoice-number">Invoice No.</label>
                                 <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 font-mono text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="invoice-number" required type="text">
                             </div>
                             <div>
@@ -194,15 +194,9 @@
                             </div>
                         </div>
 
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="invoice-date">Invoice Date</label>
-                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="invoice-date" required type="date">
-                            </div>
-                            <div>
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="invoice-po-number">PO Number</label>
-                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="invoice-po-number" type="text">
-                            </div>
+                        <div>
+                            <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="invoice-date">Invoice Date</label>
+                            <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="invoice-date" required type="date">
                         </div>
 
                         <div>

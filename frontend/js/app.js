@@ -20,12 +20,24 @@ function setHtml(id, value) {
     element.innerHTML = value;
 }
 
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
 const reportState = {
     summary: {},
     customers: [],
     selectedCustomerId: null,
     statement: null,
-    auditExportPath: "/api/exports/audit.xlsx"
+    auditExportPath: "/api/exports/audit.xlsx",
+    backups: [],
+    selectedBackup: "",
+    isBackupBusy: false
 };
 
 function updateActiveNav() {
@@ -64,14 +76,6 @@ function renderOverview(data) {
     setText("metric-mode", String(summary.projects_count ?? "0"));
     setText("metric-next", currency(summary.open_receivables_cents || 0));
     setText("metric-assets", currency(summary.unbilled_work_cents || 0));
-    setText("status-page-path", system.database_path || window.location.href);
-    setText("status-data-source", "SQLite tables and balance views served through FastAPI.");
-    setText(
-        "status-next-target",
-        system.pending_migrations_count > 0
-            ? `Apply ${system.pending_migrations_count} pending migrations before continuing.`
-            : "Statements, invoice PDFs, and XLSX audit export are now live on the served app."
-    );
 }
 
 function renderOverviewError(message) {
@@ -80,9 +84,6 @@ function renderOverviewError(message) {
     setText("metric-mode", "-");
     setText("metric-next", "-");
     setText("metric-assets", "-");
-    setText("status-page-path", window.location.href);
-    setText("status-data-source", message);
-    setText("status-next-target", "Open the app through FastAPI to load overview totals from SQLite.");
 }
 
 function customerAddress(customer) {
@@ -98,6 +99,144 @@ function statementTimestamp(value) {
     }
     const parsed = new Date(value);
     return Number.isNaN(parsed.getTime()) ? value : `Generated ${parsed.toLocaleString()}`;
+}
+
+function backupTimestamp(value) {
+    if (!value) {
+        return "";
+    }
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString();
+}
+
+function backupSizeLabel(bytes) {
+    const numericBytes = Number(bytes || 0);
+    if (numericBytes < 1024) {
+        return `${numericBytes} B`;
+    }
+    if (numericBytes < 1024 * 1024) {
+        return `${(numericBytes / 1024).toFixed(1)} KB`;
+    }
+    return `${(numericBytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function setBackupStatus(message) {
+    setText("backup-status", message);
+}
+
+function renderBackups() {
+    const select = document.getElementById("backup-select");
+    const createButton = document.getElementById("create-backup-button");
+    const restoreButton = document.getElementById("restore-backup-button");
+    const backups = Array.isArray(reportState.backups) ? reportState.backups : [];
+
+    if (select) {
+        select.innerHTML = backups.length
+            ? backups.map((backup) => {
+                const label = `${backup.file_name} (${backupSizeLabel(backup.size_bytes)}, ${backupTimestamp(backup.created_at)})`;
+                return `<option value="${escapeHtml(backup.file_name)}">${escapeHtml(label)}</option>`;
+            }).join("")
+            : '<option value="">No backups available</option>';
+        if (reportState.selectedBackup && backups.some((backup) => backup.file_name === reportState.selectedBackup)) {
+            select.value = reportState.selectedBackup;
+        } else {
+            select.value = backups[0]?.file_name || "";
+            reportState.selectedBackup = select.value;
+        }
+        select.disabled = reportState.isBackupBusy || backups.length === 0;
+    }
+
+    if (createButton) {
+        createButton.disabled = reportState.isBackupBusy;
+        createButton.classList.toggle("opacity-60", reportState.isBackupBusy);
+        createButton.textContent = reportState.isBackupBusy ? "Working..." : "Create Backup";
+    }
+
+    if (restoreButton) {
+        const isDisabled = reportState.isBackupBusy || backups.length === 0;
+        restoreButton.disabled = isDisabled;
+        restoreButton.classList.toggle("opacity-60", isDisabled);
+        restoreButton.textContent = reportState.isBackupBusy ? "Working..." : "Restore Backup";
+    }
+
+}
+
+async function requestBackupJson(path, options = {}) {
+    const response = await fetch(path, {
+        headers: {
+            Accept: "application/json",
+            ...(options.headers || {})
+        },
+        ...options
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+        throw new Error(payload.detail || payload.message || "Backup request failed.");
+    }
+    return payload.data || {};
+}
+
+async function loadBackups() {
+    try {
+        const data = await requestBackupJson("/api/backups");
+        reportState.backups = Array.isArray(data.backups) ? data.backups : [];
+        renderBackups();
+        setBackupStatus(reportState.backups.length ? `${reportState.backups.length} backups available.` : "No backups yet.");
+    } catch (error) {
+        reportState.backups = [];
+        renderBackups();
+        setBackupStatus(error.message || "Unable to load backups.");
+    }
+}
+
+async function createBackup() {
+    if (reportState.isBackupBusy) {
+        return;
+    }
+    reportState.isBackupBusy = true;
+    setBackupStatus("Creating backup...");
+    renderBackups();
+    try {
+        const data = await requestBackupJson("/api/backups", { method: "POST" });
+        reportState.backups = Array.isArray(data.backups) ? data.backups : [];
+        reportState.selectedBackup = data.backup?.file_name || reportState.backups[0]?.file_name || "";
+        setBackupStatus(data.backup ? `Created ${data.backup.file_name}.` : "Backup created.");
+    } catch (error) {
+        setBackupStatus(error.message || "Unable to create backup.");
+    } finally {
+        reportState.isBackupBusy = false;
+        renderBackups();
+    }
+}
+
+async function restoreSelectedBackup() {
+    if (reportState.isBackupBusy || !reportState.selectedBackup) {
+        return;
+    }
+    const confirmed = window.confirm(`Restore ${reportState.selectedBackup}? A safety backup of the current database will be created first.`);
+    if (!confirmed) {
+        return;
+    }
+
+    reportState.isBackupBusy = true;
+    setBackupStatus("Restoring backup...");
+    renderBackups();
+    try {
+        const data = await requestBackupJson("/api/backups/restore", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ file_name: reportState.selectedBackup })
+        });
+        reportState.backups = Array.isArray(data.backups) ? data.backups : [];
+        setBackupStatus(`Restored ${data.restored_backup?.file_name || reportState.selectedBackup}. Safety backup: ${data.safety_backup?.file_name || "created"}.`);
+        await loadOverview();
+        await loadAccountsReceivable();
+    } catch (error) {
+        setBackupStatus(error.message || "Unable to restore backup.");
+    } finally {
+        reportState.isBackupBusy = false;
+        renderBackups();
+    }
 }
 
 function renderAccountsReceivable() {
@@ -267,6 +406,15 @@ function bindReportingEvents() {
         }
         void loadAccountsReceivable(button.dataset.customerReportId || null);
     });
+    document.getElementById("create-backup-button")?.addEventListener("click", () => {
+        void createBackup();
+    });
+    document.getElementById("backup-select")?.addEventListener("change", (event) => {
+        reportState.selectedBackup = event.target.value;
+    });
+    document.getElementById("restore-backup-button")?.addEventListener("click", () => {
+        void restoreSelectedBackup();
+    });
 }
 
 function bootstrapLandingPage() {
@@ -275,6 +423,7 @@ function bootstrapLandingPage() {
     updateActiveNav();
     loadOverview();
     loadAccountsReceivable();
+    loadBackups();
 }
 
 window.addEventListener("DOMContentLoaded", () => {

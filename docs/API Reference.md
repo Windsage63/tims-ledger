@@ -16,7 +16,20 @@ Here is a concise route map of the current API, grouped by function.
   - GET /api/reports/accounts-receivable
     - Returns AR/customer receivables report data; optionally filtered by customer_id.
   - GET /api/exports/audit.xlsx
-    - Downloads an audit/export workbook as an XLSX file.
+    - Downloads a human-readable audit/export workbook as an XLSX file. This is not the application backup format.
+
+## Backups
+
+  - GET /api/backups
+    - Lists normal backup ZIP files from `app-data/backups/`.
+  - POST /api/backups
+    - Creates a normal backup ZIP in `app-data/backups/` named `Winds-Ledger-Backup-{date-timestamp}.zip`.
+    - The ZIP contains `winds-ledger.db` and the `invoices/` document directory when it exists.
+  - POST /api/backups/restore
+    - Restores a selected normal backup by file name.
+    - Before restore, creates a safety backup ZIP in `app-data/backups/safety/` so safety backups do not appear in the normal restore list.
+    - Request body:
+      - `file_name`: Backup ZIP file name from the normal backup list.
 
 ## Customers
 

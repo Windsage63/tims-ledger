@@ -9,14 +9,20 @@ from .projects import customer_lookup, project_lookup
 
 
 EXPENSE_CATEGORIES = [
-    "Equipment",
-    "Meals",
+    "Materials",
+    "Lodging",
+    "Airfare",
     "Mileage",
-    "Permits",
-    "Printing",
-    "Records",
-    "Supplies",
-    "Travel",
+    "Perdiem",
+    "Rental Car",
+    "Gas",
+    "Parking",
+    "Tolls",
+    "Meals",
+    "Entertainment",
+    "Gifts",
+    "Freight",
+    "Misc.",
 ]
 
 

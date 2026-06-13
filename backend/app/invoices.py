@@ -90,6 +90,12 @@ def invoice_terms_notice(terms_days: int) -> str:
     return f"Total due in {terms_days} days. Overdue accounts subject to a service charge of 1% per month."
 
 
+def project_reference(invoice: dict[str, object]) -> str:
+    description = str(invoice.get("project_description") or "").strip()
+    project_number = str(invoice["project_number"])
+    return f"{project_number} - {description}" if description else project_number
+
+
 def html_line_breaks(lines: list[str]) -> str:
     return "<br>".join(escape(line) for line in lines if line)
 
@@ -98,6 +104,7 @@ def render_invoice_table_rows(payload: dict[str, object]) -> str:
     invoice = payload["invoice"]
     selected_time_entries = payload["selected_time_entries"]
     selected_expenses = payload["selected_expenses"]
+    project_label = project_reference(invoice)
     rows: list[str] = []
 
     if selected_time_entries:
@@ -118,7 +125,7 @@ def render_invoice_table_rows(payload: dict[str, object]) -> str:
                 </tr>
                 """.format(
                     date=escape(format_print_date(str(entry["entry_date"]))),
-                    project=escape(str(invoice["project_number"])),
+                    project=escape(project_label),
                     description=escape(str(entry["description"])),
                     quantity=quantity,
                     unit_price=escape(currency(int(entry["rate_cents"]))),
@@ -152,7 +159,7 @@ def render_invoice_table_rows(payload: dict[str, object]) -> str:
                 </tr>
                 """.format(
                     date=escape(format_print_date(str(expense["entry_date"]))),
-                    project=escape(str(invoice["project_number"])),
+                    project=escape(project_label),
                     description=escape(description),
                     unit_price=escape(currency(int(expense["line_total_cents"]))),
                     line_total=escape(currency(int(expense["line_total_cents"]))),
@@ -426,7 +433,6 @@ def build_invoice_print_html(payload: dict[str, object]) -> str:
                 <div class="meta-row"><span class="meta-label">Due Date</span><span class="meta-value">{due_date}</span></div>
                 <div class="meta-row"><span class="meta-label">Terms</span><span class="meta-value">{terms}</span></div>
                 <div class="meta-row"><span class="meta-label">Project</span><span class="meta-value">{project_number}</span></div>
-                <div class="meta-row"><span class="meta-label">P.O. Number</span><span class="meta-value">{po_number}</span></div>
             </div>
         </section>
         <table>
@@ -469,8 +475,7 @@ def build_invoice_print_html(payload: dict[str, object]) -> str:
         invoice_date=escape(format_print_date(str(invoice["invoice_date"]))),
         due_date=escape(str(invoice["due_date"])),
         terms=escape(terms_label(int(invoice["terms_days"]))),
-        project_number=escape(str(invoice["project_number"])),
-        po_number=escape(str(invoice["po_number"] or "-")),
+        project_number=escape(project_reference(invoice)),
         table_rows=render_invoice_table_rows(payload),
         invoice_total=escape(currency(int(summary["invoice_total_cents"]))),
         prior_balance=escape(currency(int(summary["prior_balance_cents"]))),
@@ -500,6 +505,7 @@ def invoice_select_sql() -> str:
         i.invoice_number,
         i.project_id,
         p.project_number,
+        p.description AS project_description,
         i.customer_id,
         c.customer_name,
         c.street_address,
@@ -558,6 +564,7 @@ def row_to_invoice(connection: sqlite3.Connection, row: sqlite3.Row) -> dict[str
         "invoice_number": row["invoice_number"],
         "project_id": row["project_id"],
         "project_number": row["project_number"],
+        "project_description": row["project_description"],
         "customer_id": row["customer_id"],
         "customer_name": row["customer_name"],
         "street_address": row["street_address"],
@@ -678,6 +685,7 @@ def invoice_new_editor_payload(
         SELECT
             p.id AS project_id,
             p.project_number,
+            p.description AS project_description,
             c.id AS customer_id,
             c.customer_name,
             c.street_address,
@@ -702,6 +710,7 @@ def invoice_new_editor_payload(
         "invoice_number": next_invoice_number(connection, invoice_date),
         "project_id": project["project_id"],
         "project_number": project["project_number"],
+        "project_description": project["project_description"],
         "customer_id": project["customer_id"],
         "customer_name": project["customer_name"],
         "street_address": project["street_address"],

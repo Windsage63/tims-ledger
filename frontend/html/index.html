@@ -104,87 +104,6 @@
                 </article>
             </section>
 
-            <section class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(20rem,0.9fr)]">
-                <article class="rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
-                    <div class="mb-5">
-                        <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Workflow Surface</p>
-                        <h2 class="mt-2 font-display text-3xl font-bold text-ink">Every operational screen now persists through the same SQLite-backed workflow.</h2>
-                    </div>
-
-                    <div class="grid gap-3">
-                        <section class="grid gap-3 border-t border-line/80 py-4 first:border-t-0 first:pt-0 md:grid-cols-[10rem_minmax(0,1fr)]" id="customers" data-module-section>
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Customer Master</p>
-                            <div>
-                                <h3 class="font-display text-xl font-bold text-ink">Customers anchor every downstream workflow.</h3>
-                                <p class="mt-2 text-sm leading-7 text-muted">Track billing identity, mailing details, and account status from one durable record instead of scattered spreadsheet tabs.</p>
-                            </div>
-                        </section>
-
-                        <section class="grid gap-3 border-t border-line/80 py-4 md:grid-cols-[10rem_minmax(0,1fr)]" id="projects" data-module-section>
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Project Setup</p>
-                            <div>
-                                <h3 class="font-display text-xl font-bold text-ink">Project numbers and rate tables stay explicit.</h3>
-                                <p class="mt-2 text-sm leading-7 text-muted">Built-in ST, OT, and TT rates sit beside project-specific custom rates so invoice math stays predictable and auditable. The browse-plus-editor projects prototype is now live.</p>
-                            </div>
-                        </section>
-
-                        <section class="grid gap-3 border-t border-line/80 py-4 md:grid-cols-[10rem_minmax(0,1fr)]" id="time" data-module-section>
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Time Entry</p>
-                            <div>
-                                <h3 class="font-display text-xl font-bold text-ink">Time billability comes from the selected rate.</h3>
-                                <p class="mt-2 text-sm leading-7 text-muted">A zero-rate time row stays non-billable. A custom one-hour rate can represent a fixed fee without inventing manual invoice lines.</p>
-                            </div>
-                        </section>
-
-                        <section class="grid gap-3 border-t border-line/80 py-4 md:grid-cols-[10rem_minmax(0,1fr)]" id="expenses" data-module-section>
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Expense Entry</p>
-                            <div>
-                                <h3 class="font-display text-xl font-bold text-ink">Expenses remain source records with an explicit billable flag.</h3>
-                                <p class="mt-2 text-sm leading-7 text-muted">That keeps reimbursements and internal-only costs in the same ledger while preserving a clean invoice-eligibility rule.</p>
-                            </div>
-                        </section>
-
-                        <section class="grid gap-3 border-t border-line/80 py-4 md:grid-cols-[10rem_minmax(0,1fr)]" id="invoices" data-module-section>
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Invoice Builder</p>
-                            <div>
-                                <h3 class="font-display text-xl font-bold text-ink">Invoices are assembled from stored source rows.</h3>
-                                <p class="mt-2 text-sm leading-7 text-muted">The long-term shell keeps the printable invoice experience, but the bookkeeping truth stays in linked time and expense records.</p>
-                            </div>
-                        </section>
-
-                        <section class="grid gap-3 border-t border-line/80 py-4 md:grid-cols-[10rem_minmax(0,1fr)]" id="payments" data-module-section>
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Payment Ledger</p>
-                            <div>
-                                <h3 class="font-display text-xl font-bold text-ink">Receivables stay derived and explainable.</h3>
-                                <p class="mt-2 text-sm leading-7 text-muted">Open balances, unapplied credit, and customer totals come from invoices plus payment applications, not hand-maintained balance fields.</p>
-                            </div>
-                        </section>
-                    </div>
-                </article>
-
-                <article class="rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7" id="prototype">
-                    <div class="mb-5">
-                        <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">System Notes</p>
-                        <h2 class="mt-2 font-display text-3xl font-bold text-ink">Current database-backed status.</h2>
-                    </div>
-
-                    <dl class="grid gap-4">
-                        <div class="border-b border-line/80 pb-4">
-                            <dt class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Database Path</dt>
-                            <dd class="mt-2 break-all font-mono text-sm leading-6 text-muted" id="status-page-path">Loading...</dd>
-                        </div>
-                        <div class="border-b border-line/80 pb-4">
-                            <dt class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Data Source</dt>
-                            <dd class="mt-2 text-sm leading-6 text-muted" id="status-data-source">Loading...</dd>
-                        </div>
-                        <div>
-                            <dt class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Next Target</dt>
-                            <dd class="mt-2 text-sm leading-6 text-muted" id="status-next-target">Loading...</dd>
-                        </div>
-                    </dl>
-                </article>
-            </section>
-
             <section class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(20rem,0.9fr)]" id="exports">
                 <article class="rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -193,7 +112,13 @@
                             <h2 class="mt-2 font-display text-3xl font-bold text-ink">Derived customer balances and statement detail.</h2>
                             <p class="mt-3 max-w-3xl text-sm leading-7 text-muted">Open AR and unapplied credits are read from the ledger views so each balance stays explainable from invoices and payment applications.</p>
                         </div>
-                        <a class="inline-flex min-w-52 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" download href="/api/exports/audit.xlsx" id="audit-export-link">Download XLSX Audit Export</a>
+                        <div class="grid gap-3 sm:min-w-72">
+                            <a class="inline-flex min-w-52 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" download href="/api/exports/audit.xlsx" id="audit-export-link">Download XLSX Audit Export</a>
+                            <button class="inline-flex min-w-52 items-center justify-center rounded-full border border-brand/20 bg-white/40 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70" id="create-backup-button" type="button">Create Backup</button>
+                            <select class="w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="backup-select" aria-label="Backup to restore"></select>
+                            <button class="inline-flex min-w-52 items-center justify-center rounded-full border border-line bg-panel/70 px-5 py-3 text-sm font-semibold text-ink transition hover:border-brand/35 hover:bg-white" id="restore-backup-button" type="button">Restore Backup</button>
+                            <p class="text-xs leading-5 text-muted" id="backup-status">Loading backups...</p>
+                        </div>
                     </div>
 
                     <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
