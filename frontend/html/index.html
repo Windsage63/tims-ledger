@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Winds Ledger</title>
+    <title>Tim's Ledger</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,9 +46,9 @@
     <div class="min-h-screen lg:grid lg:grid-cols-[18rem_minmax(0,1fr)]">
         <aside class="flex flex-col gap-8 border-b border-white/10 bg-[linear-gradient(180deg,rgba(23,29,28,0.96),rgba(22,70,62,0.96))] px-5 py-6 text-stone-100 lg:sticky lg:top-0 lg:h-screen lg:min-h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r lg:border-r-white/10 lg:px-6">
             <div>
-                <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-stone-300/80">Local Accounting Workflow</p>
-                <a class="mt-2 inline-block font-display text-3xl font-bold tracking-tight text-stone-50" href="./index.html">Winds Ledger</a>
-                <p class="mt-3 max-w-xs text-sm leading-6 text-stone-200/75">A database-backed dashboard for customer, project, time, expense, invoice, and payment work served through FastAPI.</p>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-stone-300/80">Local Simple Accounting</p>
+                <a class="mt-2 inline-block font-display text-3xl font-bold tracking-tight text-stone-50" href="./index.html">Tim's Ledger</a>
+                <p class="mt-3 max-w-xs text-sm leading-6 text-stone-200/75">A Non-GAP bookkeeping system.</p>
             </div>
 
             <nav class="side-nav grid gap-2" aria-label="Primary">
@@ -59,13 +59,12 @@
                 <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./expenses.html">Expenses</a>
                 <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./invoices.html">Invoices</a>
                 <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./payments.html">Payments</a>
-                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="#exports">Exports</a>
             </nav>
 
             <div class="rounded-3xl border border-white/10 bg-white/8 p-4 backdrop-blur-sm lg:mt-auto">
                 <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-stone-300/80">Overview</p>
                 <p class="mt-2 text-2xl font-display font-bold text-stone-50" id="app-mode">Loading...</p>
-                <p class="mt-2 text-sm leading-6 text-stone-200/75">This screen now summarizes the persisted ledger instead of describing the prototype shell.</p>
+                <p class="mt-2 text-sm leading-6 text-stone-200/75">This page provides a summary of the application's current state and key metrics.</p>
             </div>
         </aside>
 
@@ -74,13 +73,20 @@
                 <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
                     <div class="max-w-4xl">
                         <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted">Overview</p>
-                        <h1 class="mt-3 max-w-[13ch] font-display text-4xl font-extrabold leading-none text-ink sm:text-5xl xl:text-7xl">Wind's Ledger</h1>
-                        <p class="mt-4 max-w-3xl text-base leading-7 text-muted sm:text-lg">This page now summarizes the persisted workflow: customer and project volume, issued receivables, unbilled work, customer balance detail, and the audit export utility.</p>
+                        <h1 class="mt-3 max-w-[13ch] font-display text-4xl font-extrabold leading-none text-ink sm:text-5xl xl:text-7xl">Tim's Ledger</h1>
+                        <p class="mt-4 max-w-3xl text-base leading-7 text-muted sm:text-lg">Customer Balances, Accounts Receivable, and Backups.</p>
                     </div>
 
-                    <div class="flex flex-wrap gap-3">
-                        <a class="inline-flex min-w-44 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" href="./customers.html">Open Customers</a>
-                        <a class="inline-flex min-w-44 items-center justify-center rounded-full border border-brand/20 bg-white/40 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70" href="#exports">Open Reporting</a>
+                    <div class="grid w-full gap-3 sm:w-auto sm:min-w-72">
+                        <div class="flex flex-wrap gap-3">
+                            <button class="inline-flex min-w-44 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" id="create-backup-button" type="button">Create Backup</button>
+                            <button class="inline-flex min-w-44 items-center justify-center rounded-full border border-line bg-panel/70 px-5 py-3 text-sm font-semibold text-ink transition hover:border-brand/35 hover:bg-white" id="restore-backup-button" type="button">Restore Backup</button>
+                            <a class="inline-flex min-w-44 items-center justify-center rounded-full border border-brand/20 bg-white/40 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70" download href="/api/exports/audit.xlsx" id="audit-export-link">Save as XLSX</a>
+                        </div>
+                        <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                            <select class="w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="backup-select" aria-label="Backup to restore"></select>
+                        </div>
+                        <p class="text-xs leading-5 text-muted" id="backup-status">Loading backups...</p>
                     </div>
                 </div>
             </section>
@@ -111,13 +117,6 @@
                             <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Accounts Receivable</p>
                             <h2 class="mt-2 font-display text-3xl font-bold text-ink">Derived customer balances and statement detail.</h2>
                             <p class="mt-3 max-w-3xl text-sm leading-7 text-muted">Open AR and unapplied credits are read from the ledger views so each balance stays explainable from invoices and payment applications.</p>
-                        </div>
-                        <div class="grid gap-3 sm:min-w-72">
-                            <a class="inline-flex min-w-52 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" download href="/api/exports/audit.xlsx" id="audit-export-link">Download XLSX Audit Export</a>
-                            <button class="inline-flex min-w-52 items-center justify-center rounded-full border border-brand/20 bg-white/40 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70" id="create-backup-button" type="button">Create Backup</button>
-                            <select class="w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="backup-select" aria-label="Backup to restore"></select>
-                            <button class="inline-flex min-w-52 items-center justify-center rounded-full border border-line bg-panel/70 px-5 py-3 text-sm font-semibold text-ink transition hover:border-brand/35 hover:bg-white" id="restore-backup-button" type="button">Restore Backup</button>
-                            <p class="text-xs leading-5 text-muted" id="backup-status">Loading backups...</p>
                         </div>
                     </div>
 
