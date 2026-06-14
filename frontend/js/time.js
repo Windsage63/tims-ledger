@@ -91,6 +91,7 @@ function emptyTimeDraft(overrides = {}) {
         entry_date: todayDateInputValue(),
         project_id: firstProject?.id || "",
         project_number: firstProject?.project_number || "",
+        project_description: firstProject?.description || "",
         customer_id: firstProject?.customer_id || "",
         customer_name: firstProject?.customer_name || "",
         description: "",
@@ -115,6 +116,7 @@ function normalizedTimeDraft(entry) {
         ...entry,
         project_id: project?.id || fallback.project_id,
         project_number: project?.project_number || fallback.project_number,
+        project_description: project?.description || fallback.project_description,
         customer_id: project?.customer_id || fallback.customer_id,
         customer_name: project?.customer_name || fallback.customer_name,
         rate_code: rate?.rate_code || fallback.rate_code,
@@ -136,7 +138,7 @@ function filteredEntries() {
         const matchesProject = timeState.projectFilter === "all" || String(entry.project_id) === timeState.projectFilter;
         const entryYear = String(entry.entry_date).slice(0, 4);
         const matchesYear = timeState.yearFilter === "all" || entryYear === timeState.yearFilter;
-        const haystack = [entry.project_number, entry.customer_name, entry.description, entry.rate_code, entry.invoice_number || ""].join(" ").toLowerCase();
+        const haystack = [entry.project_number, entry.project_description, entry.customer_name, entry.description, entry.rate_code, entry.invoice_number || ""].join(" ").toLowerCase();
         const matchesQuery = !query || haystack.includes(query);
         return matchesStatus && matchesProject && matchesYear && matchesQuery;
     });
@@ -149,9 +151,9 @@ function renderProjectOptions() {
         return;
     }
 
-    filter.innerHTML = ['<option value="all">All Projects</option>', ...timeState.projects.map((project) => `<option value="${project.id}">${project.project_number} · ${project.customer_name}</option>`)].join("");
+    filter.innerHTML = ['<option value="all">All Projects</option>', ...timeState.projects.map((project) => `<option value="${project.id}">${escapeHtml(project.project_number)} - ${escapeHtml(project.description)}</option>`)].join("");
     filter.value = timeState.projectFilter;
-    editor.innerHTML = timeState.projects.map((project) => `<option value="${project.id}">${project.project_number} · ${project.customer_name}</option>`).join("");
+    editor.innerHTML = timeState.projects.map((project) => `<option value="${project.id}">${escapeHtml(project.project_number)} - ${escapeHtml(project.description)}</option>`).join("");
 }
 
 function renderYearOptions() {
@@ -233,12 +235,13 @@ function renderEntryRows(entries) {
         const isSelected = entry.id === timeState.selectedId;
         return `
             <tr class="cursor-pointer border-t border-line/70 ${isSelected ? "bg-brand/5" : "bg-white/30 hover:bg-white/60"}" data-time-select="${entry.id}">
-                <td class="px-4 py-4 align-top font-mono text-sm text-ink">${entry.entry_date}</td>
-                <td class="px-4 py-4 align-top text-sm text-ink">${entry.project_number}</td>
-                <td class="px-4 py-4 align-top text-sm text-ink">${entry.customer_name}</td>
-                <td class="px-4 py-4 align-top text-sm text-muted">${entry.description}</td>
+                <td class="px-4 py-4 align-top font-mono text-sm text-ink">${escapeHtml(entry.entry_date)}</td>
+                <td class="px-4 py-4 align-top text-sm text-ink">${escapeHtml(entry.project_number)}</td>
+                <td class="px-4 py-4 align-top text-sm text-ink">${escapeHtml(entry.customer_name)}</td>
+                <td class="px-4 py-4 align-top text-sm text-ink">${escapeHtml(entry.project_description)}</td>
+                <td class="px-4 py-4 align-top text-sm text-muted">${escapeHtml(entry.description)}</td>
                 <td class="px-4 py-4 align-top text-right font-mono text-sm text-ink">${hoursFromMinutes(entry.minutes)}</td>
-                <td class="px-4 py-4 align-top text-sm text-ink">${entry.rate_code}</td>
+                <td class="px-4 py-4 align-top text-sm text-ink">${escapeHtml(entry.rate_code)}</td>
                 <td class="px-4 py-4 align-top"><span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${status.classes}">${status.label}</span></td>
             </tr>
         `;
@@ -317,6 +320,7 @@ function syncDraftFromForm() {
         entry_date: String(document.getElementById("time-entry-date")?.value || source.entry_date),
         project_id: projectId,
         project_number: project?.project_number || source.project_number,
+        project_description: project?.description || source.project_description,
         customer_id: project?.customer_id || source.customer_id,
         customer_name: project?.customer_name || source.customer_name,
         description: String(document.getElementById("time-description")?.value || source.description),
@@ -475,6 +479,7 @@ function clearEntryDraft(copyCurrent = false) {
             entry_date: original.entry_date,
             project_id: original.project_id,
             project_number: original.project_number,
+            project_description: original.project_description,
             customer_id: original.customer_id,
             customer_name: original.customer_name,
             description: original.description,

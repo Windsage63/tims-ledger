@@ -70,7 +70,7 @@ Here is a concise route map of the current API, grouped by function.
 ## Time entries
 
   - GET /api/time/bootstrap
-    - Loads time-entry screen data, optionally for a specific year.
+    - Loads time-entry screen data, including project descriptions for the selector and listing, optionally for a specific year.
   - POST /api/time-entries
     - Creates a new time entry.
   - PUT /api/time-entries/{entry_id}

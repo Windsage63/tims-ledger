@@ -175,7 +175,7 @@ Users may keep an unlimited number of normal backups and select one to restore. 
 
 ### 5.3 Time Tracking Module
 
-1. Allow time entry by date, project number, work description, hours, and rate code.
+1. Allow time entry by date, project selection, work description, hours, and rate code. Project selectors should show project number and project description.
 2. Do not ask the user to mark time as billable or non-billable separately; time billability is derived from the selected rate, and a rate of `0` is non-billable.
 3. Derive the customer and available rates from the selected project.
 4. Store invoice linkage on the time entry when Save/Print is clicked for an invoice that includes that entry, and remove that linkage when Save/Print is clicked after the entry has been unchecked.
@@ -185,7 +185,7 @@ Users may keep an unlimited number of normal backups and select one to restore. 
 ### 5.4 Expense Management Module
 
 1. Expense management is a core module.
-2. Allow expense entry by date, project number, vendor, description, quantity, unit cost, category, and billable flag.
+2. Allow expense entry by date, project selection, vendor, description, quantity, unit cost, category, and billable flag. Project selectors should show project number and project description.
 3. Derive the customer from the selected project.
 4. Store invoice linkage on the expense record when Save/Print is clicked for an invoice that includes that expense, and remove that linkage when Save/Print is clicked after the expense has been unchecked.
 5. Use the canonical expense category list from section 4.5.

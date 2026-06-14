@@ -32,7 +32,7 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 ## 4. User Enters Time
 
 1. User enters the work date.
-2. User selects the project by project number. The system derives the customer and available rates from the project.
+2. User selects the project from a dropdown showing project number and project description. The system derives the customer and available rates from the project.
 3. User enters work description, duration, and rate code. There is no separate time billable toggle. Time with a selected rate of `0` is non-billable.
 4. System stores the time entry as a source record, snapshots the selected rate, and calculates the line total.
 5. Invoice linkage is empty until Save/Print succeeds for an invoice that includes the time entry.
@@ -42,7 +42,7 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 ## 5. User Enters Expense
 
 1. User enters the expense date.
-2. User selects the project by project number. The system derives the customer from the project.
+2. User selects the project from a dropdown showing project number and project description. The system derives the customer from the project.
 3. User enters vendor, description, quantity, unit cost, category, and billable flag.
 4. System stores the expense as a source record and calculates the line total.
 5. Invoice linkage is empty until Save/Print succeeds for an invoice that includes the expense.

@@ -260,20 +260,16 @@ function renderCustomRateInputs(customRates) {
     }
 
     list.innerHTML = customRates.map((rate, index) => `
-        <div class="grid gap-3 rounded-[1.1rem] border border-line bg-white/70 p-4 md:grid-cols-[8rem_minmax(10rem,1fr)_7rem]" data-custom-rate-index="${index}">
+        <div class="grid gap-3 rounded-[1.1rem] border border-line bg-white/70 p-4 md:grid-cols-[8rem_minmax(10rem,1fr)]" data-custom-rate-index="${index}">
             <div>
                 <label class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Code</label>
-                <input class="mt-2 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" data-field="rate_code" type="text" value="${rate.rate_code}">
+                <input class="mt-2 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" data-field="rate_code" type="text" value="${escapeHtml(rate.rate_code)}">
             </div>
             <div>
                 <label class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Rate</label>
                 <input class="mt-2 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" data-field="rate_dollars" min="0" step="0.01" type="number" value="${(rate.rate_cents / 100).toFixed(2)}">
             </div>
-            <div>
-                <label class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Sort</label>
-                <input class="mt-2 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" data-field="sort_order" min="4" step="1" type="number" value="${rate.sort_order}">
-            </div>
-            <button class="inline-flex items-center justify-center rounded-full border border-danger/20 bg-danger/10 px-4 py-2 text-sm font-semibold text-danger transition hover:bg-danger/15 md:col-span-3 md:justify-self-start" data-remove-custom-rate="${index}" type="button">Remove</button>
+            <button class="inline-flex items-center justify-center rounded-full border border-danger/20 bg-danger/10 px-4 py-2 text-sm font-semibold text-danger transition hover:bg-danger/15 md:col-span-2 md:justify-self-start" data-remove-custom-rate="${index}" type="button">Remove</button>
         </div>
     `).join("");
 
@@ -306,18 +302,17 @@ function renderCustomRateInputs(customRates) {
                 }
                 if (field === "rate_code") {
                     target.rate_code = input.value.toUpperCase();
+                    input.value = target.rate_code;
                 } else if (field === "rate_dollars") {
                     target.rate_cents = Math.round(Number(input.value || 0) * 100);
-                } else if (field === "sort_order") {
-                    target.sort_order = Number(input.value || 10);
                 }
-                updateEditorRates(customRatesOnly);
+                updateEditorRates(customRatesOnly, { render: false });
             });
         });
     });
 }
 
-function updateEditorRates(customRatesOnly) {
+function updateEditorRates(customRatesOnly, options = {}) {
     const source = projectState.draftProject || selectedProject() || emptyProjectDraft();
     const defaultRateCents = readDefaultRateInput();
     const customer = projectState.customers.find((item) => item.id === Number(document.getElementById("project-customer")?.value || source.customer_id));
@@ -337,7 +332,9 @@ function updateEditorRates(customRatesOnly) {
             }))
         ]
     };
-    renderEditor(projectState.draftProject);
+    if (options.render !== false) {
+        renderEditor(projectState.draftProject);
+    }
 }
 
 function readDefaultRateInput() {

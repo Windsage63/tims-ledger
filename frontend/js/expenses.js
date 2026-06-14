@@ -138,9 +138,9 @@ function renderProjectOptions() {
     if (!filter || !editor) {
         return;
     }
-    filter.innerHTML = ['<option value="all">All Projects</option>', ...expensesState.projects.map((project) => `<option value="${project.id}">${project.project_number} · ${project.customer_name}</option>`)].join("");
+    filter.innerHTML = ['<option value="all">All Projects</option>', ...expensesState.projects.map((project) => `<option value="${project.id}">${escapeHtml(project.project_number)} - ${escapeHtml(project.description)}</option>`)].join("");
     filter.value = expensesState.projectFilter;
-    editor.innerHTML = expensesState.projects.map((project) => `<option value="${project.id}">${project.project_number} · ${project.customer_name}</option>`).join("");
+    editor.innerHTML = expensesState.projects.map((project) => `<option value="${project.id}">${escapeHtml(project.project_number)} - ${escapeHtml(project.description)}</option>`).join("");
 }
 
 function renderYearOptions() {
