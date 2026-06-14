@@ -50,7 +50,6 @@ Open finding count: 0 Blocker, 2 Major, 1 Minor, 0 Nit.
   - The backend domain modules are easy to follow: Pydantic write models sit near their persistence helpers, and routes consistently wrap response data in `response_envelope`.
   - Invoice save/print is a good model for multi-step accounting work: create/update, source-row replacement, HTML generation, and final commit are coordinated in one flow.
   - Backup and restore use a safety backup and archive path checks, which is exactly the right instinct for local production data.
-  - The Tim's Ledger rename appears complete across the active runtime identity surfaces; no `winds-ledger` or `Winds Ledger` matches remained in the source search.
   - The codebase is refreshingly small, which means every mess is still small enough to be blamed on a specific line instead of a committee.
 
 ## Prioritized Findings Summary

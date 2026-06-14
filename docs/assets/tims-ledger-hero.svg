@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+  <title id="title">Tim's Ledger hero image</title>
+  <desc id="desc">A product hero image showing Tim's Ledger with accounting workflow panels for overview metrics, invoices, payments, and backup controls.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7efe2"/>
+      <stop offset="0.42" stop-color="#e9d6bc"/>
+      <stop offset="1" stop-color="#b9d3ce"/>
+    </linearGradient>
+    <linearGradient id="sidebar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#15231f"/>
+      <stop offset="1" stop-color="#155e52"/>
+    </linearGradient>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#155e52"/>
+      <stop offset="1" stop-color="#1d7a6b"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="24" stdDeviation="24" flood-color="#3b2a18" flood-opacity="0.22"/>
+    </filter>
+    <filter id="softShadow" x="-12%" y="-12%" width="124%" height="134%">
+      <feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#243c37" flood-opacity="0.16"/>
+    </filter>
+    <style>
+      .display { font-family: "Segoe UI", Arial, sans-serif; font-weight: 800; letter-spacing: 0; }
+      .sans { font-family: "Segoe UI", Arial, sans-serif; letter-spacing: 0; }
+      .mono { font-family: "Consolas", "Courier New", monospace; letter-spacing: 0; }
+      .muted { fill: #6a6257; }
+      .ink { fill: #1f1b16; }
+      .white { fill: #fffaf3; }
+      .line { stroke: #d8cabb; stroke-width: 1.2; }
+      .screenText { fill: #4b453d; font-family: "Segoe UI", Arial, sans-serif; font-size: 15px; }
+      .tiny { fill: #7b7165; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; font-weight: 700; }
+    </style>
+  </defs>
+
+  <rect width="1280" height="640" rx="0" fill="url(#bg)"/>
+  <circle cx="112" cy="98" r="180" fill="#ffffff" opacity="0.35"/>
+  <circle cx="1190" cy="560" r="240" fill="#155e52" opacity="0.12"/>
+
+  <g transform="translate(72 82)">
+    <text class="sans" x="0" y="0" font-size="16" font-weight="800" fill="#155e52">LOCAL PROJECT BILLING</text>
+    <text class="display ink" x="0" y="64" font-size="56">Tim's Ledger</text>
+    <text class="sans muted" x="2" y="104" font-size="21">Desktop-first accounting</text>
+    <text class="sans muted" x="2" y="132" font-size="21">for project billing.</text>
+    <g transform="translate(0 174)">
+      <rect x="0" y="0" width="118" height="36" rx="18" fill="#fffaf3" stroke="#d8cabb"/>
+      <text class="sans" x="24" y="24" font-size="14" font-weight="800" fill="#155e52">FastAPI</text>
+      <rect x="132" y="0" width="104" height="36" rx="18" fill="#fffaf3" stroke="#d8cabb"/>
+      <text class="sans" x="158" y="24" font-size="14" font-weight="800" fill="#155e52">SQLite</text>
+      <rect x="0" y="48" width="122" height="36" rx="18" fill="#fffaf3" stroke="#d8cabb"/>
+      <text class="sans" x="20" y="72" font-size="14" font-weight="800" fill="#155e52">Vanilla JS</text>
+    </g>
+  </g>
+
+  <g transform="translate(438 58)" filter="url(#shadow)">
+    <rect x="0" y="0" width="770" height="510" rx="24" fill="#fffaf3"/>
+    <rect x="0" y="0" width="770" height="510" rx="24" fill="#fffaf3" stroke="#d8cabb"/>
+
+    <g>
+      <rect x="0" y="0" width="188" height="510" rx="24" fill="url(#sidebar)"/>
+      <path d="M164 0H188V510H164Z" fill="#155e52" opacity="0.36"/>
+      <text class="sans" x="28" y="48" font-size="10" font-weight="800" fill="#c7d6d2">LOCAL SIMPLE ACCOUNTING</text>
+      <text class="display" x="28" y="82" font-size="26" fill="#fffaf3">Tim's Ledger</text>
+      <text class="sans" x="28" y="112" font-size="13" fill="#cbdad6">A Non-GAP bookkeeping system.</text>
+      <g class="sans" font-size="14" font-weight="700">
+        <rect x="24" y="144" width="136" height="34" rx="10" fill="#fffaf3" opacity="0.14"/>
+        <text x="44" y="166" fill="#fffaf3">Overview</text>
+        <rect x="24" y="188" width="136" height="34" rx="10" fill="#fffaf3" opacity="0.08"/>
+        <text x="44" y="210" fill="#dce8e5">Customers</text>
+        <rect x="24" y="232" width="136" height="34" rx="10" fill="#fffaf3" opacity="0.08"/>
+        <text x="44" y="254" fill="#dce8e5">Projects</text>
+        <rect x="24" y="276" width="136" height="34" rx="10" fill="#fffaf3" opacity="0.08"/>
+        <text x="44" y="298" fill="#dce8e5">Time</text>
+        <rect x="24" y="320" width="136" height="34" rx="10" fill="#fffaf3" opacity="0.08"/>
+        <text x="44" y="342" fill="#dce8e5">Invoices</text>
+        <rect x="24" y="364" width="136" height="34" rx="10" fill="#fffaf3" opacity="0.08"/>
+        <text x="44" y="386" fill="#dce8e5">Payments</text>
+      </g>
+      <rect x="24" y="432" width="136" height="46" rx="12" fill="#fffaf3" opacity="0.12"/>
+      <text class="sans" x="40" y="452" font-size="10" font-weight="800" fill="#c7d6d2">ACCOUNTS RECEIVABLE</text>
+      <text class="display" x="40" y="472" font-size="18" fill="#fffaf3">$42,180</text>
+    </g>
+
+    <g transform="translate(218 36)">
+      <text class="tiny" x="0" y="0">OVERVIEW</text>
+      <text class="display ink" x="0" y="46" font-size="44">Customer Balances</text>
+      <text class="sans muted" x="2" y="78" font-size="17">Invoices, payments, audit export, and backups in one local workflow.</text>
+
+      <g transform="translate(0 112)">
+        <rect x="0" y="0" width="156" height="96" rx="16" fill="#f5efe2" stroke="#d8cabb"/>
+        <text class="tiny" x="18" y="28">OPEN INVOICES</text>
+        <text class="display ink" x="18" y="62" font-size="26">18</text>
+        <rect x="18" y="76" width="86" height="6" rx="3" fill="#155e52"/>
+
+        <rect x="174" y="0" width="156" height="96" rx="16" fill="#eef6f3" stroke="#bad4cc"/>
+        <text class="tiny" x="192" y="28">AR BALANCE</text>
+        <text class="display ink" x="192" y="62" font-size="26">$42.1k</text>
+        <rect x="192" y="76" width="108" height="6" rx="3" fill="#1d7a6b"/>
+
+        <rect x="348" y="0" width="156" height="96" rx="16" fill="#fff7e8" stroke="#e5c58f"/>
+        <text class="tiny" x="366" y="28">THIS MONTH</text>
+        <text class="display ink" x="366" y="62" font-size="26">$12.4k</text>
+        <rect x="366" y="76" width="96" height="6" rx="3" fill="#c47b34"/>
+      </g>
+
+      <g transform="translate(0 242)" filter="url(#softShadow)">
+        <rect x="0" y="0" width="330" height="178" rx="18" fill="#ffffff" stroke="#d8cabb"/>
+        <text class="sans ink" x="20" y="32" font-size="18" font-weight="800">Invoice Workbench</text>
+        <text class="screenText" x="20" y="60">Project reference</text>
+        <rect x="20" y="74" width="132" height="14" rx="7" fill="#155e52" opacity="0.85"/>
+        <rect x="164" y="74" width="122" height="14" rx="7" fill="#d8cabb"/>
+        <line x1="20" y1="110" x2="304" y2="110" stroke="#efe6d7"/>
+        <circle cx="28" cy="134" r="7" fill="#155e52"/>
+        <rect x="48" y="127" width="146" height="13" rx="6.5" fill="#61584d"/>
+        <rect x="226" y="127" width="64" height="13" rx="6.5" fill="#d0b189"/>
+        <circle cx="28" cy="158" r="7" fill="#155e52"/>
+        <rect x="48" y="151" width="118" height="13" rx="6.5" fill="#61584d"/>
+        <rect x="226" y="151" width="64" height="13" rx="6.5" fill="#d0b189"/>
+      </g>
+
+      <g transform="translate(354 242)" filter="url(#softShadow)">
+        <rect x="0" y="0" width="178" height="178" rx="18" fill="#17342f"/>
+        <text class="sans" x="20" y="34" font-size="17" font-weight="800" fill="#fffaf3">Backup Ready</text>
+        <text class="sans" x="20" y="62" font-size="13" fill="#cbdad6">Local data stays local.</text>
+        <rect x="20" y="92" width="138" height="12" rx="6" fill="#fffaf3" opacity="0.72"/>
+        <rect x="20" y="116" width="112" height="12" rx="6" fill="#fffaf3" opacity="0.5"/>
+        <rect x="20" y="140" width="96" height="24" rx="12" fill="#d0b189"/>
+        <text class="sans" x="42" y="157" font-size="12" font-weight="800" fill="#1f1b16">Export</text>
+      </g>
+    </g>
+  </g>
+
+  <g transform="translate(90 430)" filter="url(#softShadow)">
+    <rect x="0" y="0" width="302" height="116" rx="22" fill="#fffaf3" stroke="#d8cabb"/>
+    <text class="sans" x="24" y="35" font-size="14" font-weight="800" fill="#155e52">ZIP DOWNLOAD FLOW</text>
+    <text class="mono ink" x="24" y="68" font-size="16">install.bat</text>
+    <path d="M134 62H174" stroke="#d0b189" stroke-width="3" stroke-linecap="round"/>
+    <path d="M166 54L176 62L166 70" fill="none" stroke="#d0b189" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <text class="mono ink" x="190" y="68" font-size="16">startup.bat</text>
+    <text class="sans muted" x="24" y="94" font-size="14">Python, venv, requirements, then run.</text>
+  </g>
+</svg>
