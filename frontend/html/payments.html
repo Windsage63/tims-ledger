@@ -201,11 +201,11 @@
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div>
                                 <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="payment-reference">Reference No.</label>
-                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 font-mono text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="payment-reference" required type="text">
+                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 font-mono text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="payment-reference" type="text">
                             </div>
                             <div>
                                 <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="payment-amount">Amount</label>
-                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 font-mono text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="payment-amount" min="0" required step="0.01" type="number">
+                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 font-mono text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="payment-amount" required step="0.01" type="number">
                             </div>
                         </div>
 
@@ -249,8 +249,7 @@
 
                     <div class="mt-5 flex flex-wrap gap-3">
                         <button class="inline-flex min-w-40 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" id="save-payment-button" type="button">Save Payment</button>
-                        <button class="inline-flex min-w-40 items-center justify-center rounded-full border border-brand/20 bg-white/40 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70" id="duplicate-payment-button" type="button">Duplicate</button>
-                        <button class="inline-flex min-w-40 items-center justify-center rounded-full border border-brand/20 bg-panel/70 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/80" id="save-applications-button" type="button">Save Applications</button>
+                        <button class="inline-flex min-w-40 items-center justify-center rounded-full border border-danger/20 bg-white/50 px-5 py-3 text-sm font-semibold text-danger transition hover:border-danger/35 hover:bg-white/80" id="delete-payment-button" type="button">Delete Payment</button>
                     </div>
                 </article>
             </section>

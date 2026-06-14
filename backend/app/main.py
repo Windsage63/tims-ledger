@@ -15,7 +15,7 @@ from .db import apply_pending_migrations, connect, get_database_status
 from .expenses import ExpenseWrite, create_expense, expense_bootstrap_payload, update_expense
 from .invoices import InvoiceSavePrintWrite, fetch_saved_invoice_document, invoice_bootstrap_payload, invoice_editor_payload, invoice_new_editor_payload, save_print_invoice
 from .overview import overview_bootstrap_payload
-from .payments import PaymentApplicationsReplace, PaymentWrite, create_payment, payment_editor_payload, payments_bootstrap_payload, replace_payment_applications, update_payment
+from .payments import PaymentApplicationsReplace, PaymentWrite, create_payment, customer_open_invoices_payload, delete_payment, payment_editor_payload, payments_bootstrap_payload, replace_payment_applications, update_payment
 from .projects import ProjectWrite, create_project, customer_lookup, fetch_projects, update_project
 from .reporting import accounts_receivable_report_payload, build_audit_export_bytes
 from .time_entries import TimeEntryWrite, create_time_entry, time_bootstrap_payload, update_time_entry
@@ -423,6 +423,16 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
 
         return response_envelope(payload, screen="payments")
 
+    @app.get("/api/payments/customers/{customer_id}/open-invoices")
+    def payments_customer_open_invoices(customer_id: int, request: Request) -> dict[str, object]:
+        try:
+            with connect(request.app.state.settings.database_path) as connection:
+                payload = customer_open_invoices_payload(connection, customer_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+        return response_envelope(payload, screen="payment_editor")
+
     @app.get("/api/payments/{payment_id}/editor")
     def payments_editor(payment_id: int, request: Request) -> dict[str, object]:
         with connect(request.app.state.settings.database_path) as connection:
@@ -455,6 +465,16 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
             raise HTTPException(status_code=404, detail="Payment not found.")
 
         return response_envelope({"payment": payment}, screen="payments")
+
+    @app.delete("/api/payments/{payment_id}")
+    def payments_delete(payment_id: int, request: Request) -> dict[str, object]:
+        with connect(request.app.state.settings.database_path) as connection:
+            deleted = delete_payment(connection, payment_id)
+
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Payment not found.")
+
+        return response_envelope({"deleted": True, "payment_id": payment_id}, screen="payments")
 
     @app.post("/api/payments/{payment_id}/applications")
     def payments_replace_applications(payment_id: int, payload: PaymentApplicationsReplace, request: Request) -> dict[str, object]:

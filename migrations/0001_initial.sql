@@ -100,7 +100,7 @@ CREATE TABLE payments (
     customer_id INTEGER NOT NULL,
     payment_date TEXT NOT NULL,
     reference_number TEXT,
-    amount_cents INTEGER NOT NULL CHECK (amount_cents > 0),
+    amount_cents INTEGER NOT NULL,
     notes TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,

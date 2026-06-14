@@ -71,11 +71,14 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 
 ## 7. User Records and Applies a Payment
 
-1. User records a payment for a customer.
-2. System creates a payment record with the full amount initially unapplied.
-3. User applies some or all of that payment to one or more open invoices.
-4. System prevents over-application and updates both invoice open balances and the payment's remaining unapplied amount.
-5. Customer balance shows open AR and net balance, each derived from invoices, payments, and payment applications.
+1. User starts a new payment draft for a customer.
+2. The draft stays browser-local until the user clicks Save Payment. Drafts may begin at zero while receipt details are being entered, credits may be entered as negative payments, and the reference number may be left blank.
+3. System creates or updates the persisted payment record on Save Payment with the full amount initially unapplied.
+4. User applies some or all of a positive payment amount to one or more open invoices in the same editor.
+5. Save Payment persists both the payment record and current invoice applications.
+6. Delete Payment removes the selected payment and its application rows.
+7. System prevents over-application and updates both invoice open balances and the payment's remaining unapplied amount.
+8. Customer balance shows open AR and net balance, each derived from invoices, payments, and payment applications.
 
 ## 8. User Exports, Backs Up, Or Restores Data
 

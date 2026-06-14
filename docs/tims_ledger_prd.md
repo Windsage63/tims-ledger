@@ -127,10 +127,11 @@ Invoices do not need a draft state. New invoice creation may begin in browser st
 Payments must support:
 
 1. ordinary payment records with unapplied balance at creation
-2. full unapplied amount at creation
-3. partial or full application across one or more open invoices
-4. over-application prevention
-5. remaining unapplied balance tracking
+2. browser-local zero-dollar payment drafts while receipt details are being entered
+3. negative payment records for issued credits or corrections
+4. partial or full application of positive payment amounts across one or more open invoices
+5. over-application prevention
+6. remaining unapplied balance tracking
 
 Customer balance reporting must be explainable from invoices, payments, and payment applications.
 
@@ -222,10 +223,14 @@ The invoice editor should preserve the printable invoice experience while keepin
 ### 5.7 Payments Ledger And Application Workflow
 
 1. Provide a dedicated payments ledger screen.
-2. The payments ledger must list payment records, customer, payment type, original amount, unapplied amount, and application status.
-3. The user must be able to open a payment and apply or remove allocations across open invoices.
-4. The user must be prevented from applying more than the remaining unapplied amount.
-5. Payment applications must update invoice open balances and customer balances immediately.
+2. The payments ledger must list payment records, customer, reference, original amount, unapplied amount, and application status.
+3. Starting a new payment must create a browser-local draft, not a persisted payment row.
+4. The payment editor must expose only Save Payment and Delete Payment actions.
+5. Save Payment must persist both payment fields and invoice applications.
+6. Delete Payment must remove the payment and its payment applications.
+7. The user must be able to open a payment and apply or remove allocations across open invoices.
+8. The user must be prevented from applying more than the remaining unapplied amount.
+9. Payment applications must update invoice open balances and customer balances immediately.
 
 ### 5.8 Customer Balance And Accounts Receivable Reporting
 

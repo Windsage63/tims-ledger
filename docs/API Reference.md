@@ -103,8 +103,12 @@ Here is a concise route map of the current API, grouped by function.
   - GET /api/payments/{payment_id}/editor
     - Loads the payment editor payload for one payment.
   - POST /api/payments
-    - Creates a new payment.
+    - Creates a new payment. Payment amounts may be zero while a draft is being entered, or negative for credits/corrections. The reference number is optional.
   - PUT /api/payments/{payment_id}
-    - Updates an existing payment.
+    - Updates an existing payment. The reference number is optional.
+  - DELETE /api/payments/{payment_id}
+    - Deletes a payment and its invoice application rows.
+  - GET /api/payments/customers/{customer_id}/open-invoices
+    - Loads open invoice rows for the selected customer while editing a payment.
   - POST /api/payments/{payment_id}/applications
-    - Replaces invoice applications for a payment.
+    - Replaces invoice applications for a payment. The payment screen calls this as part of Save Payment.

@@ -11,7 +11,7 @@ from .projects import customer_lookup
 class PaymentWrite(BaseModel):
     customer_id: int
     payment_date: str
-    reference_number: str
+    reference_number: str = ""
     amount_cents: int
     notes: str | None = None
 
@@ -28,21 +28,6 @@ class PaymentWrite(BaseModel):
     @classmethod
     def valid_payment_date(cls, value: str) -> str:
         return validate_iso_date(value, label="Payment date")
-
-    @field_validator("reference_number")
-    @classmethod
-    def require_text(cls, value: str) -> str:
-        if not value:
-            raise ValueError("This field is required.")
-        return value
-
-    @field_validator("amount_cents")
-    @classmethod
-    def positive_amount(cls, value: int) -> int:
-        if value <= 0:
-            raise ValueError("Amount must be greater than zero.")
-        return value
-
 
 class PaymentApplicationWrite(BaseModel):
     invoice_id: int
@@ -155,14 +140,12 @@ def fetch_applications(connection: sqlite3.Connection, payment_id: int) -> list[
     return [dict(row) for row in rows]
 
 
-def fetch_open_invoices(connection: sqlite3.Connection, payment: dict[str, object]) -> list[dict[str, object]]:
-    current_applications = {
-        row["invoice_id"]: row["applied_amount_cents"]
-        for row in connection.execute(
-            "SELECT invoice_id, applied_amount_cents FROM payment_applications WHERE payment_id = ?",
-            (payment["id"],),
-        ).fetchall()
-    }
+def fetch_customer_open_invoices(
+    connection: sqlite3.Connection,
+    customer_id: int,
+    current_applications: dict[int, int] | None = None,
+) -> list[dict[str, object]]:
+    current_applications = current_applications or {}
     rows = connection.execute(
         """
         SELECT
@@ -178,7 +161,7 @@ def fetch_open_invoices(connection: sqlite3.Connection, payment: dict[str, objec
         WHERE i.customer_id = ? AND i.issued_at IS NOT NULL
         ORDER BY i.invoice_date DESC, i.id DESC
         """,
-        (payment["customer_id"],),
+        (customer_id,),
     ).fetchall()
 
     open_invoices: list[dict[str, object]] = []
@@ -203,6 +186,17 @@ def fetch_open_invoices(connection: sqlite3.Connection, payment: dict[str, objec
     return open_invoices
 
 
+def fetch_open_invoices(connection: sqlite3.Connection, payment: dict[str, object]) -> list[dict[str, object]]:
+    current_applications = {
+        row["invoice_id"]: row["applied_amount_cents"]
+        for row in connection.execute(
+            "SELECT invoice_id, applied_amount_cents FROM payment_applications WHERE payment_id = ?",
+            (payment["id"],),
+        ).fetchall()
+    }
+    return fetch_customer_open_invoices(connection, int(payment["customer_id"]), current_applications)
+
+
 def payment_editor_payload(connection: sqlite3.Connection, payment_id: int) -> dict[str, object] | None:
     payment = fetch_payment(connection, payment_id)
     if payment is None:
@@ -218,6 +212,17 @@ def payments_bootstrap_payload(connection: sqlite3.Connection, year: str | None 
     return {
         "payments": fetch_payments(connection, year=year),
         "customers": customer_lookup(connection),
+    }
+
+
+def customer_open_invoices_payload(connection: sqlite3.Connection, customer_id: int) -> dict[str, object]:
+    customer = resolve_customer(connection, customer_id)
+    if customer is None:
+        raise ValueError("Customer not found.")
+    return {
+        "payment": None,
+        "applications": [],
+        "open_invoices": fetch_customer_open_invoices(connection, customer_id),
     }
 
 
@@ -297,6 +302,16 @@ def update_payment(connection: sqlite3.Connection, payment_id: int, payload: Pay
     )
     connection.commit()
     return fetch_payment(connection, payment_id)
+
+
+def delete_payment(connection: sqlite3.Connection, payment_id: int) -> bool:
+    existing = fetch_payment(connection, payment_id)
+    if existing is None:
+        return False
+    connection.execute("DELETE FROM payment_applications WHERE payment_id = ?", (payment_id,))
+    connection.execute("DELETE FROM payments WHERE id = ?", (payment_id,))
+    connection.commit()
+    return True
 
 
 def replace_payment_applications(

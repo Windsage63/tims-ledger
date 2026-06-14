@@ -35,7 +35,7 @@ function setEmptyState(message) {
     }
     if (detail) {
         detail.textContent = paymentsState.loadError
-            ? "Retry after the API is available or correct the reported validation issue."
+            ? "Retry after the API is available."
             : "Adjust the customer, year, or status filter, or create a new payment draft.";
     }
 }
@@ -49,7 +49,23 @@ function customerById(customerId) {
 }
 
 function selectedPayment() {
-    return paymentsState.payments.find((payment) => payment.id === paymentsState.selectedPaymentId) || paymentsState.editor.payment || null;
+    return paymentsState.editor.payment || paymentsState.payments.find((payment) => payment.id === paymentsState.selectedPaymentId) || null;
+}
+
+function createUnsavedPayment(customer, sourcePayment = null) {
+    return {
+        id: null,
+        customer_id: customer.id,
+        customer_name: customer.customer_name,
+        payment_date: TODAY,
+        reference_number: sourcePayment ? `${sourcePayment.reference_number}-COPY` : "",
+        amount_cents: sourcePayment?.amount_cents || 0,
+        applied_amount_cents: 0,
+        unapplied_amount_cents: sourcePayment?.amount_cents || 0,
+        application_status: "unapplied",
+        notes: sourcePayment?.notes || "",
+        updated_at: ""
+    };
 }
 
 function paymentStatus(appliedAmountCents, amountCents) {
@@ -91,6 +107,31 @@ function paymentStatusMetaFromStatus(status) {
 
 function paymentStatusMeta(payment) {
     return paymentStatusMetaFromStatus(payment.application_status);
+}
+
+function updatePaymentSummary(payment) {
+    const preview = paymentPreview(payment);
+    const status = paymentStatusMetaFromStatus(preview.application_status);
+    const chip = document.getElementById("payment-editor-status-chip");
+    if (chip) {
+        chip.className = `rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${status.classes}`;
+        chip.textContent = status.label;
+    }
+
+    setText("payment-detail-unapplied", currency(preview.unapplied_amount_cents));
+    setText("payment-summary-applied", currency(preview.applied_amount_cents));
+    setText("payment-summary-unapplied", currency(preview.unapplied_amount_cents));
+    setText("payment-summary-status", status.label);
+}
+
+function updatePaymentHeader(payment) {
+    if (!payment) {
+        return;
+    }
+    setText("payment-editor-title", `${payment.reference_number} - ${payment.payment_date}`);
+    setText("payment-detail-customer", payment.customer_name);
+    setText("payment-detail-amount", currency(payment.amount_cents));
+    updatePaymentSummary(payment);
 }
 
 function invoiceStatusMeta(invoice) {
@@ -137,7 +178,33 @@ async function loadEditor(paymentId) {
         setEditorPayload(data);
         paymentsState.loadError = "";
     } catch (error) {
-        paymentsState.loadError = extractErrorMessage(error, "Unable to load payment details.");
+        window.alert(extractErrorMessage(error, "Unable to load payment details."));
+    }
+    render();
+}
+
+async function loadCustomerOpenInvoices(customerId) {
+    if (!customerId) {
+        paymentsState.editor.applications = [];
+        paymentsState.editor.open_invoices = [];
+        paymentsState.applicationDrafts = {};
+        render();
+        return;
+    }
+
+    try {
+        const data = await requestJson(`/customers/${customerId}/open-invoices`, {}, "Unable to load open invoices.");
+        paymentsState.editor.applications = [];
+        paymentsState.editor.open_invoices = Array.isArray(data.open_invoices) ? data.open_invoices : [];
+        paymentsState.applicationDrafts = Object.fromEntries(
+            paymentsState.editor.open_invoices.map((invoice) => [invoice.id, invoice.current_applied_cents || 0])
+        );
+        paymentsState.loadError = "";
+    } catch (error) {
+        window.alert(extractErrorMessage(error, "Unable to load open invoices."));
+        paymentsState.editor.applications = [];
+        paymentsState.editor.open_invoices = [];
+        paymentsState.applicationDrafts = {};
     }
     render();
 }
@@ -240,10 +307,8 @@ function renderPaymentRows(payments) {
         return;
     }
     if (paymentsState.loadError) {
-        tbody.innerHTML = "";
-        setEmptyState(paymentsState.loadError);
-        emptyState.classList.remove("hidden");
-        return;
+        window.alert(paymentsState.loadError);
+        paymentsState.loadError = "";
     }
     if (payments.length === 0) {
         tbody.innerHTML = "";
@@ -340,7 +405,7 @@ function renderApplications(payment) {
 
     openList.querySelectorAll("[data-application-input]").forEach((input) => {
         input.addEventListener("input", () => {
-            updateApplicationDraft(Number(input.dataset.applicationInput), centsFromInput(input.value));
+            updateApplicationDraft(Number(input.dataset.applicationInput), centsFromInput(input.value), input);
         });
     });
 }
@@ -379,12 +444,19 @@ function updateEditor(payment) {
 }
 
 function paymentPayloadFromForm(currentPayment) {
+    const customerValue = document.getElementById("payment-customer")?.value;
+    const dateValue = document.getElementById("payment-date")?.value;
+    const referenceValue = document.getElementById("payment-reference")?.value;
+    const amountValue = document.getElementById("payment-amount")?.value;
+    const notesValue = document.getElementById("payment-notes")?.value;
     return {
-        customer_id: Number(document.getElementById("payment-customer")?.value || currentPayment?.customer_id || 0),
-        payment_date: String(document.getElementById("payment-date")?.value || currentPayment?.payment_date || TODAY),
-        reference_number: String(document.getElementById("payment-reference")?.value || currentPayment?.reference_number || "").trim(),
-        amount_cents: centsFromInput(document.getElementById("payment-amount")?.value || dollarsInput(currentPayment?.amount_cents || 0)),
-        notes: String(document.getElementById("payment-notes")?.value || currentPayment?.notes || "")
+        customer_id: Number(customerValue ?? currentPayment?.customer_id ?? 0),
+        payment_date: String(dateValue ?? currentPayment?.payment_date ?? TODAY),
+        reference_number: String(referenceValue ?? currentPayment?.reference_number ?? "").trim(),
+        amount_cents: amountValue === undefined
+            ? (currentPayment?.amount_cents || 0)
+            : centsFromInput(amountValue),
+        notes: String(notesValue ?? currentPayment?.notes ?? "")
     };
 }
 
@@ -419,41 +491,20 @@ async function createDraftPayment(sourcePayment = null) {
     if (!customer) {
         return;
     }
-    const payload = {
-        customer_id: customer.id,
-        payment_date: TODAY,
-        reference_number: sourcePayment ? `${sourcePayment.reference_number}-COPY` : `PAY-${String((paymentsState.payments[0]?.id || 75) + 1).padStart(4, "0")}`,
-        amount_cents: sourcePayment?.amount_cents || 0,
-        notes: sourcePayment?.notes || ""
-    };
 
-    paymentsState.isSaving = true;
+    paymentsState.selectedPaymentId = null;
+    paymentsState.editor = {
+        payment: createUnsavedPayment(customer, sourcePayment),
+        applications: [],
+        open_invoices: []
+    };
+    paymentsState.applicationDrafts = {};
+    paymentsState.loadError = "";
     render();
-    try {
-        const data = await requestJson(
-            "",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            },
-            "Unable to create payment."
-        );
-        if (data.payment) {
-            upsertPayment(data.payment);
-            paymentsState.selectedPaymentId = data.payment.id;
-            await loadEditor(data.payment.id);
-        }
-        paymentsState.loadError = "";
-    } catch (error) {
-        paymentsState.loadError = extractErrorMessage(error, "Unable to create payment.");
-    } finally {
-        paymentsState.isSaving = false;
-        render();
-    }
+    await loadCustomerOpenInvoices(customer.id);
 }
 
-function updateApplicationDraft(invoiceId, requestedCents) {
+function updateApplicationDraft(invoiceId, requestedCents, input = null) {
     const payment = selectedPayment();
     if (!payment) {
         return;
@@ -476,7 +527,10 @@ function updateApplicationDraft(invoiceId, requestedCents) {
     const maxForPayment = Math.max(0, payment.amount_cents - otherApplied);
     const nextAmount = Math.max(0, Math.min(requestedCents, invoice.available_to_apply_cents, maxForPayment));
     paymentsState.applicationDrafts[invoiceId] = nextAmount;
-    render();
+    if (input && nextAmount !== requestedCents) {
+        input.value = dollarsInput(nextAmount);
+    }
+    updatePaymentSummary(payment);
 }
 
 async function savePayment() {
@@ -488,10 +542,18 @@ async function savePayment() {
     paymentsState.isSaving = true;
     render();
     try {
+        const isSavedPayment = Boolean(payment.id);
+        const existingPayment = isSavedPayment
+            ? paymentsState.payments.find((currentPayment) => currentPayment.id === payment.id)
+            : null;
+        if (isSavedPayment && existingPayment && existingPayment.customer_id === payment.customer_id) {
+            await saveApplicationsForPayment(payment.id);
+        }
+
         const data = await requestJson(
-            `/${payment.id}`,
+            isSavedPayment ? `/${payment.id}` : "",
             {
-                method: "PUT",
+                method: isSavedPayment ? "PUT" : "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(paymentPayloadFromForm(payment))
             },
@@ -499,48 +561,75 @@ async function savePayment() {
         );
         if (data.payment) {
             upsertPayment(data.payment);
+            await saveApplicationsForPayment(data.payment.id);
             await loadEditor(data.payment.id);
         }
         paymentsState.loadError = "";
     } catch (error) {
-        paymentsState.loadError = extractErrorMessage(error, "Unable to save payment.");
+        paymentsState.loadError = "";
+        window.alert(extractErrorMessage(error, "Unable to save payment."));
     } finally {
         paymentsState.isSaving = false;
         render();
     }
 }
 
-async function saveApplications() {
+function applicationPayloadFromDrafts() {
+    return (paymentsState.editor.open_invoices || [])
+        .map((invoice) => ({
+            invoice_id: invoice.id,
+            applied_amount_cents: Number.isFinite(paymentsState.applicationDrafts[invoice.id])
+                ? paymentsState.applicationDrafts[invoice.id]
+                : (invoice.current_applied_cents || 0)
+        }))
+        .filter((application) => application.applied_amount_cents > 0);
+}
+
+async function saveApplicationsForPayment(paymentId) {
+    if (!paymentId) {
+        return null;
+    }
+    return requestJson(
+        `/${paymentId}/applications`,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ applications: applicationPayloadFromDrafts() })
+        },
+        "Unable to save payment applications."
+    );
+}
+
+async function deleteSelectedPayment() {
     const payment = selectedPayment();
     if (!payment || paymentsState.isSaving) {
+        return;
+    }
+
+    if (!payment.id) {
+        paymentsState.editor = { payment: null, applications: [], open_invoices: [] };
+        paymentsState.applicationDrafts = {};
+        paymentsState.selectedPaymentId = paymentsState.payments[0]?.id || null;
+        await loadEditor(paymentsState.selectedPaymentId);
         return;
     }
 
     paymentsState.isSaving = true;
     render();
     try {
-        const applications = (paymentsState.editor.open_invoices || [])
-            .map((invoice) => ({
-                invoice_id: invoice.id,
-                applied_amount_cents: Number.isFinite(paymentsState.applicationDrafts[invoice.id])
-                    ? paymentsState.applicationDrafts[invoice.id]
-                    : (invoice.current_applied_cents || 0)
-            }))
-            .filter((application) => application.applied_amount_cents > 0);
-
-        const data = await requestJson(
-            `/${payment.id}/applications`,
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ applications })
-            },
-            "Unable to save payment applications."
+        await requestJson(
+            `/${payment.id}`,
+            { method: "DELETE" },
+            "Unable to delete payment."
         );
-        setEditorPayload(data);
+        paymentsState.payments = paymentsState.payments.filter((currentPayment) => currentPayment.id !== payment.id);
+        paymentsState.editor = { payment: null, applications: [], open_invoices: [] };
+        paymentsState.applicationDrafts = {};
+        paymentsState.selectedPaymentId = paymentsState.payments[0]?.id || null;
+        await loadEditor(paymentsState.selectedPaymentId);
         paymentsState.loadError = "";
     } catch (error) {
-        paymentsState.loadError = extractErrorMessage(error, "Unable to save payment applications.");
+        window.alert(extractErrorMessage(error, "Unable to delete payment."));
     } finally {
         paymentsState.isSaving = false;
         render();
@@ -573,11 +662,10 @@ function bindEvents() {
     document.getElementById("new-payment-button")?.addEventListener("click", () => {
         void createDraftPayment(null);
     });
-    document.getElementById("duplicate-payment-button")?.addEventListener("click", () => {
-        void createDraftPayment(selectedPayment());
-    });
     document.getElementById("save-payment-button")?.addEventListener("click", savePayment);
-    document.getElementById("save-applications-button")?.addEventListener("click", saveApplications);
+    document.getElementById("delete-payment-button")?.addEventListener("click", () => {
+        void deleteSelectedPayment();
+    });
     document.getElementById("reset-payment-filters-button")?.addEventListener("click", () => {
         paymentsState.searchQuery = "";
         paymentsState.customerFilter = "all";
@@ -590,29 +678,25 @@ function bindEvents() {
         render();
     });
 
-    document.getElementById("payment-customer")?.addEventListener("change", () => {
+    document.getElementById("payment-customer")?.addEventListener("change", async () => {
         syncSelectedPaymentFromForm(true);
-        render();
+        await loadCustomerOpenInvoices(Number(document.getElementById("payment-customer")?.value || 0));
     });
     document.getElementById("payment-date")?.addEventListener("input", () => {
         syncSelectedPaymentFromForm();
-        render();
-    });
-    document.getElementById("payment-type")?.addEventListener("change", () => {
-        syncSelectedPaymentFromForm();
-        render();
+        updatePaymentHeader(selectedPayment());
     });
     document.getElementById("payment-reference")?.addEventListener("input", () => {
         syncSelectedPaymentFromForm();
-        render();
+        updatePaymentHeader(selectedPayment());
     });
     document.getElementById("payment-amount")?.addEventListener("input", () => {
         syncSelectedPaymentFromForm();
-        render();
+        updatePaymentHeader(selectedPayment());
     });
     document.getElementById("payment-notes")?.addEventListener("input", () => {
         syncSelectedPaymentFromForm();
-        render();
+        updatePaymentHeader(selectedPayment());
     });
 }
 

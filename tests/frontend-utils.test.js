@@ -16,6 +16,12 @@ function makeClassList() {
                 this.values.delete(className);
             }
         },
+        add(className) {
+            this.values.add(className);
+        },
+        remove(className) {
+            this.values.delete(className);
+        },
         contains(className) {
             return this.values.has(className);
         }
@@ -176,6 +182,10 @@ test("rich extractErrorMessage helpers handle strings, arrays, Error-like object
             context.extractErrorMessage({ detail: [{ msg: "First" }, { message: "Second" }, "Third"] }, "Fallback"),
             "First Second Third"
         );
+        assert.equal(
+            context.extractErrorMessage({ detail: [{ loc: ["body", "reference_number"], msg: "Value error, This field is required." }] }, "Fallback"),
+            "Reference No.: This field is required."
+        );
         assert.equal(context.extractErrorMessage({ message: "Message error" }, "Fallback"), "Message error");
         assert.equal(context.extractErrorMessage(null, "Fallback"), "Fallback");
     }
@@ -257,6 +267,105 @@ test("requestJson helpers throw extracted messages for non-ok responses", async 
         () => payments.requestJson("/bad", {}, "Fallback"),
         /Bad request/
     );
+});
+
+test("payment save validation failures alert without replacing the ledger error state", async () => {
+    const alerts = [];
+    const elements = {
+        "payment-customer": makeElement(),
+        "payment-date": makeElement(),
+        "payment-reference": makeElement(),
+        "payment-amount": makeElement(),
+        "payment-notes": makeElement()
+    };
+    elements["payment-customer"].value = "0";
+    elements["payment-date"].value = "2026-05-31";
+    elements["payment-reference"].value = "";
+    elements["payment-amount"].value = "0";
+    const context = loadScript("payments.js", {
+        document: makeDocument({ elements }),
+        fetch: async () => {
+            return {
+                ok: false,
+                async json() {
+                    return { detail: [{ loc: ["body", "customer_id"], msg: "Value error, Customer is required." }] };
+                }
+            };
+        }
+    });
+    context.window.alert = (message) => {
+        alerts.push(message);
+    };
+    vm.runInContext(`
+        paymentsState.editor.payment = {
+            id: null,
+            customer_id: 0,
+            customer_name: "Customer",
+            payment_date: "2026-05-31",
+            reference_number: "",
+            amount_cents: 0,
+            applied_amount_cents: 0,
+            unapplied_amount_cents: 0,
+            application_status: "unapplied",
+            notes: ""
+        };
+        paymentsState.loadError = "";
+    `, context);
+
+    await context.savePayment();
+
+    assert.deepEqual(alerts, ["Customer: Customer is required."]);
+    assert.equal(vm.runInContext("paymentsState.loadError", context), "");
+});
+
+test("payment table renderer alerts load errors without clearing existing rows", () => {
+    const alerts = [];
+    const tbody = makeElement();
+    const emptyState = makeElement();
+    const heading = makeElement();
+    const detail = makeElement();
+    tbody.innerHTML = "<tr><td>Existing payment</td></tr>";
+    emptyState.querySelector = (selector) => {
+        if (selector === "p.font-display") {
+            return heading;
+        }
+        if (selector === "p.mt-2") {
+            return detail;
+        }
+        return null;
+    };
+    const context = loadScript("payments.js", {
+        document: makeDocument({
+            elements: {
+                "payment-table-body": tbody,
+                "payment-empty-state": emptyState
+            }
+        })
+    });
+    context.window.alert = (message) => {
+        alerts.push(message);
+    };
+    vm.runInContext(`
+        paymentsState.isLoading = false;
+        paymentsState.loadError = "Value error, This field is required.";
+    `, context);
+
+    context.renderPaymentRows([
+        {
+            id: 1,
+            payment_date: "2026-05-31",
+            customer_name: "Customer",
+            reference_number: "REF",
+            amount_cents: 100,
+            unapplied_amount_cents: 100,
+            application_status: "unapplied"
+        }
+    ]);
+
+    assert.deepEqual(alerts, ["Value error, This field is required."]);
+    assert.match(tbody.innerHTML, /REF/);
+    assert.equal(vm.runInContext("paymentsState.loadError", context), "");
+    assert.equal(emptyState.classList.contains("hidden"), true);
 });
 
 test("requestBackupJson uses raw backup paths and returns envelope data", async () => {

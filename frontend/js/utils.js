@@ -58,13 +58,48 @@ function extractErrorMessage(error, fallbackMessage) {
             return error.detail;
         }
         if (Array.isArray(error.detail) && error.detail.length > 0) {
-            return error.detail.map((item) => item.msg || item.message || String(item)).join(" ");
+            return error.detail.map(formatValidationError).join(" ");
         }
     }
     if (error.message) {
         return error.message;
     }
     return fallbackMessage;
+}
+
+function formatValidationError(item) {
+    if (!item || typeof item !== "object") {
+        return String(item);
+    }
+
+    const message = String(item.msg || item.message || item).replace(/^Value error,\s*/i, "");
+    const location = Array.isArray(item.loc) ? item.loc : [];
+    const field = location[location.length - 1];
+    if (!field || field === "body") {
+        return message;
+    }
+
+    return `${fieldLabel(field)}: ${message}`;
+}
+
+function fieldLabel(fieldName) {
+    const labels = {
+        amount_cents: "Amount",
+        applied_amount_cents: "Applied amount",
+        customer_id: "Customer",
+        invoice_id: "Invoice",
+        notes: "Notes",
+        payment_date: "Payment Date",
+        reference_number: "Reference No."
+    };
+    if (labels[fieldName]) {
+        return labels[fieldName];
+    }
+    return String(fieldName)
+        .replace(/_id$/, "")
+        .replace(/_cents$/, "")
+        .replaceAll("_", " ")
+        .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 function getCurrentPage(fallbackPage = "index.html") {
