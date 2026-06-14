@@ -4,6 +4,8 @@ Here is a concise route map of the current API, grouped by function.
 
 ## System / health
 
+  - GET /
+    - Redirects to `/frontend/html/index.html`.
   - GET /api/health
     - Returns backend health, DB path, and migration status.
   - GET /api/system/status
@@ -99,16 +101,26 @@ Here is a concise route map of the current API, grouped by function.
 ## Payments
 
   - GET /api/payments/bootstrap
-    - Loads payment screen data, optionally for a specific year.
+    - Loads payment screen data, optionally filtered by `year`.
   - GET /api/payments/{payment_id}/editor
     - Loads the payment editor payload for one payment.
   - POST /api/payments
     - Creates a new payment. Payment amounts may be zero while a draft is being entered, or negative for credits/corrections. The reference number is optional.
+    - Request body:
+      - `customer_id`: Customer ID.
+      - `payment_date`: Payment date as `YYYY-MM-DD`.
+      - `reference_number`: Optional payment/check/reference text.
+      - `amount_cents`: Payment amount in cents. Zero and negative values are allowed.
+      - `notes`: Optional notes.
   - PUT /api/payments/{payment_id}
     - Updates an existing payment. The reference number is optional.
+    - Uses the same request body as `POST /api/payments`.
   - DELETE /api/payments/{payment_id}
     - Deletes a payment and its invoice application rows.
   - GET /api/payments/customers/{customer_id}/open-invoices
     - Loads open invoice rows for the selected customer while editing a payment.
   - POST /api/payments/{payment_id}/applications
     - Replaces invoice applications for a payment. The payment screen calls this as part of Save Payment.
+    - Request body:
+      - `applications`: List of application rows.
+      - Each row contains `invoice_id` and `applied_amount_cents`.

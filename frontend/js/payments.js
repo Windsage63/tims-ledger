@@ -1,5 +1,3 @@
-const TODAY = "2026-05-31";
-
 const paymentsState = {
     customers: [],
     payments: [],
@@ -57,7 +55,7 @@ function createUnsavedPayment(customer, sourcePayment = null) {
         id: null,
         customer_id: customer.id,
         customer_name: customer.customer_name,
-        payment_date: TODAY,
+        payment_date: todayDateInputValue(),
         reference_number: sourcePayment ? `${sourcePayment.reference_number}-COPY` : "",
         amount_cents: sourcePayment?.amount_cents || 0,
         applied_amount_cents: 0,
@@ -451,7 +449,7 @@ function paymentPayloadFromForm(currentPayment) {
     const notesValue = document.getElementById("payment-notes")?.value;
     return {
         customer_id: Number(customerValue ?? currentPayment?.customer_id ?? 0),
-        payment_date: String(dateValue ?? currentPayment?.payment_date ?? TODAY),
+        payment_date: String(dateValue ?? currentPayment?.payment_date ?? todayDateInputValue()),
         reference_number: String(referenceValue ?? currentPayment?.reference_number ?? "").trim(),
         amount_cents: amountValue === undefined
             ? (currentPayment?.amount_cents || 0)

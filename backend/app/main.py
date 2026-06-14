@@ -73,7 +73,6 @@ def create_lifespan(settings: Settings):
 def create_app(app_settings: Settings | None = None) -> FastAPI:
     settings = app_settings or load_settings()
     frontend_dir = settings.repo_root / "frontend"
-    static_dir = frontend_dir / "html"
 
     app = FastAPI(
         title="Tim's Ledger API",
@@ -83,7 +82,6 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.startup_migrations_applied = []
     app.mount("/frontend", StaticFiles(directory=str(frontend_dir)), name="frontend")
-    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
     @app.get("/")
     def root() -> RedirectResponse:

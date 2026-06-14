@@ -133,6 +133,8 @@ Payments must support:
 5. over-application prevention
 6. remaining unapplied balance tracking
 
+Payment reference numbers are optional. A payment can be saved with only the selected customer, default payment date, and default amount.
+
 Customer balance reporting must be explainable from invoices, payments, and payment applications.
 
 ### 4.8 Backups And Audit Export
@@ -223,7 +225,7 @@ The invoice editor should preserve the printable invoice experience while keepin
 ### 5.7 Payments Ledger And Application Workflow
 
 1. Provide a dedicated payments ledger screen.
-2. The payments ledger must list payment records, customer, reference, original amount, unapplied amount, and application status.
+2. The payments ledger must list payment records, customer, optional reference, original amount, unapplied amount, and application status.
 3. Starting a new payment must create a browser-local draft, not a persisted payment row.
 4. The payment editor must expose only Save Payment and Delete Payment actions.
 5. Save Payment must persist both payment fields and invoice applications.

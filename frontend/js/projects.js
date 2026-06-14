@@ -79,10 +79,6 @@ function nextRateId() {
     return Math.max(...projectState.projects.flatMap((project) => project.rates.map((rate) => rate.id)), 0) + 1;
 }
 
-function nextProjectId() {
-    return Math.max(...projectState.projects.map((project) => project.id), 0) + 1;
-}
-
 function createBuiltinRates(defaultRateCents) {
     return [
         { id: nextRateId(), rate_code: "ST", rate_cents: defaultRateCents, is_builtin: true, sort_order: 1 },

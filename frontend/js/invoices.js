@@ -1,5 +1,3 @@
-const TODAY = "2026-05-31";
-
 const invoicesState = {
     projects: [],
     invoices: [],
@@ -147,13 +145,13 @@ async function loadEditor(invoiceId) {
         }
         invoicesState.loadError = "";
     } catch (error) {
-        invoicesState.loadError = extractErrorMessage(error, "Unable to load invoice details.");
+        window.alert(extractErrorMessage(error, "Unable to load invoice details."));
     }
     render();
 }
 
 async function loadNewEditor(projectId, sourceInvoice = null) {
-    const invoiceDate = sourceInvoice?.invoice_date || document.getElementById("invoice-date")?.value || TODAY;
+    const invoiceDate = sourceInvoice?.invoice_date || document.getElementById("invoice-date")?.value || todayDateInputValue();
     const termsDays = Number(sourceInvoice?.terms_days ?? 30);
     const query = new URLSearchParams({
         project_id: String(projectId),
@@ -176,7 +174,7 @@ async function loadNewEditor(projectId, sourceInvoice = null) {
         invoicesState.selectedInvoiceId = sourceInvoice?.id || null;
         invoicesState.loadError = "";
     } catch (error) {
-        invoicesState.loadError = extractErrorMessage(error, "Unable to load project invoice rows.");
+        window.alert(extractErrorMessage(error, "Unable to load project invoice rows."));
     }
     render();
 }
@@ -272,7 +270,7 @@ function renderInvoiceRows(invoices) {
         emptyState.classList.remove("hidden");
         return;
     }
-    if (invoicesState.loadError) {
+    if (invoicesState.loadError && invoicesState.invoices.length === 0) {
         tbody.innerHTML = "";
         setEmptyState(invoicesState.loadError);
         emptyState.classList.remove("hidden");
@@ -420,7 +418,7 @@ function renderEditor(invoice) {
 }
 
 function invoicePayloadFromForm(currentInvoice) {
-    const invoiceDate = String(document.getElementById("invoice-date")?.value || currentInvoice?.invoice_date || TODAY);
+    const invoiceDate = String(document.getElementById("invoice-date")?.value || currentInvoice?.invoice_date || todayDateInputValue());
     return {
         invoice_number: String(document.getElementById("invoice-number")?.value || currentInvoice?.invoice_number || "").trim() || null,
         project_id: Number(document.getElementById("invoice-project")?.value || currentInvoice?.project_id || 0),
@@ -489,8 +487,7 @@ async function savePrintInvoice() {
 
     const printWindow = window.open("about:blank", "_blank");
     if (!printWindow) {
-        invoicesState.loadError = "Allow pop-ups to save and print the invoice.";
-        render();
+        window.alert("Allow pop-ups to save and print the invoice.");
         return;
     }
 
@@ -530,7 +527,7 @@ async function savePrintInvoice() {
         invoicesState.loadError = "";
     } catch (error) {
         printWindow.close();
-        invoicesState.loadError = extractErrorMessage(error, "Unable to save and print invoice.");
+        window.alert(extractErrorMessage(error, "Unable to save and print invoice."));
     } finally {
         invoicesState.isSaving = false;
         render();

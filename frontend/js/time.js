@@ -58,7 +58,7 @@ function timeBootstrapErrorMessage(error) {
     }
 
     if (error instanceof TypeError) {
-        return "The time API is unavailable from this page. Open the app through FastAPI at /static/time.html instead of loading the HTML file directly.";
+        return "The time API is unavailable from this page. Open the app through FastAPI instead of loading the HTML file directly.";
     }
 
     return error instanceof Error ? error.message : "Unable to load time entries.";
@@ -88,7 +88,7 @@ function emptyTimeDraft(overrides = {}) {
     const firstRate = firstProject?.rates[0];
     return {
         id: "",
-        entry_date: "2026-05-31",
+        entry_date: todayDateInputValue(),
         project_id: firstProject?.id || "",
         project_number: firstProject?.project_number || "",
         customer_id: firstProject?.customer_id || "",
@@ -361,7 +361,7 @@ async function loadEntries() {
         timeState.entries = [];
         timeState.selectedId = null;
         timeState.isLoading = false;
-        timeState.loadError = "The time screen needs the FastAPI backend. Open http://127.0.0.1:8004/static/time.html or start the app with startup.bat.";
+        timeState.loadError = "The time screen needs the FastAPI backend. Start the app with startup.bat, then open the Time screen from the sidebar.";
         render();
         return;
     }

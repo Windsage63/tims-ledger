@@ -6,33 +6,24 @@ const reportState = {
     auditExportPath: "/api/exports/audit.xlsx",
     backups: [],
     selectedBackup: "",
-    isBackupBusy: false
+    isBackupBusy: false,
+    backupCooldownUntil: 0,
+    backupCooldownTimer: null
 };
 
-function updateActiveNav() {
-    const currentHash = window.location.hash || "#overview";
-    const currentPage = window.location.pathname.split("/").pop() || "index.html";
-    const navLinks = document.querySelectorAll(".side-nav .nav-link");
+function isBackupCooldownActive() {
+    return Date.now() < reportState.backupCooldownUntil;
+}
 
-    navLinks.forEach((link) => {
-        const href = link.getAttribute("href") || "";
-        const isPageLink = href.endsWith(".html");
-        const targetPage = href.replace("./", "");
-        const isActive = isPageLink
-            ? currentPage === targetPage || (!currentPage && targetPage === "index.html")
-            : href === currentHash;
-
-        link.classList.toggle("bg-white/10", !isActive);
-        link.classList.toggle("border-white/10", !isActive);
-        link.classList.toggle("text-stone-100", !isActive);
-
-        link.classList.toggle("bg-gradient-to-r", isActive);
-        link.classList.toggle("from-sand/35", isActive);
-        link.classList.toggle("to-brand/35", isActive);
-        link.classList.toggle("border-sand/50", isActive);
-        link.classList.toggle("text-white", isActive);
-        link.classList.toggle("shadow-lg", isActive);
-    });
+function startBackupCooldown() {
+    reportState.backupCooldownUntil = Date.now() + 5000;
+    if (reportState.backupCooldownTimer) {
+        window.clearTimeout(reportState.backupCooldownTimer);
+    }
+    reportState.backupCooldownTimer = window.setTimeout(() => {
+        reportState.backupCooldownTimer = null;
+        renderBackups();
+    }, 5000);
 }
 
 function renderOverview(data) {
@@ -116,8 +107,9 @@ function renderBackups() {
     }
 
     if (createButton) {
-        createButton.disabled = reportState.isBackupBusy;
-        createButton.classList.toggle("opacity-60", reportState.isBackupBusy);
+        const isCreateDisabled = reportState.isBackupBusy || isBackupCooldownActive();
+        createButton.disabled = isCreateDisabled;
+        createButton.classList.toggle("opacity-60", isCreateDisabled);
         createButton.textContent = reportState.isBackupBusy ? "Working..." : "Create Backup";
     }
 
@@ -148,7 +140,7 @@ async function loadBackups() {
 }
 
 async function createBackup() {
-    if (reportState.isBackupBusy) {
+    if (reportState.isBackupBusy || isBackupCooldownActive()) {
         return;
     }
     reportState.isBackupBusy = true;
@@ -162,6 +154,7 @@ async function createBackup() {
     } catch (error) {
         setBackupStatus(error.message || "Unable to create backup.");
     } finally {
+        startBackupCooldown();
         reportState.isBackupBusy = false;
         renderBackups();
     }
@@ -347,11 +340,11 @@ async function loadAccountsReceivable(customerId = null) {
 }
 
 function bindNavState() {
-    window.addEventListener("hashchange", updateActiveNav);
+    window.addEventListener("hashchange", renderNavState);
 
     document.querySelectorAll(".side-nav .nav-link").forEach((link) => {
         link.addEventListener("click", () => {
-            window.setTimeout(updateActiveNav, 0);
+            window.setTimeout(renderNavState, 0);
         });
     });
 }
@@ -378,7 +371,7 @@ function bindReportingEvents() {
 function bootstrapLandingPage() {
     bindNavState();
     bindReportingEvents();
-    updateActiveNav();
+    renderNavState();
     loadOverview();
     loadAccountsReceivable();
     loadBackups();

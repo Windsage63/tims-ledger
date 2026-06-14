@@ -1,5 +1,0 @@
-{
-  "scripts": {
-    "test:frontend-utils": "node tests/frontend-utils.test.js"
-  }
-}

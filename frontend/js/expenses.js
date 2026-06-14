@@ -51,7 +51,7 @@ function emptyExpenseDraft(overrides = {}) {
     const firstCategory = expensesState.categories[0];
     return {
         id: "",
-        entry_date: "2026-05-31",
+        entry_date: todayDateInputValue(),
         project_id: firstProject?.id || "",
         project_number: firstProject?.project_number || "",
         customer_id: firstProject?.customer_id || "",
@@ -201,7 +201,7 @@ function renderExpenseRows(expenses) {
         emptyState.classList.remove("hidden");
         return;
     }
-    if (expensesState.loadError) {
+    if (expensesState.loadError && expensesState.expenses.length === 0) {
         tbody.innerHTML = "";
         setEmptyState(expensesState.loadError);
         emptyState.classList.remove("hidden");
@@ -350,7 +350,7 @@ async function saveExpense(event) {
         expensesState.draftExpense = null;
         expensesState.loadError = "";
     } catch (error) {
-        expensesState.loadError = extractErrorMessage(error, "Unable to save expense.");
+        window.alert(extractErrorMessage(error, "Unable to save expense."));
     } finally {
         expensesState.isSaving = false;
         render();
