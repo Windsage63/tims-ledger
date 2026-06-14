@@ -2,7 +2,15 @@
 
 This document is a companion reference to the primary PRD in `docs/tims_ledger_prd.md`. When wording differs, the PRD and later explicit product decisions take precedence.
 
-## 1. User Enters Customer
+## 1. User Maintains Company Profile
+
+1. User opens the Company screen from the bottom of the sidebar menu.
+2. User enters the company name, street address, city, state, ZIP code, email, and phone.
+3. System stores a single company profile record used as invoice identity source data.
+4. Newly saved or printed invoice documents use the current company profile for the invoice header and check-payable footer.
+5. Existing generated invoice HTML documents are historical files and are not retroactively rewritten when the Company profile changes.
+
+## 2. User Enters Customer
 
 1. User creates or updates a customer master record before entering project work.
 2. User enters customer name, street address, city, state, ZIP code, contact name, email, and phone.
@@ -10,7 +18,7 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 4. System stores the customer record in the `customers` table.
 5. Customer record becomes available for project creation, invoice generation, payment receipt, and derived balance reporting.
 
-## 2. User Enters Project
+## 3. User Enters Project
 
 1. User creates a project under an existing customer.
 2. User enters `project_number`, customer, project description, and project default rate.
@@ -21,7 +29,7 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 7. System stores the project record and its rate records.
 8. Project becomes available for time entry, expense entry, invoice building, and payment reporting.
 
-## 3. User Enters Time
+## 4. User Enters Time
 
 1. User enters the work date.
 2. User selects the project by project number. The system derives the customer and available rates from the project.
@@ -31,7 +39,7 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 6. Unbilled time with a non-zero rate is eligible for invoice building. In the invoice editor, checking or unchecking time is browser-local until Save/Print. When Save/Print succeeds, checked time entries are stamped to the invoice and unchecked prior entries have their invoice linkage cleared.
 7. Fixed-fee billing is represented by a one-hour time entry that uses a custom rate equal to the fixed fee. There are no separate manual invoice lines.
 
-## 4. User Enters Expense
+## 5. User Enters Expense
 
 1. User enters the expense date.
 2. User selects the project by project number. The system derives the customer from the project.
@@ -42,7 +50,7 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 7. Non-billable expenses remain available for internal cost tracking and must not appear as invoice charges.
 8. Expense categories are limited to `Materials`, `Lodging`, `Airfare`, `Mileage`, `Perdiem`, `Rental Car`, `Gas`, `Parking`, `Tolls`, `Meals`, `Entertainment`, `Gifts`, `Freight`, and `Misc.`.
 
-## 5. User Creates Or Edits An Invoice
+## 6. User Creates Or Edits An Invoice
 
 1. User enters or edits the invoice date, unique invoice number, project, and notes. The project selector shows the project number and project description.
 2. For a new invoice, the editor may hold the invoice in browser state until Save/Print. No invoice database row is required before Save/Print.
@@ -58,9 +66,10 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 12. Checked expenses are saved with the invoice ID. Unchecked prior expenses have their invoice linkage cleared and return to the unbilled pool.
 13. Existing issued invoices may be viewed, edited, saved, and reprinted by invoice number.
 14. The printed invoice shows project references as `{project number} - {project description}`.
-15. Editing and reissuing an invoice intentionally changes accounting history. This application does not require an immutable invoice audit trail.
+15. The printed invoice company header and check-payable footer come from the current Company profile at Save/Print time.
+16. Editing and reissuing an invoice intentionally changes accounting history. This application does not require an immutable invoice audit trail.
 
-## 6. User Records and Applies a Payment
+## 7. User Records and Applies a Payment
 
 1. User records a payment for a customer.
 2. System creates a payment record with the full amount initially unapplied.
@@ -68,7 +77,7 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 4. System prevents over-application and updates both invoice open balances and the payment's remaining unapplied amount.
 5. Customer balance shows open AR and net balance, each derived from invoices, payments, and payment applications.
 
-## 7. User Exports, Backs Up, Or Restores Data
+## 8. User Exports, Backs Up, Or Restores Data
 
 1. User can download the XLSX audit export from the overview page. This export is for review and audit, not disaster recovery.
 2. User can create a backup from the overview page.

@@ -31,6 +31,22 @@ Here is a concise route map of the current API, grouped by function.
     - Request body:
       - `file_name`: Backup ZIP file name from the normal backup list.
 
+## Company
+
+  - GET /api/company/profile
+    - Loads the single Company profile used for newly generated invoice headers and check-payable footer text.
+  - PUT /api/company/profile
+    - Updates the single Company profile.
+    - Request body:
+      - `company_name`: Company name printed on invoices.
+      - `street_address`: Company street address.
+      - `city`: Company city.
+      - `state`: Two-letter company state.
+      - `zip`: Company ZIP code.
+      - `email`: Company email printed on invoices.
+      - `phone`: Company phone printed on invoices.
+    - Existing saved invoice HTML documents are not retroactively rewritten.
+
 ## Customers
 
   - GET /api/customers/bootstrap

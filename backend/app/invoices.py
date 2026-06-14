@@ -8,6 +8,7 @@ import sqlite3
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from .company import fetch_company_profile
 from .date_utils import parse_iso_date, utc_now, validate_iso_date
 from .expenses import expense_select_sql
 from .projects import project_lookup
@@ -101,7 +102,6 @@ def html_line_breaks(lines: list[str]) -> str:
 
 
 def render_invoice_table_rows(payload: dict[str, object]) -> str:
-    invoice = payload["invoice"]
     selected_time_entries = payload["selected_time_entries"]
     selected_expenses = payload["selected_expenses"]
     rows: list[str] = []
@@ -179,7 +179,7 @@ def render_invoice_table_rows(payload: dict[str, object]) -> str:
     return "\n".join(rows)
 
 
-def build_invoice_print_html(payload: dict[str, object]) -> str:
+def build_invoice_print_html(payload: dict[str, object], company_profile: dict[str, object]) -> str:
     invoice = payload["invoice"]
     summary = payload["summary"]
     customer_lines = [
@@ -188,6 +188,14 @@ def build_invoice_print_html(payload: dict[str, object]) -> str:
         f"{invoice['city']}, {invoice['state']} {invoice['zip']}",
         f"Phone: {invoice['phone']}",
         f"Email: {invoice['email']}",
+    ]
+    company_address_lines = [
+        str(company_profile["street_address"]),
+        f"{company_profile['city']}, {company_profile['state']} {company_profile['zip']}",
+    ]
+    company_contact_lines = [
+        f"Email: {company_profile['email']}",
+        f"Phone: {company_profile['phone']}",
     ]
     notes_block = ""
     if invoice.get("notes"):
@@ -412,9 +420,9 @@ def build_invoice_print_html(payload: dict[str, object]) -> str:
     <main class="page">
         <header class="header">
             <div class="company-block">
-                <h1>Air Advantage, Inc.</h1>
-                <p class="detail">2850 Lake Silver Rd<br>Crestview, FL 32536</p>
-                <p class="detail" style="margin-top: 10px;">Email: tmallory@outlook.com<br>Phone: 850-774-3283</p>
+                <h1>{company_name}</h1>
+                <p class="detail">{company_address}</p>
+                <p class="detail" style="margin-top: 10px;">{company_contact}</p>
             </div>
             <div class="invoice-heading">
                 <h2>INVOICE</h2>
@@ -462,12 +470,15 @@ def build_invoice_print_html(payload: dict[str, object]) -> str:
         {notes_block}
         <footer class="footer">
             <p>{terms_notice}</p>
-            <p>Make all checks payable to Air Advantage, Inc.</p>
+            <p>Make all checks payable to {company_name}</p>
         </footer>
     </main>
 </body>
 </html>
 """.format(
+        company_name=escape(str(company_profile["company_name"])),
+        company_address=html_line_breaks(company_address_lines),
+        company_contact=html_line_breaks(company_contact_lines),
         invoice_number=escape(str(invoice["invoice_number"])),
         customer_name=escape(str(invoice["customer_name"])),
         customer_block=html_line_breaks(customer_lines[1:]),
@@ -956,7 +967,8 @@ def save_invoice_html_without_commit(
     if int(invoice["invoice_amount_cents"]) <= 0:
         raise ValueError("Select at least one billable row before saving the invoice.")
 
-    document_html = build_invoice_print_html(payload)
+    company_profile = fetch_company_profile(connection)
+    document_html = build_invoice_print_html(payload, company_profile)
     output_dir = ensure_invoice_output_dir(data_dir)
     file_name = stored_invoice_file_name(int(invoice["id"]), str(invoice["invoice_number"]))
     file_path = output_dir / file_name

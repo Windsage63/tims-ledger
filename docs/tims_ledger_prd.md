@@ -17,18 +17,33 @@ This PRD is the primary product reference. The workflow document in [docs/workfl
 
 ## 3. Core Workflow Summary
 
-1. User creates or updates a customer record.
-2. User creates a project under an existing customer.
-3. User enters time against the project and selects the project rate code.
-4. User enters expenses against the project and flags whether each expense is billable.
-5. User creates or edits an invoice by selecting eligible unbilled time and expenses.
-6. Invoices are issued and kept in a ledger and applied to customer accounts.
-7. User records payments and applies them to customer balances, leaving any excess receipt unapplied until it is allocated.
-8. User can create ZIP backups and restore from selected backups through the overview/reporting area.
+1. User maintains the Company profile used on newly generated invoices.
+2. User creates or updates a customer record.
+3. User creates a project under an existing customer.
+4. User enters time against the project and selects the project rate code.
+5. User enters expenses against the project and flags whether each expense is billable.
+6. User creates or edits an invoice by selecting eligible unbilled time and expenses.
+7. Invoices are issued and kept in a ledger and applied to customer accounts.
+8. User records payments and applies them to customer balances, leaving any excess receipt unapplied until it is allocated.
+9. User can create ZIP backups and restore from selected backups through the overview/reporting area.
 
 ## 4. Core Data Model And Invariants
 
-### 4.1 Customers
+### 4.1 Company Profile
+
+The Company profile is a single-record settings table used as invoice identity source data. It must store:
+
+1. company_name
+2. street_address
+3. city
+4. state
+5. zip
+6. email
+7. phone
+
+Newly generated invoice HTML documents must use the current Company profile for the printed company header and check-payable footer. Existing saved invoice HTML documents are historical artifacts and are not retroactively rewritten when the Company profile changes.
+
+### 4.2 Customers
 
 Each customer record must store, at minimum:
 
@@ -42,7 +57,7 @@ Each customer record must store, at minimum:
 8. customer_phone
 Customer records must be complete enough to support project setup, invoice generation, payment receipt, and customer balance reporting. Customer balance is a derived reporting value, not a hand-maintained master field.
 
-### 4.2 Projects
+### 4.3 Projects
 
 Each project:
 
@@ -59,7 +74,7 @@ Built-in rate behavior:
 3. TT = 0.5 x project_default_rate
 Projects may also store custom rate entries as rate-code and rate values. Fixed-fee billing is represented by a custom project rate used on a one-hour time entry rather than by manual invoice lines. Materials orders can also be entered through custom rates by adding item prices as custom project rates.
 
-### 4.3 Time Entries
+### 4.4 Time Entries
 
 Each time entry stores:
 
@@ -73,7 +88,7 @@ Each time entry stores:
 
 There is no separate time-entry billable flag. Time with a selected rate of `0` is non-billable. Only unbilled time with a non-zero rate is eligible for invoice building. In the invoice editor, checking and unchecking time entries is browser-local until Save/Print. On Save/Print, checked time entries receive the invoice linkage and unchecked prior entries have the linkage cleared. Fixed-fee-supporting or non-billable time remains available for project tracking but must not be treated automatically as labor revenue.
 
-### 4.4 Expense Entries
+### 4.5 Expense Entries
 
 Each expense entry stores:
 
@@ -91,7 +106,7 @@ Each expense entry stores:
 Only expenses flagged as billable are eligible for invoice building. In the invoice editor, checking and unchecking expenses is browser-local until Save/Print. On Save/Print, checked expenses receive the invoice linkage and unchecked prior expenses have the linkage cleared. Non-billable expenses remain available for internal cost tracking without being treated as invoiceable lines.
 Expense categories are: `Materials`, `Lodging`, `Airfare`, `Mileage`, `Perdiem`, `Rental Car`, `Gas`, `Parking`, `Tolls`, `Meals`, `Entertainment`, `Gifts`, `Freight`, and `Misc.`.
 
-### 4.5 Invoices
+### 4.6 Invoices
 
 Each invoice:
 
@@ -104,9 +119,10 @@ Each invoice:
 
 Invoice lines derived from time and expenses must remain traceable back to their source records.
 Printed invoices must show the project reference as `{project number} - {project description}` so the customer can identify what the invoice is for.
+Printed invoices must show the company identity from the Company profile at Save/Print time.
 Invoices do not need a draft state. New invoice creation may begin in browser state, but the database row and source-record links are created or updated only when the user clicks Save/Print. Existing invoices may be edited and reissued even though that changes accounting history; an immutable invoice audit trail is out of scope for this application.
 
-### 4.6 Payments And Payment Applications
+### 4.7 Payments And Payment Applications
 
 Payments must support:
 
@@ -118,7 +134,7 @@ Payments must support:
 
 Customer balance reporting must be explainable from invoices, payments, and payment applications.
 
-### 4.7 Backups And Audit Export
+### 4.8 Backups And Audit Export
 
 The XLSX export is an audit/readability artifact, not the restore source of truth.
 
@@ -130,6 +146,14 @@ Backups must be ZIP files stored in `app-data/backups/` and named `Tims-Ledger-B
 Users may keep an unlimited number of normal backups and select one to restore. During restore, the system must first create a safety backup of the current database and invoice documents in `app-data/backups/safety/` so it is not confused with normal restore candidates.
 
 ## 5. Functional Requirements
+
+### 5.0 Company Profile
+
+1. Provide a Company screen at the bottom of the sidebar menu.
+2. Let the user edit company name, street address, city, state, ZIP code, email, and phone.
+3. Store exactly one active Company profile record.
+4. Use the current Company profile on newly generated invoice HTML documents.
+5. Do not rewrite existing saved invoice HTML documents when the Company profile changes.
 
 ### 5.1 Customers Module
 
@@ -161,7 +185,7 @@ Users may keep an unlimited number of normal backups and select one to restore. 
 2. Allow expense entry by date, project number, vendor, description, quantity, unit cost, category, and billable flag.
 3. Derive the customer from the selected project.
 4. Store invoice linkage on the expense record when Save/Print is clicked for an invoice that includes that expense, and remove that linkage when Save/Print is clicked after the expense has been unchecked.
-5. Use the canonical expense category list from section 4.4.
+5. Use the canonical expense category list from section 4.5.
 6. Provide a browse-plus-editor surface for reviewing, creating, and updating expenses.
 
 ### 5.5 Invoice Creation And Editing
@@ -178,6 +202,7 @@ Users may keep an unlimited number of normal backups and select one to restore. 
 10. Editing an issued invoice must preserve the same source-linked checkbox workflow and may change accounting history.
 11. The printed invoice should present time-derived charges in the upper section and expense-derived charges in a separate lower section.
 12. The printed invoice project reference should be `{project number} - {project description}` in the invoice metadata and line-item project column.
+13. The printed invoice company header and check-payable footer should come from the Company profile.
 
 The invoice editor should preserve the printable invoice experience while keeping source records authoritative:
 
@@ -231,6 +256,7 @@ The invoice editor should preserve the printable invoice experience while keepin
 7. Keep the printable invoice layout, but route line selection through source-record checkbox lists.
 8. Keep the payments ledger and payment-application screen family to complete the workflow.
 9. Keep the overview page focused on metrics, accounts receivable, customer statements, audit export, and backup/restore controls.
+10. Keep the Company profile as a simple single-record settings screen.
 
 ## 7. UX And Interaction Guidance
 

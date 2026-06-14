@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from .backups import BackupRestoreWrite, create_backup, list_backup_files, restore_backup
+from .company import CompanyProfileWrite, fetch_company_profile, upsert_company_profile
 from .config import Settings, load_settings
 from .customers import CustomerWrite, create_customer, fetch_customers, update_customer
 from .db import apply_pending_migrations, connect, get_database_status
@@ -190,6 +191,20 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
             },
             screen="overview",
         )
+
+    @app.get("/api/company/profile")
+    def company_profile(request: Request) -> dict[str, object]:
+        with connect(request.app.state.settings.database_path) as connection:
+            profile = fetch_company_profile(connection)
+
+        return response_envelope({"profile": profile}, screen="company")
+
+    @app.put("/api/company/profile")
+    def company_profile_update(payload: CompanyProfileWrite, request: Request) -> dict[str, object]:
+        with connect(request.app.state.settings.database_path) as connection:
+            profile = upsert_company_profile(connection, payload)
+
+        return response_envelope({"profile": profile}, screen="company")
 
     @app.get("/api/customers/bootstrap")
     def customers_bootstrap(request: Request) -> dict[str, object]:

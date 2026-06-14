@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tim's Ledger Company</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Work+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        background: "#f5efe2",
+                        surface: "#fffaf3",
+                        ink: "#1f1b16",
+                        muted: "#6a6257",
+                        line: "#d8cabb",
+                        brand: "#155e52",
+                        branddeep: "#0f433a",
+                        sand: "#d0b189",
+                        panel: "#efe6d7",
+                        forest: "#1d332f",
+                        danger: "#a84432",
+                        warn: "#a66a11",
+                        calm: "#375a7f"
+                    },
+                    fontFamily: {
+                        sans: ["Inter", "sans-serif"],
+                        display: ["Work Sans", "sans-serif"],
+                        mono: ["JetBrains Mono", "monospace"]
+                    },
+                    boxShadow: {
+                        soft: "0 24px 60px rgba(56, 37, 16, 0.12)"
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.72),transparent_24%),linear-gradient(145deg,#f6f0e4_0%,#ebddca_48%,#d5c7b0_100%)] font-sans text-ink">
+    <div class="min-h-screen lg:grid lg:grid-cols-[18rem_minmax(0,1fr)]">
+        <aside class="flex flex-col gap-8 border-b border-white/10 bg-[linear-gradient(180deg,rgba(23,29,28,0.96),rgba(22,70,62,0.96))] px-5 py-6 text-stone-100 lg:sticky lg:top-0 lg:h-screen lg:min-h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r lg:border-r-white/10 lg:px-6">
+            <div>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-stone-300/80">Local Simple Accounting</p>
+                <a class="mt-2 inline-block font-display text-3xl font-bold tracking-tight text-stone-50" href="./index.html">Tim's Ledger</a>
+                <p class="mt-3 max-w-xs text-sm leading-6 text-stone-200/75">A Non-GAP bookkeeping system.</p>
+            </div>
+
+            <nav class="side-nav grid gap-2" aria-label="Primary">
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./index.html">Overview</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./customers.html">Customers</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./projects.html">Projects</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./time.html">Time</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./expenses.html">Expenses</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./invoices.html">Invoices</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./payments.html">Payments</a>
+                <a class="nav-link rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-stone-100 transition hover:translate-x-1 hover:bg-white/10" href="./company.html">Company</a>
+            </nav>
+
+            <div class="rounded-3xl border border-white/10 bg-white/8 p-4 backdrop-blur-sm lg:mt-auto">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-stone-300/80">Company Profile</p>
+                <p class="mt-2 text-2xl font-display font-bold text-stone-50" id="company-mode">Loading...</p>
+                <p class="mt-2 text-sm leading-6 text-stone-200/75">This profile is used on newly generated invoice documents.</p>
+            </div>
+        </aside>
+
+        <main class="px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+            <section class="rounded-[2rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur md:p-8">
+                <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+                    <div class="max-w-4xl">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted">Company Settings</p>
+                        <h1 class="mt-3 font-display text-4xl font-extrabold leading-none text-ink sm:text-5xl xl:text-6xl">Company Profile</h1>
+                        <p class="mt-4 max-w-3xl text-base leading-7 text-muted sm:text-lg">Maintain the business name and contact information printed on invoices.</p>
+                    </div>
+
+                    <div class="flex flex-wrap gap-3">
+                        <button class="inline-flex min-w-44 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" id="save-company-button" type="button">Save Company</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.8fr)]">
+                <article class="rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
+                    <div class="mb-5">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Invoice Identity</p>
+                        <h2 class="mt-2 font-display text-3xl font-bold text-ink">Printed company details.</h2>
+                        <p class="mt-3 text-sm leading-7 text-muted">Updates apply to invoices generated after saving. Existing saved invoice documents are not rewritten.</p>
+                    </div>
+
+                    <form class="grid gap-4" id="company-form">
+                        <div>
+                            <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="company-name">Company Name</label>
+                            <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="company-name" name="company_name" required type="text">
+                        </div>
+
+                        <div>
+                            <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="street-address">Street Address</label>
+                            <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="street-address" name="street_address" required type="text">
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_6rem_8rem]">
+                            <div>
+                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="city">City</label>
+                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="city" name="city" required type="text">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="state">State</label>
+                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="state" maxlength="2" name="state" required type="text">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="zip">ZIP</label>
+                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="zip" name="zip" required type="text">
+                            </div>
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="email">Email</label>
+                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="email" name="email" required type="email">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="phone">Phone</label>
+                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="phone" name="phone" required type="text">
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap gap-3 pt-2">
+                            <button class="inline-flex min-w-40 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" type="submit">Save Company</button>
+                            <button class="inline-flex min-w-32 items-center justify-center rounded-full border border-line bg-panel/50 px-5 py-3 text-sm font-semibold text-ink transition hover:bg-white" id="reload-company-button" type="button">Reload</button>
+                        </div>
+                    </form>
+                </article>
+
+                <article class="rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
+                    <div class="mb-5">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Invoice Preview</p>
+                        <h2 class="mt-2 font-display text-3xl font-bold text-ink" id="preview-company-name">Loading...</h2>
+                        <p class="mt-3 text-sm leading-7 text-muted">This is the company block that will appear on newly generated invoice documents.</p>
+                    </div>
+
+                    <div class="rounded-[1.2rem] border border-line bg-panel/45 p-4">
+                        <p class="text-sm leading-7 text-ink" id="preview-address">-</p>
+                        <p class="mt-4 text-sm leading-7 text-ink" id="preview-contact">-</p>
+                    </div>
+
+                    <div class="mt-5 rounded-[1.2rem] border border-line bg-white/60 p-4">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Check Payable Footer</p>
+                        <p class="mt-2 text-sm leading-7 text-ink" id="preview-payable">-</p>
+                    </div>
+
+                    <p class="mt-5 rounded-[1.2rem] border border-line bg-panel/35 px-4 py-3 text-sm text-muted" id="company-status">Loading company profile...</p>
+                </article>
+            </section>
+        </main>
+    </div>
+
+    <script src="../js/utils.js" defer></script>
+    <script src="../js/company.js" defer></script>
+</body>
+</html>
