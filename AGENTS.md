@@ -6,9 +6,9 @@ Tim's Ledger is a local, desktop-first accounting workflow for project billing. 
 
 The current product reference docs are:
 
-- [docs/tims_ledger_prd.md](docs/tims_ledger_prd.md)
-- [docs/workflows.md](docs/workflows.md)
-- [docs/API Reference.md](docs/API%20Reference.md)
+  - [docs/tims_ledger_prd.md](docs/tims_ledger_prd.md)
+  - [docs/workflows.md](docs/workflows.md)
+  - [docs/API Reference.md](docs/API%20Reference.md)
 
 ## Environment And Commands
 
@@ -67,28 +67,28 @@ Normal backups live in `app-data/backups/` as `Tims-Ledger-Backup-{date-timestam
 
 ## Backend Conventions
 
-- Routes in `main.py` use `response_envelope(data, screen=...)` for JSON responses.
-- Domain modules expose Pydantic write models plus functions that accept a `sqlite3.Connection`.
-- Use `with connect(settings.database_path) as connection:` so `row_factory` and foreign keys are applied.
-- Commit inside create/update helpers that directly mutate user records. Multi-step invoice/payment flows use `*_without_commit` helpers and commit once after all links/documents are updated.
-- Keep migrations additive and ordered under `migrations/`; startup applies pending migrations unless disabled by settings.
+  - Routes in `main.py` use `response_envelope(data, screen=...)` for JSON responses.
+  - Domain modules expose Pydantic write models plus functions that accept a `sqlite3.Connection`.
+  - Use `with connect(settings.database_path) as connection:` so `row_factory` and foreign keys are applied.
+  - Commit inside create/update helpers that directly mutate user records. Multi-step invoice/payment flows use `*_without_commit` helpers and commit once after all links/documents are updated.
+  - Keep migrations additive and ordered under `migrations/`; startup applies pending migrations unless disabled by settings.
 
 ## Frontend Conventions
 
-- Each screen owns its state in `frontend/js/{screen}.js` and talks directly to its matching API endpoints.
-- Escape user/database text before inserting template HTML. Existing screen files define `escapeHtml`; use it for table rows, cards, and option labels.
-- Prefer `textContent` helpers for simple text updates and event delegation for generated rows/lists.
-- Preserve the dense desktop ledger layout: sidebar navigation, metrics, browse tables, and editor panels.
+  - Each screen owns its state in `frontend/js/{screen}.js` and talks directly to its matching API endpoints.
+  - Escape user/database text before inserting template HTML. Existing screen files define `escapeHtml`; use it for table rows, cards, and option labels.
+  - Prefer `textContent` helpers for simple text updates and event delegation for generated rows/lists.
+  - Preserve the dense desktop ledger layout: sidebar navigation, metrics, browse tables, and editor panels.
 
 ## Product Rules To Preserve
 
-- Time billability comes from the selected rate. Rate `0` is non-billable; there is no separate time billable toggle.
-- Fixed-fee and materials-order style billing is represented through custom project rates and unit entries in time, not manual invoice lines.
-- Expense categories are exactly: `Materials`, `Lodging`, `Airfare`, `Mileage`, `Perdiem`, `Rental Car`, `Gas`, `Parking`, `Tolls`, `Meals`, `Entertainment`, `Gifts`, `Freight`, `Misc.`.
-- Invoice source-row checkbox changes stay browser-local until Save/Print. Save/Print creates or updates the invoice, replaces time/expense invoice links, writes the saved invoice HTML, and opens it for printing.
-- Printed invoice project references should read `{project number} - {project description}`.
-- PO number is not part of the active invoice UI.
-- Overview should prioritize metrics, accounts receivable, customer statement detail, XLSX audit export, and backup/restore controls.
+  - Time billability comes from the selected rate. Rate `0` is non-billable; there is no separate time billable toggle.
+  - Fixed-fee and materials-order style billing is represented through custom project rates and unit entries in time, not manual invoice lines.
+  - Expense categories are exactly: `Materials`, `Lodging`, `Airfare`, `Mileage`, `Perdiem`, `Rental Car`, `Gas`, `Parking`, `Tolls`, `Meals`, `Entertainment`, `Gifts`, `Freight`, `Misc.`.
+  - Invoice source-row checkbox changes stay browser-local until Save/Print. Save/Print creates or updates the invoice, replaces time/expense invoice links, writes the saved invoice HTML, and opens it for printing.
+  - Printed invoice project references should read `{project number} - {project description}`.
+  - PO number is not part of the active invoice UI.
+  - Overview should prioritize metrics, accounts receivable, customer statement detail, XLSX audit export, and backup/restore controls.
 
 ## Documentation
 
