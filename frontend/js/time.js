@@ -545,7 +545,6 @@ function bindEvents() {
 }
 
 function render() {
-    renderNavState();
     renderProjectOptions();
     renderYearOptions();
     renderStatusFilters();

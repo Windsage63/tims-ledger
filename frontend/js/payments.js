@@ -699,7 +699,6 @@ function bindEvents() {
 }
 
 function render() {
-    renderNavState();
     renderCustomerOptions();
     renderYearOptions();
     renderStatusFilters();

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Tim's Ledger is a local, desktop-first accounting workflow for project billing. It uses a FastAPI backend, vanilla HTML/JavaScript frontend, SQLite persistence, and generated HTML invoice documents.
+Tim's Ledger is a local, desktop-first accounting workflow for project billing. It uses a FastAPI backend, Jinja2 HTML templates with vanilla JavaScript controllers, SQLite persistence, and generated HTML invoice documents.
 
 The current product reference docs are:
 
@@ -40,6 +40,7 @@ There is no formal automated test suite yet. For frontend or workflow changes, r
 ```text
 backend/app/
   main.py          FastAPI app factory and routes
+  pages.py         Ordered page registry, navigation and template metadata
   db.py            SQLite connection and migration helpers
   config.py        Data, database, and migration paths
   customers.py     Customer models and CRUD helpers
@@ -51,7 +52,7 @@ backend/app/
   reporting.py     AR reports and XLSX audit export
   backups.py       ZIP backup/list/restore behavior
 
-frontend/html/     One page per screen
+frontend/templates/ Shared base layout and one content template per screen
 frontend/js/       One stateful vanilla JS controller per screen
 migrations/        Ordered SQL migrations applied at startup
 app-data/          Local runtime data; gitignored
@@ -75,6 +76,10 @@ Normal backups live in `app-data/backups/` as `Tims-Ledger-Backup-{date-timestam
 
 ## Frontend Conventions
 
+  - Screens extend `frontend/templates/base.html`; keep document setup, shared theme, sidebar, and script loading in that base template.
+  - Define menu entries and screen metadata once in `backend/app/pages.py`. Server-rendered page URLs remain `/frontend/html/{page_name}`; only registry filenames are allowed. Company is the bottom settings link.
+  - Pages require the running app; direct file opening is unsupported. Serve JavaScript at `/frontend/js/`, and never expose template source through a broad static mount.
+  - Navigation active styling and `aria-current` are server-rendered. Do not reintroduce browser-side navigation highlighting.
   - Each screen owns its state in `frontend/js/{screen}.js` and talks directly to its matching API endpoints.
   - Escape user/database text before inserting template HTML. Existing screen files define `escapeHtml`; use it for table rows, cards, and option labels.
   - Prefer `textContent` helpers for simple text updates and event delegation for generated rows/lists.

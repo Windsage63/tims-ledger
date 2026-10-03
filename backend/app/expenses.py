@@ -7,7 +7,6 @@ from pydantic import BaseModel, ConfigDict, field_validator
 from .date_utils import utc_now, validate_iso_date
 from .projects import customer_lookup, project_lookup
 
-
 EXPENSE_CATEGORIES = [
     "Materials",
     "Lodging",

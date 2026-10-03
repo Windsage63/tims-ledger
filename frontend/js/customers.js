@@ -384,7 +384,6 @@ function bindEvents() {
 }
 
 function render() {
-    renderNavState();
     renderStatusFilters();
 
     const customers = filteredCustomers();

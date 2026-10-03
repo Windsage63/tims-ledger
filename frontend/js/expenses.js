@@ -433,7 +433,6 @@ function bindEvents() {
 }
 
 function render() {
-    renderNavState();
     renderProjectOptions();
     renderYearOptions();
     renderCategoryOptions();

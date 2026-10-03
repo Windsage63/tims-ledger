@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from io import BytesIO
 import sqlite3
+from io import BytesIO
 from xml.etree import ElementTree as ET
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from .date_utils import utc_now
 from .invoices import invoice_select_sql, row_to_invoice
 from .overview import overview_bootstrap_payload
-
 
 SPREADSHEET_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 OFFICE_DOC_REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"

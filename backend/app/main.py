@@ -1,25 +1,65 @@
 from __future__ import annotations
 
+import sqlite3
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
-from .backups import BackupRestoreWrite, create_backup, list_backup_files, restore_backup
+from .backups import (
+    BackupRestoreWrite,
+    create_backup,
+    list_backup_files,
+    restore_backup,
+)
 from .company import CompanyProfileWrite, fetch_company_profile, upsert_company_profile
 from .config import Settings, load_settings
 from .customers import CustomerWrite, create_customer, fetch_customers, update_customer
 from .db import apply_pending_migrations, connect, get_database_status
-from .expenses import ExpenseWrite, create_expense, expense_bootstrap_payload, update_expense
-from .invoices import InvoiceSavePrintWrite, fetch_saved_invoice_document, invoice_bootstrap_payload, invoice_editor_payload, invoice_new_editor_payload, save_print_invoice
+from .expenses import (
+    ExpenseWrite,
+    create_expense,
+    expense_bootstrap_payload,
+    update_expense,
+)
+from .invoices import (
+    InvoiceSavePrintWrite,
+    fetch_saved_invoice_document,
+    invoice_bootstrap_payload,
+    invoice_editor_payload,
+    invoice_new_editor_payload,
+    save_print_invoice,
+)
 from .overview import overview_bootstrap_payload
-from .payments import PaymentApplicationsReplace, PaymentWrite, create_payment, customer_open_invoices_payload, delete_payment, payment_editor_payload, payments_bootstrap_payload, replace_payment_applications, update_payment
-from .projects import ProjectWrite, create_project, customer_lookup, fetch_projects, update_project
+from .pages import PAGE_REGISTRY
+from .payments import (
+    PaymentApplicationsReplace,
+    PaymentWrite,
+    create_payment,
+    customer_open_invoices_payload,
+    delete_payment,
+    payment_editor_payload,
+    payments_bootstrap_payload,
+    replace_payment_applications,
+    update_payment,
+)
+from .projects import (
+    ProjectWrite,
+    create_project,
+    customer_lookup,
+    fetch_projects,
+    update_project,
+)
 from .reporting import accounts_receivable_report_payload, build_audit_export_bytes
-from .time_entries import TimeEntryWrite, create_time_entry, time_bootstrap_payload, update_time_entry
-import sqlite3
+from .time_entries import (
+    TimeEntryWrite,
+    create_time_entry,
+    time_bootstrap_payload,
+    update_time_entry,
+)
 
 
 def response_envelope(data: dict[str, object], *, screen: str | None = None) -> dict[str, object]:
@@ -81,7 +121,19 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings = settings
     app.state.startup_migrations_applied = []
-    app.mount("/frontend", StaticFiles(directory=str(frontend_dir)), name="frontend")
+    templates = Jinja2Templates(directory=str(frontend_dir / "templates"))
+    app.mount("/frontend/js", StaticFiles(directory=str(frontend_dir / "js")), name="frontend_js")
+
+    @app.get("/frontend/html/{page_name}", response_class=HTMLResponse, include_in_schema=False)
+    def frontend_page(page_name: str, request: Request) -> Response:
+        page = PAGE_REGISTRY.get(page_name)
+        if page is None:
+            raise HTTPException(status_code=404, detail="Page not found.")
+        return templates.TemplateResponse(
+            request=request,
+            name=page.filename,
+            context={"page": page, "pages": tuple(PAGE_REGISTRY.values())},
+        )
 
     @app.get("/")
     def root() -> RedirectResponse:

@@ -136,7 +136,6 @@ function bindEvents() {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-    renderNavState();
     bindEvents();
     loadCompanyProfile();
 });

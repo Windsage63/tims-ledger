@@ -2,7 +2,7 @@
 
 ![Tim's Ledger hero](docs/assets/tims-ledger-hero.png)
 
-Tim's Ledger is a local, desktop-first accounting workflow for project billing. It uses a FastAPI backend, a vanilla HTML/JavaScript frontend, SQLite persistence, and generated HTML invoice documents.
+Tim's Ledger is a local, desktop-first accounting workflow for project billing. It uses a FastAPI backend, server-rendered Jinja2 HTML with vanilla JavaScript controllers, SQLite persistence, and generated HTML invoice documents.
 
 The app is meant to replace a spreadsheet-driven workflow, not become a full accounting platform. It focuses on customers, projects, time, expenses, invoices, payments, accounts receivable, audit export, and backup/restore.
 
@@ -15,7 +15,7 @@ The app is meant to replace a spreadsheet-driven workflow, not become a full acc
 ## Tech Stack
 
   - Backend: FastAPI and SQLite
-  - Frontend: static HTML pages with vanilla JavaScript controllers
+  - Frontend: Jinja2 pages sharing one layout, with vanilla JavaScript controllers
   - Runtime data: `app-data/`
   - Migrations: ordered SQL files in `migrations/`
 
@@ -23,7 +23,7 @@ The app is meant to replace a spreadsheet-driven workflow, not become a full acc
 
 ```text
 backend/app/       FastAPI routes, domain modules, SQLite helpers, reporting, backups
-frontend/html/     One desktop-oriented page per screen
+frontend/templates/ Shared base layout and one Jinja2 content template per screen
 frontend/js/       One vanilla JavaScript controller per screen plus shared utilities
 migrations/        Startup-applied SQLite migrations
 docs/              Product, workflow, and API documentation
@@ -61,6 +61,14 @@ http://127.0.0.1:8004/
 ```
 
 `startup.bat` starts `uvicorn`, waits for `/api/health`, and opens the browser unless `TIMS_LEDGER_SKIP_BROWSER=1` is set.
+
+Pages require the running application; opening template files directly in a browser is not supported. Existing page URLs such as `/frontend/html/customers.html` render through FastAPI. JavaScript remains available under `/frontend/js/`; template source is not publicly served.
+
+## Shared Frontend Layout
+
+`frontend/templates/base.html` owns the document setup, theme, sidebar, main wrapper, and shared script loading. Each screen extends it with its main content. Update the shared theme or layout here once for all screens.
+
+`backend/app/pages.py` contains the ordered page registry: page filenames, titles, navigation labels, controller URLs, and sidebar help/status metadata. Update this registry to change menu entries. Company is rendered separately as the bottom settings link. Navigation highlighting and `aria-current` are rendered on the server.
 
 ## Configuration
 

@@ -339,16 +339,6 @@ async function loadAccountsReceivable(customerId = null) {
     }
 }
 
-function bindNavState() {
-    window.addEventListener("hashchange", renderNavState);
-
-    document.querySelectorAll(".side-nav .nav-link").forEach((link) => {
-        link.addEventListener("click", () => {
-            window.setTimeout(renderNavState, 0);
-        });
-    });
-}
-
 function bindReportingEvents() {
     document.getElementById("ar-customers-body")?.addEventListener("click", (event) => {
         const button = event.target.closest("[data-customer-report-id]");
@@ -369,9 +359,7 @@ function bindReportingEvents() {
 }
 
 function bootstrapLandingPage() {
-    bindNavState();
     bindReportingEvents();
-    renderNavState();
     loadOverview();
     loadAccountsReceivable();
     loadBackups();

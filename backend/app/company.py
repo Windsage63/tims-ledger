@@ -6,7 +6,6 @@ from pydantic import BaseModel, ConfigDict, field_validator
 
 from .date_utils import utc_now
 
-
 DEFAULT_COMPANY_PROFILE = {
     "id": 1,
     "company_name": "Your Company Name",

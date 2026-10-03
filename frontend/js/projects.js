@@ -371,7 +371,6 @@ function renderEditor(project) {
 }
 
 function render() {
-    renderNavState();
     renderCustomerFilterOptions();
 
     const projects = filteredProjects();

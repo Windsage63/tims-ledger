@@ -6,6 +6,11 @@ Here is a concise route map of the current API, grouped by function.
 
   - GET /
     - Redirects to `/frontend/html/index.html`.
+  - GET /frontend/html/{page_name}
+    - Renders a Jinja2 screen using the shared layout. Allowed filenames are `index.html`, `customers.html`, `projects.html`, `time.html`, `expenses.html`, `invoices.html`, `payments.html`, and `company.html`.
+    - Unknown filenames return HTTP 404. Page rendering supplies layout metadata only; browser controllers load business data through the existing JSON APIs.
+  - GET /frontend/js/{asset_path}
+    - Serves the existing JavaScript assets. Template source under `frontend/templates/` is not publicly served.
   - GET /api/health
     - Returns backend health, DB path, and migration status.
   - GET /api/system/status

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import re
+import sqlite3
 from datetime import timedelta
 from html import escape
 from pathlib import Path
-import re
-import sqlite3
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
