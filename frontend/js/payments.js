@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Manage payment drafts and invoice application amounts.
+ * @license Apache-2.0
+ * @copyright 2026 Timothy Mallory
+ */
+
 const paymentsState = {
     customers: [],
     payments: [],

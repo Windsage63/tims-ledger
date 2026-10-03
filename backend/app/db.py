@@ -1,3 +1,9 @@
+"""
+@fileoverview Manage SQLite connections, migrations, and database status.
+@license Apache-2.0
+@copyright 2026 Timothy Mallory
+"""
+
 from __future__ import annotations
 
 import sqlite3

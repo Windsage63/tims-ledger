@@ -1,3 +1,9 @@
+"""
+@fileoverview Define allowed pages, navigation order, and shared layout metadata.
+@license Apache-2.0
+@copyright 2026 Timothy Mallory
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

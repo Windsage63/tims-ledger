@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Provide shared formatting, escaping, DOM, and JSON request helpers.
+ * @license Apache-2.0
+ * @copyright 2026 Timothy Mallory
+ */
+
 function currency(cents) {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format((cents || 0) / 100);
 }

@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Browse, filter, and edit project time entries.
+ * @license Apache-2.0
+ * @copyright 2026 Timothy Mallory
+ */
+
 const timeState = {
     projects: [],
     entries: [],

@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Edit the company profile and preview printed invoice identity.
+ * @license Apache-2.0
+ * @copyright 2026 Timothy Mallory
+ */
+
 const companyState = {
     profile: null,
     isLoading: true,

@@ -25,12 +25,23 @@ Use the following template for the license header:
  */
 ```
 
+```Python
+"""
+@fileoverview {explains the purpose of the file}
+@license Apache-2.0
+@copyright {copyright_years} {author_name}
+"""
+```
+
 ## Implementation Rules
 
 ### 1. Identify File Type
 
   - **JavaScript (.js)**: Use the `/** ... */` block comment syntax shown above.
   - **CSS (.css)**: Use the `/** ... */` block comment syntax shown above.
+  - **TypeScript (.ts)**: Use the `/** ... */` block comment syntax shown above.
+  - **Shell Scripts (.sh)**: Use the `# ...` line comment syntax, prefixing each line with `#`.
+  - **Python (.py)**: Use the `""" ... """` block comment syntax shown above.
   - **HTML (.html)**: Wrap the entire block in HTML comment tags: `<!-- ... -->`.
 
 ### 2. Header Placement

@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Control overview metrics, customer statements, exports, and backups.
+ * @license Apache-2.0
+ * @copyright 2026 Timothy Mallory
+ */
+
 const reportState = {
     summary: {},
     customers: [],

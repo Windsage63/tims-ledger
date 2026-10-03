@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Browse, filter, and edit customer records.
+ * @license Apache-2.0
+ * @copyright 2026 Timothy Mallory
+ */
+
 const state = {
     customers: [],
     searchQuery: "",

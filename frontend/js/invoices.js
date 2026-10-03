@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Manage invoice drafts, source selection, preview totals, and Save/Print.
+ * @license Apache-2.0
+ * @copyright 2026 Timothy Mallory
+ */
+
 const invoicesState = {
     projects: [],
     invoices: [],

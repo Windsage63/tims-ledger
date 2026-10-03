@@ -1,3 +1,9 @@
+"""
+@fileoverview Provide shared date validation and UTC timestamp helpers.
+@license Apache-2.0
+@copyright 2026 Timothy Mallory
+"""
+
 from __future__ import annotations
 
 from datetime import date, datetime, timezone

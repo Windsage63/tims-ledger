@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Browse and edit projects, default rates, and custom billing rates.
+ * @license Apache-2.0
+ * @copyright 2026 Timothy Mallory
+ */
+
 const projectState = {
     customers: [],
     projects: [],
