@@ -25,7 +25,7 @@ This PRD is the primary product reference. The workflow document in [docs/workfl
 6. User creates or edits an invoice by selecting eligible unbilled time and expenses.
 7. Invoices are issued and kept in a ledger and applied to customer accounts.
 8. User records payments and applies them to customer balances, leaving any excess receipt unapplied until it is allocated.
-9. User can create ZIP backups and restore from selected backups through the overview/reporting area.
+9. User can create ZIP backups and restore from selected backups through Settings. The Back up action is available in every page header.
 
 ## 4. Core Data Model And Invariants
 
@@ -152,7 +152,7 @@ Users may keep an unlimited number of normal backups and select one to restore. 
 
 ### 5.0 Company Profile
 
-1. Provide a Company screen at the bottom of the sidebar menu.
+1. Provide Settings at the bottom of the sidebar menu with the Company profile, Backup & Restore, and Audit Export (XLSX).
 2. Let the user edit company name, street address, city, state, ZIP code, email, and phone.
 3. Store exactly one active Company profile record.
 4. Use the current Company profile on newly generated invoice HTML documents.
@@ -212,13 +212,13 @@ The invoice editor should preserve the printable invoice experience while keepin
 1. Keep the printable invoice canvas, customer address display, notes area, and totals layout.
 2. Replace freeform primary line entry with eligible unbilled time and expense checkbox lists.
 3. Group selected invoice content into a time section and an expense section rather than mixing it into a generic line-item editor.
-4. Treat terms and due date as invoice metadata; PO number is not part of the active invoice UI.
+4. Offer editable terms (Due on receipt / Net 10 / 15 / 30 / 45 / 60), defaulting to Net 30, and preview the terms-derived calendar due date. Preserve other stored terms when editing existing invoices. PO number is not part of the active invoice UI.
 5. Treat tax and discount fields as optional future enhancements until tax policy is defined in the workflow.
 
 ### 5.6 Invoice Ledger
 
 1. Provide an invoice ledger listing saved invoices with search, filtering, and row actions.
-2. Support status views such as All, Open, Printed, and Paid.
+2. Support All, Draft, Open, Overdue, and Paid views. Draft means unprinted; Open includes printed unpaid invoices, including overdue invoices. Overdue means a printed invoice has a positive balance and its due date is before the local calendar date. Show Due and Balance columns, plus Open Balance, Overdue, and Draft Total metrics for the filtered rows.
 3. Derive invoice status from issuance state and open balance.
 4. Support viewing saved invoice HTML documents by invoice number.
 
@@ -229,7 +229,7 @@ The invoice editor should preserve the printable invoice experience while keepin
 3. Starting a new payment must create a browser-local draft, not a persisted payment row.
 4. The payment editor must expose only Save Payment and Delete Payment actions.
 5. Save Payment must persist both payment fields and invoice applications.
-6. Delete Payment must remove the payment and its payment applications.
+6. Delete Payment must ask for confirmation before removing a saved payment and its payment applications.
 7. The user must be able to open a payment and apply or remove allocations across open invoices.
 8. The user must be prevented from applying more than the remaining unapplied amount.
 9. Payment applications must update invoice open balances and customer balances immediately.
@@ -237,13 +237,13 @@ The invoice editor should preserve the printable invoice experience while keepin
 ### 5.8 Customer Balance And Accounts Receivable Reporting
 
 1. Customer-level views must distinguish current invoice charges, open AR, unapplied credits, and net balance.
-2. Any future overdue indicators must be derived from invoice due date and open balance rather than entered manually.
+2. Overdue indicators must be derived from invoice due date, issuance state, and positive open balance rather than entered manually. A due date equal to today is not overdue.
 3. Summary cards, customer status chips, and invoice ledger filters are acceptable presentation elements if they remain derived views of ledger data.
-4. The overview page should prioritize accounts receivable, customer statement detail, XLSX audit export, and backup/restore controls.
+4. Home (Overview) should prioritize financial metrics, accounts receivable, and customer statement detail. Settings owns XLSX audit export and backup/restore controls.
 
 ### 5.9 Backup And Restore
 
-1. Provide a Create Backup action on the overview page near the audit export.
+1. Provide Back up and a last-normal-backup indicator in every page header. Settings contains the full Backup & Restore workflow and a separate Audit Export (XLSX) panel.
 2. Store normal backups in `app-data/backups/`.
 3. Name normal backups `Tims-Ledger-Backup-{date-timestamp}.zip`.
 4. Include the SQLite database and saved invoice document directory in each backup.
@@ -262,8 +262,8 @@ The invoice editor should preserve the printable invoice experience while keepin
 6. Keep the invoice ledger screen.
 7. Keep the printable invoice layout, but route line selection through source-record checkbox lists.
 8. Keep the payments ledger and payment-application screen family to complete the workflow.
-9. Keep the overview page focused on metrics, accounts receivable, customer statements, audit export, and backup/restore controls.
-10. Keep the Company profile as a simple single-record settings screen.
+9. Keep Home focused on Open A/R, Unapplied Credit, Net Receivables, and Unbilled Work metrics, accounts receivable, and customer statements.
+10. Keep the Company profile as a simple single-record editor in Settings, alongside backup/restore and audit export. Group sidebar navigation into Home, Sales (Invoices, Receive Payments, Customers), and Work (Projects, Time, Expenses). Every page uses a compact header with contextual help, page actions, and a + New menu.
 
 ## 7. UX And Interaction Guidance
 
@@ -287,6 +287,6 @@ These ideas may be useful later but are not part of the core workflow unless sep
 
 ## 9. Open Decisions
 
-1. Confirm whether invoice terms should remain fixed/hidden or become user-editable.
+1. Invoice terms are user-editable; full accounts-receivable aging remains deferred.
 2. Confirm whether tax and discount should remain hidden until policy is defined.
 3. Define whether customer directory status badges should be driven only by receivables state or also by internal lifecycle flags.

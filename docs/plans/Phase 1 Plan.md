@@ -50,3 +50,13 @@ All screens: remove the hero banner and explanatory headings, use one compact KP
   - Run `startup.bat` and load every page.
   - Check the browser console for errors.
   - Exercise: + New on each screen, Back up, restore list rendering, invoice terms/due/overdue, and the filters.
+
+## Implementation and verification — October 4, 2026
+
+Phase 1 is implemented. Routes and API contracts are unchanged. The theme now uses system fonts; Tailwind bundling for offline styling remains deferred.
+
+  - Backend syntax checks, JavaScript syntax checks, and diff whitespace checks passed.
+  - All eight screens loaded in the browser without application console errors. New-record flows, row selection, filters, page help, and Escape menu dismissal were exercised.
+  - An isolated copy of the database and invoice documents was used for writes. Save/Print persisted Net 10 terms, generated the expected due date, and showed the saved positive balance as Overdue.
+  - Global backup updated both the header indicator and Settings restore list. ZIP contents, restore safety backup creation/exclusion, and XLSX download were verified in the isolated runtime.
+  - Focused checks covered leap-year/year-end/calendar boundaries, due-today behavior, Draft/Open/Paid/Overdue filtering, Net 0 payloads, HTML escaping without double escaping, and canceled payment deletion.

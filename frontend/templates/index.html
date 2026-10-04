@@ -1,5 +1,5 @@
 <!--
-@fileoverview Render overview metrics, customer statements, and backup controls.
+@fileoverview Render Home metrics, accounts receivable, and customer statements.
 @license Apache-2.0
 @copyright 2026 Timothy Mallory
 -->
@@ -7,76 +7,34 @@
 {% extends "base.html" %}
 
 {% block content %}
-            <section class="rounded-[2rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur md:p-8">
-                <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-                    <div class="max-w-4xl">
-                        <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted">Overview</p>
-                        <h1 class="mt-3 max-w-[13ch] font-display text-4xl font-extrabold leading-none text-ink sm:text-5xl xl:text-7xl">Tim's Ledger</h1>
-                        <p class="mt-4 max-w-3xl text-base leading-7 text-muted sm:text-lg">Customer Balances, Accounts Receivable, and Backups.</p>
-                    </div>
 
-                    <div class="grid w-full gap-3 sm:w-auto sm:min-w-72">
-                        <div class="flex flex-wrap gap-3">
-                            <button class="inline-flex min-w-44 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" id="create-backup-button" type="button">Create Backup</button>
-                            <button class="inline-flex min-w-44 items-center justify-center rounded-full border border-line bg-panel/70 px-5 py-3 text-sm font-semibold text-ink transition hover:border-brand/35 hover:bg-white" id="restore-backup-button" type="button">Restore Backup</button>
-                            <a class="inline-flex min-w-44 items-center justify-center rounded-full border border-brand/20 bg-white/40 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70" download href="/api/exports/audit.xlsx" id="audit-export-link">Save as XLSX</a>
-                        </div>
-                        <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-                            <select class="w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="backup-select" aria-label="Backup to restore"></select>
-                        </div>
-                        <p class="text-xs leading-5 text-muted" id="backup-status">Loading backups...</p>
-                    </div>
-                </div>
-            </section>
-
-            <section class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Overview metrics">
-                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Customers</p>
-                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-sections">-</p>
+            <section class="kpi-strip" aria-label="Overview metrics">
+                <article class="card">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Open A/R</p>
+                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="ar-total-open">-</p>
                 </article>
-                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Projects</p>
-                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-mode">-</p>
+                <article class="card">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Unapplied Credit</p>
+                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="ar-total-credit">-</p>
                 </article>
-                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Open Receivables</p>
-                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-next">-</p>
+                <article class="card">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Net Receivables</p>
+                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="ar-total-net">-</p>
                 </article>
-                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Unbilled Work</p>
-                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-assets">-</p>
+                <article class="card">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Unbilled Work</p>
+                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-assets">-</p>
                 </article>
             </section>
 
-            <section class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(20rem,0.9fr)]" id="exports">
-                <article class="rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
-                    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                        <div>
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Accounts Receivable</p>
-                            <h2 class="mt-2 font-display text-3xl font-bold text-ink">Derived customer balances and statement detail.</h2>
-                            <p class="mt-3 max-w-3xl text-sm leading-7 text-muted">Open AR and unapplied credits are read from the ledger views so each balance stays explainable from invoices and payment applications.</p>
-                        </div>
-                    </div>
+            <section class="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1.5fr)_minmax(20rem,0.9fr)]" id="accounts-receivable">
+                <article class="card">
+                    <h2 class="text-lg font-semibold">Accounts receivable</h2>
 
-                    <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                        <article class="rounded-[1.2rem] border border-line/80 bg-panel/35 p-4">
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Total Open AR</p>
-                            <p class="mt-2 font-display text-3xl font-bold text-ink" id="ar-total-open">-</p>
-                        </article>
-                        <article class="rounded-[1.2rem] border border-line/80 bg-panel/35 p-4">
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Unapplied Credit</p>
-                            <p class="mt-2 font-display text-3xl font-bold text-ink" id="ar-total-credit">-</p>
-                        </article>
-                        <article class="rounded-[1.2rem] border border-line/80 bg-panel/35 p-4">
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Net Receivables</p>
-                            <p class="mt-2 font-display text-3xl font-bold text-ink" id="ar-total-net">-</p>
-                        </article>
-                    </div>
-
-                    <div class="mt-6 overflow-hidden rounded-[1.4rem] border border-line/80 bg-white/60">
+                    <div class="mt-3 overflow-hidden rounded border border-line/80 bg-white/60">
                         <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-line/80 text-left">
-                                <thead class="bg-panel/50 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">
+                            <table class="data-table">
+                                <thead class="bg-panel/50 text-[11px] font-semibold uppercase tracking-wide text-muted">
                                     <tr>
                                         <th class="px-4 py-3">Customer</th>
                                         <th class="px-4 py-3">Open AR</th>
@@ -87,7 +45,7 @@
                                 </thead>
                                 <tbody class="divide-y divide-line/70 text-sm text-ink" id="ar-customers-body">
                                     <tr>
-                                        <td class="px-4 py-4 text-muted" colspan="5">Loading accounts receivable report...</td>
+                                        <td class="px-4 py-2 text-muted" colspan="5">Loading accounts receivable report...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -95,42 +53,42 @@
                     </div>
                 </article>
 
-                <article class="rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
+                <article class="card">
                     <div class="mb-5">
-                        <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Customer Statement</p>
-                        <h2 class="mt-2 font-display text-3xl font-bold text-ink" id="statement-customer-name">Loading...</h2>
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Customer Statement</p>
+                        <h2 class="mt-2 font-display text-lg font-bold text-ink" id="statement-customer-name">Loading...</h2>
                         <p class="mt-3 text-sm leading-7 text-muted" id="statement-customer-meta">Statement detail will load from the reporting endpoint.</p>
                     </div>
 
-                    <div class="grid gap-4 sm:grid-cols-3">
-                        <article class="rounded-[1.2rem] border border-line/80 bg-panel/35 p-4">
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Open AR</p>
-                            <p class="mt-2 font-display text-2xl font-bold text-ink" id="statement-open-ar">-</p>
+                    <div class="grid gap-3 sm:grid-cols-3">
+                        <article class="rounded border border-line/80 bg-panel/35 p-4">
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Open AR</p>
+                            <p class="mt-2 font-display text-lg font-semibold text-ink" id="statement-open-ar">-</p>
                         </article>
-                        <article class="rounded-[1.2rem] border border-line/80 bg-panel/35 p-4">
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Unapplied Credit</p>
-                            <p class="mt-2 font-display text-2xl font-bold text-ink" id="statement-unapplied-credit">-</p>
+                        <article class="rounded border border-line/80 bg-panel/35 p-4">
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Unapplied Credit</p>
+                            <p class="mt-2 font-display text-lg font-semibold text-ink" id="statement-unapplied-credit">-</p>
                         </article>
-                        <article class="rounded-[1.2rem] border border-line/80 bg-panel/35 p-4">
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Net Balance</p>
-                            <p class="mt-2 font-display text-2xl font-bold text-ink" id="statement-net-balance">-</p>
+                        <article class="rounded border border-line/80 bg-panel/35 p-4">
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Net Balance</p>
+                            <p class="mt-2 font-display text-lg font-semibold text-ink" id="statement-net-balance">-</p>
                         </article>
                     </div>
 
-                    <div class="mt-6">
+                    <div class="mt-3">
                         <div class="flex items-center justify-between gap-3">
                             <h3 class="font-display text-xl font-bold text-ink">Printed Invoices</h3>
-                            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-muted" id="statement-generated-at">-</p>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-muted" id="statement-generated-at">-</p>
                         </div>
                         <div class="mt-3 grid gap-3" id="statement-invoices-list">
-                            <p class="rounded-2xl border border-line/80 bg-panel/35 px-4 py-4 text-sm text-muted">Loading invoices...</p>
+                            <p class="rounded border border-line/80 bg-panel/35 px-4 py-2 text-sm text-muted">Loading invoices...</p>
                         </div>
                     </div>
 
-                    <div class="mt-6">
+                    <div class="mt-3">
                         <h3 class="font-display text-xl font-bold text-ink">Unapplied Payments</h3>
                         <div class="mt-3 grid gap-3" id="statement-payments-list">
-                            <p class="rounded-2xl border border-line/80 bg-panel/35 px-4 py-4 text-sm text-muted">Loading unapplied payments...</p>
+                            <p class="rounded border border-line/80 bg-panel/35 px-4 py-2 text-sm text-muted">Loading unapplied payments...</p>
                         </div>
                     </div>
                 </article>

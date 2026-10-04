@@ -66,9 +66,9 @@ Pages require the running application; opening template files directly in a brow
 
 ## Shared Frontend Layout
 
-`frontend/templates/base.html` owns the document setup, theme, sidebar, main wrapper, and shared script loading. Each screen extends it with its main content. Update the shared theme or layout here once for all screens.
+`frontend/templates/base.html` owns the document setup, theme, sidebar, main wrapper, and shared script loading. Each screen extends it with its main content and page actions. `utils.js` supplies toasts, segmented filter state, calendar due-date helpers, and the post-bootstrap `#new` hook; `shell.js` owns menus and shared backup state/events. Update the shared theme or layout here once for all screens.
 
-`backend/app/pages.py` contains the ordered page registry: page filenames, titles, navigation labels, controller URLs, and sidebar help/status metadata. Update this registry to change menu entries. Company is rendered separately as the bottom settings link. Navigation highlighting and `aria-current` are rendered on the server.
+`backend/app/pages.py` contains the ordered page registry: page filenames, titles, navigation labels, controller URLs, navigation groups, headings, help text, and new-record labels. Update this registry to change menu entries. Navigation groups are Home, Sales (Invoices, Receive Payments, Customers), and Work (Projects, Time, Expenses), with Settings at the bottom. Navigation highlighting and `aria-current` are rendered on the server.
 
 ## Configuration
 
@@ -93,7 +93,9 @@ The startup script also reads:
 
 Use the application backup and restore workflow instead of manually replacing the database. Normal backups are written to `app-data/backups/` as `Tims-Ledger-Backup-{date-timestamp}.zip`. Restore safety backups are written under `app-data/backups/safety/` and are not listed as normal restore choices.
 
-The XLSX export is for audit and readability. It is not the backup format.
+Settings contains the Company profile, Backup & Restore, and XLSX audit export. Every page header provides Back up and a last-backup indicator. Home keeps financial metrics, accounts receivable, and customer statements. The XLSX export is for audit and readability. It is not the backup format.
+
+The + New menu opens a browser-local draft after the destination screen finishes loading. Invoice terms are selectable as Due on receipt or Net 10 / 15 / 30 / 45 / 60. The ledger shows due date and balance with Draft, Open, Overdue, and Paid labels. Overdue means a printed invoice has a positive balance and a due date before the local calendar date; Open includes all printed unpaid invoices, including overdue ones.
 
 ## Verification
 

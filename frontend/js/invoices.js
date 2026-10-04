@@ -63,10 +63,13 @@ function invoiceStatusMeta(invoice) {
     if (status === "paid") {
         return { key: status, label: "Paid", classes: "bg-brand/10 text-brand border border-brand/20" };
     }
-    if (status === "printed") {
-        return { key: status, label: "Printed", classes: "bg-warn/10 text-warn border border-warn/20" };
+    if (isInvoiceOverdue(invoice)) {
+        return { key: "overdue", label: "Overdue", classes: "bg-danger/10 text-danger border border-danger/20" };
     }
-    return { key: status, label: "Open", classes: "bg-stone-200/70 text-stone-700 border border-stone-300" };
+    if (status === "printed") {
+        return { key: status, label: "Open", classes: "bg-warn/10 text-warn border border-warn/20" };
+    }
+    return { key: status, label: "Draft", classes: "bg-stone-200/70 text-stone-700 border border-stone-300" };
 }
 
 function selectedInvoice() {
@@ -151,7 +154,7 @@ async function loadEditor(invoiceId) {
         }
         invoicesState.loadError = "";
     } catch (error) {
-        window.alert(extractErrorMessage(error, "Unable to load invoice details."));
+        showToast(extractErrorMessage(error, "Unable to load invoice details."));
     }
     render();
 }
@@ -180,7 +183,7 @@ async function loadNewEditor(projectId, sourceInvoice = null) {
         invoicesState.selectedInvoiceId = sourceInvoice?.id || null;
         invoicesState.loadError = "";
     } catch (error) {
-        window.alert(extractErrorMessage(error, "Unable to load project invoice rows."));
+        showToast(extractErrorMessage(error, "Unable to load project invoice rows."));
     }
     render();
 }
@@ -212,7 +215,7 @@ function filteredInvoices() {
     const query = invoicesState.searchQuery.trim().toLowerCase();
     return invoicesState.invoices.filter((invoice) => {
         const status = deriveInvoiceStatus(invoice);
-        const matchesStatus = invoicesState.statusFilter === "all" || status === invoicesState.statusFilter;
+        const matchesStatus = invoicesState.statusFilter === "all" || (invoicesState.statusFilter === "overdue" ? isInvoiceOverdue(invoice) : status === invoicesState.statusFilter);
         const year = String(invoice.invoice_date).slice(0, 4);
         const matchesYear = invoicesState.yearFilter === "all" || year === invoicesState.yearFilter;
         const haystack = [invoice.invoice_number, invoice.customer_name, invoice.project_number, invoice.notes || ""].join(" ").toLowerCase();
@@ -240,28 +243,14 @@ function renderYearOptions() {
 }
 
 function renderMetrics(invoices) {
-    const openReceivables = invoices.reduce((sum, invoice) => sum + (deriveInvoiceStatus(invoice) !== "paid" ? (invoice.open_balance_cents || 0) : 0), 0);
-    const printedAmount = invoices.reduce((sum, invoice) => sum + (deriveInvoiceStatus(invoice) === "printed" ? (invoice.open_balance_cents || 0) : 0), 0);
-    const paidAmount = invoices.reduce((sum, invoice) => sum + (invoice.paid_amount_cents || 0), 0);
-    const openAmount = invoices.reduce((sum, invoice) => sum + (deriveInvoiceStatus(invoice) === "draft" ? (invoice.invoice_amount_cents || 0) : 0), 0);
-    setText("invoices-mode", invoicesState.isLoading ? "Loading" : "Served Mode");
-    setText("metric-open-receivables", currency(openReceivables));
-    setText("metric-pending-amount", currency(printedAmount));
-    setText("metric-paid-amount", currency(paidAmount));
-    setText("metric-draft-amount", currency(openAmount));
+    const sum = (rows, field) => rows.reduce((total, invoice) => total + (invoice[field] || 0), 0);
+    setText("metric-open-receivables", currency(sum(invoices.filter((invoice) => invoice.status === "printed"), "open_balance_cents")));
+    setText("metric-pending-amount", currency(sum(invoices.filter((invoice) => isInvoiceOverdue(invoice)), "open_balance_cents")));
+    setText("metric-draft-amount", currency(sum(invoices.filter((invoice) => invoice.status === "draft"), "invoice_amount_cents")));
 }
 
 function renderStatusFilters() {
-    document.querySelectorAll("[data-invoice-status-filter]").forEach((button) => {
-        const isActive = button.dataset.invoiceStatusFilter === invoicesState.statusFilter;
-        button.classList.toggle("bg-brand", isActive);
-        button.classList.toggle("text-stone-50", isActive);
-        button.classList.toggle("border-brand", isActive);
-        button.classList.toggle("shadow-sm", isActive);
-        button.classList.toggle("bg-panel/70", !isActive);
-        button.classList.toggle("text-ink", !isActive);
-        button.classList.toggle("border-line", !isActive);
-    });
+    syncFilterButtons("[data-invoice-status-filter]", "data-invoice-status-filter", invoicesState.statusFilter);
 }
 
 function renderInvoiceRows(invoices) {
@@ -294,12 +283,14 @@ function renderInvoiceRows(invoices) {
         const isSelected = invoice.id === invoicesState.selectedInvoiceId;
         return `
             <tr class="cursor-pointer border-t border-line/70 ${isSelected ? "bg-brand/5" : "bg-white/30 hover:bg-white/60"}" data-invoice-select="${invoice.id}">
-                <td class="px-4 py-4 align-top font-mono text-sm text-ink">${escapeHtml(invoice.invoice_number)}</td>
-                <td class="px-4 py-4 align-top text-sm text-ink">${escapeHtml(invoice.customer_name)}</td>
-                <td class="px-4 py-4 align-top text-sm text-ink">${escapeHtml(invoice.project_number)}</td>
-                <td class="px-4 py-4 align-top text-sm text-ink">${escapeHtml(invoice.invoice_date)}</td>
-                <td class="px-4 py-4 align-top text-right font-mono text-sm text-ink">${currency(invoice.invoice_amount_cents || 0)}</td>
-                <td class="px-4 py-4 align-top"><span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${status.classes}">${escapeHtml(status.label)}</span></td>
+                <td class="px-4 py-2 align-top font-mono text-sm text-ink">${escapeHtml(invoice.invoice_number)}</td>
+                <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(invoice.customer_name)}</td>
+                <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(invoice.project_number)}</td>
+                <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(invoice.invoice_date)}</td>
+                <td>${escapeHtml(invoiceDueDate(invoice))}</td>
+                <td class="px-4 py-2 align-top text-right font-mono text-sm text-ink">${currency(invoice.invoice_amount_cents || 0)}</td>
+                <td class="text-right font-mono">${currency(invoice.open_balance_cents || 0)}</td>
+                <td class="px-4 py-2 align-top"><span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${status.classes}">${escapeHtml(status.label)}</span></td>
             </tr>
         `;
     }).join("");
@@ -317,7 +308,7 @@ function renderSelectableSourceList(containerId, items, type, invoiceId, isDisab
         return;
     }
     if (items.length === 0) {
-        container.innerHTML = '<p class="rounded-xl border border-dashed border-line bg-panel/35 px-3 py-3 text-sm text-muted">No eligible rows for this invoice.</p>';
+        container.innerHTML = '<p class="rounded border border-dashed border-line bg-panel/35 px-3 py-3 text-sm text-muted">No eligible rows for this invoice.</p>';
         return;
     }
     container.innerHTML = items.map((item) => formatter(item, type, invoiceId, isDisabled)).join("");
@@ -358,9 +349,19 @@ function renderEditor(invoice) {
     document.getElementById("invoice-number").value = invoice.invoice_number;
     projectSelect.value = String(invoice.project_id);
     document.getElementById("invoice-date").value = invoice.invoice_date;
+    const termsSelect = document.getElementById("invoice-terms");
+    const terms = String(invoice.terms_days ?? 30);
+    termsSelect.querySelectorAll("[data-custom-terms]").forEach((option) => option.remove());
+    if (![...termsSelect.options].some((option) => option.value === terms)) {
+        const option = new Option(invoiceTermsLabel(terms), terms);
+        option.dataset.customTerms = "true";
+        termsSelect.add(option);
+    }
+    termsSelect.value = terms;
+    setText("invoice-due-date", invoiceDueDate(invoice));
     document.getElementById("invoice-notes").value = invoice.notes || "";
 
-    ["invoice-number", "invoice-project", "invoice-date", "invoice-notes"].forEach((id) => {
+    ["invoice-number", "invoice-project", "invoice-date", "invoice-terms", "invoice-notes"].forEach((id) => {
         document.getElementById(id).disabled = invoicesState.isSaving;
     });
 
@@ -382,7 +383,7 @@ function renderEditor(invoice) {
         selectedTimeIds,
         invoicesState.isSaving,
         (entry, type, selectedIds, disabled) => `
-            <label class="flex items-start gap-3 rounded-xl border border-line bg-panel/35 px-3 py-3 ${disabled ? "opacity-70" : "cursor-pointer hover:bg-white/80"}">
+            <label class="flex items-start gap-3 rounded border border-line bg-panel/35 px-3 py-3 ${disabled ? "opacity-70" : "cursor-pointer hover:bg-white/80"}">
                 <input class="mt-1 rounded border-line text-brand focus:ring-brand/30" data-selection-id="${entry.id}" data-selection-type="${type}" ${selectedIds.has(Number(entry.id)) ? "checked" : ""} ${disabled ? "disabled" : ""} type="checkbox">
                 <div class="min-w-0 flex-1">
                     <p class="font-mono text-xs text-ink">${escapeHtml(entry.entry_date)} · ${timeHours(entry.minutes)}h · ${escapeHtml(entry.rate_code)}</p>
@@ -398,7 +399,7 @@ function renderEditor(invoice) {
         selectedExpenseIds,
         invoicesState.isSaving,
         (expense, type, selectedIds, disabled) => `
-            <label class="flex items-start gap-3 rounded-xl border border-line bg-panel/35 px-3 py-3 ${disabled ? "opacity-70" : "cursor-pointer hover:bg-white/80"}">
+            <label class="flex items-start gap-3 rounded border border-line bg-panel/35 px-3 py-3 ${disabled ? "opacity-70" : "cursor-pointer hover:bg-white/80"}">
                 <input class="mt-1 rounded border-line text-brand focus:ring-brand/30" data-selection-id="${expense.id}" data-selection-type="${type}" ${selectedIds.has(Number(expense.id)) ? "checked" : ""} ${disabled ? "disabled" : ""} type="checkbox">
                 <div class="min-w-0 flex-1">
                     <p class="font-mono text-xs text-ink">${escapeHtml(expense.entry_date)} · ${escapeHtml(expense.category)}</p>
@@ -429,7 +430,7 @@ function invoicePayloadFromForm(currentInvoice) {
         invoice_number: String(document.getElementById("invoice-number")?.value || currentInvoice?.invoice_number || "").trim() || null,
         project_id: Number(document.getElementById("invoice-project")?.value || currentInvoice?.project_id || 0),
         invoice_date: invoiceDate,
-        terms_days: Number(currentInvoice?.terms_days ?? 30),
+        terms_days: Number(document.getElementById("invoice-terms")?.value ?? currentInvoice?.terms_days ?? 30),
         notes: String(document.getElementById("invoice-notes")?.value || "")
     };
 }
@@ -493,7 +494,7 @@ async function savePrintInvoice() {
 
     const printWindow = window.open("about:blank", "_blank");
     if (!printWindow) {
-        window.alert("Allow pop-ups to save and print the invoice.");
+        showToast("Allow pop-ups to save and print the invoice.");
         return;
     }
 
@@ -533,7 +534,7 @@ async function savePrintInvoice() {
         invoicesState.loadError = "";
     } catch (error) {
         printWindow.close();
-        window.alert(extractErrorMessage(error, "Unable to save and print invoice."));
+        showToast(extractErrorMessage(error, "Unable to save and print invoice."));
     } finally {
         invoicesState.isSaving = false;
         render();
@@ -563,6 +564,10 @@ async function deleteDraftInvoice() {
 }
 
 function bindEvents() {
+    document.getElementById("invoice-terms")?.addEventListener("change", () => {
+        syncSelectedInvoiceFromForm();
+        render();
+    });
     document.getElementById("invoice-search")?.addEventListener("input", (event) => {
         invoicesState.searchQuery = event.target.value;
         render();
@@ -633,5 +638,5 @@ function render() {
 window.addEventListener("DOMContentLoaded", () => {
     bindEvents();
     render();
-    loadInvoices();
+    void loadInvoices().then(() => consumeNewRecordRequest("new-invoice-button"));
 });

@@ -6,141 +6,138 @@
 
 {% extends "base.html" %}
 
+{% block page_actions %}
+                        <button class="btn-primary" id="new-invoice-button" type="button">New Invoice</button>
+                        <button class="btn-secondary" id="reset-invoice-filters-button" type="button">Reset Filters</button>
+{% endblock %}
+
 {% block content %}
-            <section class="rounded-[2rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur md:p-8">
-                <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-                    <div class="max-w-4xl">
-                        <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted">Invoice Ledger</p>
-                        <h1 class="mt-3 font-display text-4xl font-extrabold leading-none text-ink sm:text-5xl xl:text-6xl">Invoicing</h1>
-                        <p class="mt-4 max-w-3xl text-base leading-7 text-muted sm:text-lg">This is both the invoice ledger and invoice editor: All un-invoiced time and expenses will show so that you can checkbox items to add to the invoice.</p>
-                    </div>
 
-                    <div class="flex flex-wrap gap-3">
-                        <button class="inline-flex min-w-44 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" id="new-invoice-button" type="button">New Invoice</button>
-                        <button class="inline-flex min-w-44 items-center justify-center rounded-full border border-brand/20 bg-white/40 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70" id="reset-invoice-filters-button" type="button">Reset Filters</button>
-                    </div>
-                </div>
-            </section>
-
-            <section class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Invoice summary metrics">
-                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Open Receivables</p>
-                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-open-receivables">-</p>
+            <section class="kpi-strip" aria-label="Invoice summary metrics">
+                <article class="card">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Open Balance</p>
+                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-open-receivables">-</p>
                 </article>
-                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Printed Amount</p>
-                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-pending-amount">-</p>
+                <article class="card">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Overdue</p>
+                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-pending-amount">-</p>
                 </article>
-                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Paid Amount</p>
-                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-paid-amount">-</p>
-                </article>
-                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Open Amount</p>
-                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-draft-amount">-</p>
+                <article class="card">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Draft Total</p>
+                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-draft-amount">-</p>
                 </article>
             </section>
 
-            <section class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(29rem,1fr)]">
-                <article class="rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
-                    <div class="flex flex-col gap-4 border-b border-line/80 pb-5">
-                        <div>
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Ledger Surface</p>
-                            <h2 class="mt-2 font-display text-3xl font-bold text-ink">Filter invoice rows by status and date, then open the source-linked editor.</h2>
-                        </div>
+            <section class="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1.15fr)_minmax(29rem,1fr)]">
+                <article class="card">
+                    <div class="toolbar">
+                        <div class="filter-fields">
 
                         <div class="grid w-full gap-3 lg:grid-cols-[minmax(0,1fr)_10rem]">
                             <div>
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="invoice-search">Search</label>
-                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="invoice-search" placeholder="Search invoice number, customer, project, or notes" type="search">
+                                <label class="field-label" for="invoice-search">Search</label>
+                                <input class="field" id="invoice-search" placeholder="Search invoice number, customer, project, or notes" type="search">
                             </div>
                             <div>
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="invoice-year-filter">Year</label>
-                                <select class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="invoice-year-filter"></select>
+                                <label class="field-label" for="invoice-year-filter">Year</label>
+                                <select class="field" id="invoice-year-filter"></select>
                             </div>
                         </div>
                     </div>
-
-                    <div class="mt-5 flex flex-wrap gap-2" id="invoice-status-filter-group">
-                        <button class="invoice-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-invoice-status-filter="all" type="button">All</button>
-                        <button class="invoice-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-invoice-status-filter="draft" type="button">Open</button>
-                        <button class="invoice-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-invoice-status-filter="printed" type="button">Printed</button>
-                        <button class="invoice-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-invoice-status-filter="paid" type="button">Paid</button>
+                        <div class="filter-tabs" id="invoice-status-filter-group">
+                        <button class="tab" data-invoice-status-filter="all" type="button">All</button>
+                        <button class="tab" data-invoice-status-filter="draft" type="button">Draft</button>
+                        <button class="tab" data-invoice-status-filter="printed" type="button">Open</button>
+                        <button class="tab" data-invoice-status-filter="overdue" type="button">Overdue</button>
+                        <button class="tab" data-invoice-status-filter="paid" type="button">Paid</button>
+                    </div>
                     </div>
 
-                    <div class="mt-5 overflow-x-auto rounded-[1.4rem] border border-line bg-white/70">
-                        <table class="min-w-full border-collapse text-left text-sm">
+                    <div class="mt-3 overflow-x-auto rounded border border-line bg-white/70">
+                        <table class="data-table invoice-table">
                             <thead class="bg-panel/65 text-muted">
                                 <tr>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Invoice</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Customer</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Project</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Invoice Date</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em] text-right">Amount</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Status</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Invoice</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Customer</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Project</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Date</th>
+                                    <th>Due</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide text-right">Amount</th>
+                                    <th class="text-right">Balance</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="invoice-table-body"></tbody>
                         </table>
                     </div>
 
-                    <div class="mt-5 hidden rounded-[1.4rem] border border-dashed border-line bg-panel/40 p-8 text-center" id="invoice-empty-state">
-                        <p class="font-display text-2xl font-bold text-ink">No invoices match the current filter.</p>
+                    <div class="mt-3 hidden rounded border border-dashed border-line bg-panel/40 p-8 text-center" id="invoice-empty-state">
+                        <p class="font-display text-lg font-semibold text-ink">No invoices match the current filter.</p>
                         <p class="mt-2 text-sm leading-6 text-muted">Adjust the year or status filter, or create a new invoice.</p>
                     </div>
                 </article>
 
-                <article class="rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
-                    <div class="mb-5 flex items-start justify-between gap-4">
+                <article class="card">
+                    <div class="mb-5 flex items-start justify-between gap-3">
                         <div>
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Invoice Editor</p>
-                            <h2 class="mt-2 font-display text-3xl font-bold text-ink" id="invoice-editor-title">Select an invoice</h2>
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Invoice Editor</p>
+                            <h2 class="mt-2 font-display text-lg font-bold text-ink" id="invoice-editor-title">Select an invoice</h2>
                         </div>
-                        <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]" id="invoice-editor-status-chip">Draft</span>
+                        <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide" id="invoice-editor-status-chip">Draft</span>
                     </div>
 
-                    <div class="mb-5 rounded-[1.2rem] border border-line bg-panel/45 p-4">
+                    <div class="mb-5 rounded border border-line bg-panel/45 p-4">
                         <div class="grid gap-3 sm:grid-cols-3">
                             <div>
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Customer</p>
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Customer</p>
                                 <p class="mt-2 text-sm text-ink" id="invoice-detail-customer">None</p>
                             </div>
                             <div>
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Invoice Total</p>
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Invoice Total</p>
                                 <p class="mt-2 font-mono text-sm text-ink" id="invoice-detail-total">$0.00</p>
                             </div>
                             <div>
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Open Balance</p>
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Open Balance</p>
                                 <p class="mt-2 font-mono text-sm text-ink" id="invoice-detail-open-balance">$0.00</p>
                             </div>
                         </div>
                     </div>
 
-                    <form class="grid gap-4" id="invoice-form">
-                        <div class="grid gap-4 sm:grid-cols-2">
+                    <form class="grid gap-3" id="invoice-form">
+                        <div class="grid gap-3 sm:grid-cols-2">
                             <div>
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="invoice-number">Invoice No.</label>
-                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 font-mono text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="invoice-number" required type="text">
+                                <label class="field-label" for="invoice-number">Invoice No.</label>
+                                <input class="field" id="invoice-number" required type="text">
                             </div>
                             <div>
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="invoice-project">Project</label>
-                                <select class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="invoice-project" required></select>
+                                <label class="field-label" for="invoice-project">Project</label>
+                                <select class="field" id="invoice-project" required></select>
                             </div>
                         </div>
 
                         <div>
-                            <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="invoice-date">Invoice Date</label>
-                            <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="invoice-date" required type="date">
+                            <label class="field-label" for="invoice-date">Invoice Date</label>
+                            <input class="field" id="invoice-date" required type="date">
                         </div>
 
+                        <div class="grid gap-2 sm:grid-cols-2">
+                            <div><label class="field-label" for="invoice-terms">Terms</label>
+                                <select class="field" id="invoice-terms">
+                                    <option value="0">Due on receipt</option><option value="10">Net 10</option>
+                                    <option value="15">Net 15</option><option value="30" selected>Net 30</option>
+                                    <option value="45">Net 45</option><option value="60">Net 60</option>
+                                </select>
+                            </div>
+                            <div><p class="field-label">Due date</p><p class="mt-2 text-sm" id="invoice-due-date">—</p></div>
+                        </div>
                         <div>
-                            <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="invoice-notes">Notes</label>
-                            <textarea class="mt-2 min-h-24 w-full rounded-[1.4rem] border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="invoice-notes"></textarea>
+                            <label class="field-label" for="invoice-notes">Notes</label>
+                            <textarea class="field" id="invoice-notes"></textarea>
                         </div>
                     </form>
 
-                    <section class="mt-6 rounded-[1.2rem] border border-line bg-white/70 p-4">
-                        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Invoice Summary</p>
+                    <section class="mt-3 rounded border border-line bg-white/70 p-4">
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Invoice Summary</p>
                         <div class="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                             <div>
                                 <p class="text-[11px] uppercase tracking-[0.16em] text-muted">Time Total</p>
@@ -169,18 +166,18 @@
                         </div>
                     </section>
 
-                    <section class="mt-4 grid gap-4 lg:grid-cols-2">
-                        <div class="rounded-[1.2rem] border border-line bg-white/70 p-4">
+                    <section class="mt-4 grid gap-3 lg:grid-cols-2">
+                        <div class="rounded border border-line bg-white/70 p-4">
                             <div class="flex items-center justify-between gap-3">
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Time Entries</p>
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Time Entries</p>
                                 <span class="text-[11px] text-muted" id="eligible-time-count">0 rows</span>
                             </div>
                             <p class="mt-2 text-xs leading-5 text-muted">Checkbox changes are saved when you click Save/Print.</p>
                             <div class="mt-3 grid gap-2" id="eligible-time-list"></div>
                         </div>
-                        <div class="rounded-[1.2rem] border border-line bg-white/70 p-4">
+                        <div class="rounded border border-line bg-white/70 p-4">
                             <div class="flex items-center justify-between gap-3">
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Expenses</p>
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Expenses</p>
                                 <span class="text-[11px] text-muted" id="eligible-expense-count">0 rows</span>
                             </div>
                             <p class="mt-2 text-xs leading-5 text-muted">Checkbox changes are saved when you click Save/Print.</p>
@@ -188,9 +185,9 @@
                         </div>
                     </section>
 
-                    <div class="mt-5 flex flex-wrap gap-3">
-                        <button class="inline-flex min-w-44 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" id="save-invoice-button" type="button">Save/Print Invoice</button>
-                        <button class="inline-flex min-w-40 items-center justify-center rounded-full border border-danger/20 bg-white/50 px-5 py-3 text-sm font-semibold text-danger transition hover:border-danger/35 hover:bg-white/80" id="delete-invoice-button" type="button">Discard New</button>
+                    <div class="mt-3 flex flex-wrap gap-3">
+                        <button class="btn-primary" id="save-invoice-button" type="button">Save/Print Invoice</button>
+                        <button class="btn-danger" id="delete-invoice-button" type="button">Discard New</button>
                     </div>
                 </article>
             </section>

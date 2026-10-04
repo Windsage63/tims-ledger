@@ -73,7 +73,6 @@ function renderPreview(profile) {
 }
 
 function render() {
-    setText("company-mode", companyState.isLoading ? "Loading..." : (companyState.profile?.company_name || "Ready"));
     if (companyState.profile) {
         fillForm(companyState.profile);
     }
@@ -144,4 +143,46 @@ function bindEvents() {
 window.addEventListener("DOMContentLoaded", () => {
     bindEvents();
     loadCompanyProfile();
+    bindSettingsBackupEvents();
+    renderSettingsBackups();
 });
+
+function renderSettingsBackups() {
+    const select = document.getElementById("backup-select");
+    const previous = select.value;
+    select.innerHTML = shellBackups.backups.length
+        ? shellBackups.backups.map((backup) => `<option value="${escapeHtml(backup.file_name)}">${escapeHtml(backup.file_name)} · ${escapeHtml(backupTimestamp(backup.created_at))}</option>`).join("")
+        : '<option value="">No backups available</option>';
+    if (shellBackups.backups.some((backup) => backup.file_name === previous)) select.value = previous;
+    select.disabled = shellBackups.busy || shellBackups.backups.length === 0;
+    document.getElementById("create-backup-button").disabled = shellBackups.busy || Date.now() < shellBackups.cooldownUntil;
+    document.getElementById("restore-backup-button").disabled = shellBackups.busy || shellBackups.backups.length === 0;
+    setText("backup-status", shellBackups.error || (shellBackups.busy ? "Working…" : `${shellBackups.backups.length} backups available.`));
+}
+
+async function restoreSettingsBackup() {
+    const fileName = document.getElementById("backup-select").value;
+    if (!fileName || shellBackups.busy) return;
+    if (!window.confirm(`Restore ${fileName}? This replaces the current database and saved invoices. A safety backup of the current data will be created first.`)) return;
+    shellBackups.busy = true;
+    renderShellBackups();
+    try {
+        await apiRequestJson("/api/backups", "/restore", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ file_name: fileName })
+        }, "Unable to restore backup.");
+        // Reload all current page state after the database and documents change.
+        window.location.reload();
+    } catch (error) {
+        showToast(error.message);
+    } finally {
+        shellBackups.busy = false;
+        renderShellBackups();
+    }
+}
+
+function bindSettingsBackupEvents() {
+    window.addEventListener("backups:changed", renderSettingsBackups);
+    document.getElementById("create-backup-button").addEventListener("click", () => void createShellBackup());
+    document.getElementById("restore-backup-button").addEventListener("click", () => void restoreSettingsBackup());
+}

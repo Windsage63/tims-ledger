@@ -175,7 +175,7 @@ function renderMetrics(expenses) {
     const billableUnbilled = expenses.reduce((sum, expense) => sum + (!expense.invoice_number && expense.is_billable ? expense.line_total_cents : 0), 0);
     const invoicedSpend = expenses.reduce((sum, expense) => sum + (expense.invoice_number ? expense.line_total_cents : 0), 0);
     const nonbillableSpend = expenses.reduce((sum, expense) => sum + (!expense.is_billable ? expense.line_total_cents : 0), 0);
-    setText("expenses-mode", expensesState.isLoading ? "Loading" : "Served Mode");
+
     setText("metric-visible-spend", currency(visibleSpend));
     setText("metric-billable-unbilled", currency(billableUnbilled));
     setText("metric-invoiced-spend", currency(invoicedSpend));
@@ -183,16 +183,7 @@ function renderMetrics(expenses) {
 }
 
 function renderStatusFilters() {
-    document.querySelectorAll("[data-expense-status-filter]").forEach((button) => {
-        const isActive = button.dataset.expenseStatusFilter === expensesState.statusFilter;
-        button.classList.toggle("bg-brand", isActive);
-        button.classList.toggle("text-stone-50", isActive);
-        button.classList.toggle("border-brand", isActive);
-        button.classList.toggle("shadow-sm", isActive);
-        button.classList.toggle("bg-panel/70", !isActive);
-        button.classList.toggle("text-ink", !isActive);
-        button.classList.toggle("border-line", !isActive);
-    });
+    syncFilterButtons("[data-expense-status-filter]", "data-expense-status-filter", expensesState.statusFilter);
 }
 
 function renderExpenseRows(expenses) {
@@ -225,13 +216,13 @@ function renderExpenseRows(expenses) {
         const isSelected = expense.id === expensesState.selectedId;
         return `
             <tr class="cursor-pointer border-t border-line/70 ${isSelected ? "bg-brand/5" : "bg-white/30 hover:bg-white/60"}" data-expense-select="${expense.id}">
-                <td class="px-4 py-4 align-top font-mono text-sm text-ink">${expense.entry_date}</td>
-                <td class="px-4 py-4 align-top text-sm text-ink">${expense.project_number}</td>
-                <td class="px-4 py-4 align-top text-sm text-ink">${expense.vendor}</td>
-                <td class="px-4 py-4 align-top text-sm text-muted">${expense.description}</td>
-                <td class="px-4 py-4 align-top text-sm text-ink">${expense.category}</td>
-                <td class="px-4 py-4 align-top text-right font-mono text-sm text-ink">${currency(expense.line_total_cents)}</td>
-                <td class="px-4 py-4 align-top"><span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${status.classes}">${status.label}</span></td>
+                <td class="px-4 py-2 align-top font-mono text-sm text-ink">${escapeHtml(expense.entry_date)}</td>
+                <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(expense.project_number)}</td>
+                <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(expense.vendor)}</td>
+                <td class="px-4 py-2 align-top text-sm text-muted">${escapeHtml(expense.description)}</td>
+                <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(expense.category)}</td>
+                <td class="px-4 py-2 align-top text-right font-mono text-sm text-ink">${currency(expense.line_total_cents)}</td>
+                <td class="px-4 py-2 align-top"><span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${status.classes}">${status.label}</span></td>
             </tr>
         `;
     }).join("");
@@ -356,7 +347,7 @@ async function saveExpense(event) {
         expensesState.draftExpense = null;
         expensesState.loadError = "";
     } catch (error) {
-        window.alert(extractErrorMessage(error, "Unable to save expense."));
+        showToast(extractErrorMessage(error, "Unable to save expense."));
     } finally {
         expensesState.isSaving = false;
         render();
@@ -453,5 +444,5 @@ function render() {
 window.addEventListener("DOMContentLoaded", () => {
     bindEvents();
     render();
-    loadExpenses();
+    void loadExpenses().then(() => consumeNewRecordRequest("new-expense-button"));
 });

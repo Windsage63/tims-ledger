@@ -53,8 +53,8 @@ function setEmptyState(title, message) {
     }
 
     emptyState.innerHTML = `
-        <p class="font-display text-2xl font-bold text-ink">${title}</p>
-        <p class="mt-2 text-sm leading-6 text-muted">${message}</p>
+        <p class="font-display text-lg font-semibold text-ink">${escapeHtml(title)}</p>
+        <p class="mt-2 text-sm leading-6 text-muted">${escapeHtml(message)}</p>
     `;
 }
 
@@ -175,7 +175,7 @@ function renderYearOptions() {
 
 function renderMetrics(entries) {
     if (timeState.isLoading) {
-        setText("time-mode", "Loading...");
+
         setText("metric-visible-hours", "-");
         setText("metric-billable-amount", "-");
         setText("metric-unbilled-hours", "-");
@@ -187,7 +187,7 @@ function renderMetrics(entries) {
     const billableAmount = entries.reduce((sum, entry) => sum + (entry.rate_cents > 0 ? entry.line_total_cents : 0), 0);
     const unbilledMinutes = entries.reduce((sum, entry) => sum + (!entry.invoice_number ? entry.minutes : 0), 0);
     const nonbillableMinutes = entries.reduce((sum, entry) => sum + (entry.rate_cents === 0 ? entry.minutes : 0), 0);
-    setText("time-mode", window.location.protocol === "file:" ? "File Mode" : "SQLite Mode");
+
     setText("metric-visible-hours", hoursFromMinutes(totalMinutes));
     setText("metric-billable-amount", currency(billableAmount));
     setText("metric-unbilled-hours", hoursFromMinutes(unbilledMinutes));
@@ -195,16 +195,7 @@ function renderMetrics(entries) {
 }
 
 function renderStatusFilters() {
-    document.querySelectorAll("[data-time-status-filter]").forEach((button) => {
-        const isActive = button.dataset.timeStatusFilter === timeState.statusFilter;
-        button.classList.toggle("bg-brand", isActive);
-        button.classList.toggle("text-stone-50", isActive);
-        button.classList.toggle("border-brand", isActive);
-        button.classList.toggle("shadow-sm", isActive);
-        button.classList.toggle("bg-panel/70", !isActive);
-        button.classList.toggle("text-ink", !isActive);
-        button.classList.toggle("border-line", !isActive);
-    });
+    syncFilterButtons("[data-time-status-filter]", "data-time-status-filter", timeState.statusFilter);
 }
 
 function renderEntryRows(entries) {
@@ -241,14 +232,14 @@ function renderEntryRows(entries) {
         const isSelected = entry.id === timeState.selectedId;
         return `
             <tr class="cursor-pointer border-t border-line/70 ${isSelected ? "bg-brand/5" : "bg-white/30 hover:bg-white/60"}" data-time-select="${entry.id}">
-                <td class="px-4 py-4 align-top font-mono text-sm text-ink">${escapeHtml(entry.entry_date)}</td>
-                <td class="px-4 py-4 align-top text-sm text-ink">${escapeHtml(entry.project_number)}</td>
-                <td class="px-4 py-4 align-top text-sm text-ink">${escapeHtml(entry.customer_name)}</td>
-                <td class="px-4 py-4 align-top text-sm text-ink">${escapeHtml(entry.project_description)}</td>
-                <td class="px-4 py-4 align-top text-sm text-muted">${escapeHtml(entry.description)}</td>
-                <td class="px-4 py-4 align-top text-right font-mono text-sm text-ink">${hoursFromMinutes(entry.minutes)}</td>
-                <td class="px-4 py-4 align-top text-sm text-ink">${escapeHtml(entry.rate_code)}</td>
-                <td class="px-4 py-4 align-top"><span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${status.classes}">${status.label}</span></td>
+                <td class="px-4 py-2 align-top font-mono text-sm text-ink">${escapeHtml(entry.entry_date)}</td>
+                <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(entry.project_number)}</td>
+                <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(entry.customer_name)}</td>
+                <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(entry.project_description)}</td>
+                <td class="px-4 py-2 align-top text-sm text-muted">${escapeHtml(entry.description)}</td>
+                <td class="px-4 py-2 align-top text-right font-mono text-sm text-ink">${hoursFromMinutes(entry.minutes)}</td>
+                <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(entry.rate_code)}</td>
+                <td class="px-4 py-2 align-top"><span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${status.classes}">${status.label}</span></td>
             </tr>
         `;
     }).join("");
@@ -270,7 +261,7 @@ function renderRateOptions(projectId, selectedCode) {
 
     const project = projectById(projectId);
     const rates = project?.rates || [];
-    select.innerHTML = rates.map((rate) => `<option value="${rate.rate_code}">${rate.rate_code} · ${currency(rate.rate_cents)}</option>`).join("");
+    select.innerHTML = rates.map((rate) => `<option value="${escapeHtml(rate.rate_code)}">${escapeHtml(rate.rate_code)} · ${currency(rate.rate_cents)}</option>`).join("");
     if (selectedCode && rates.some((rate) => rate.rate_code === selectedCode)) {
         select.value = selectedCode;
     }
@@ -469,7 +460,7 @@ async function saveEntry(event) {
         timeState.selectedId = saved.id;
         timeState.draftEntry = null;
     } catch (error) {
-        window.alert(error instanceof Error ? error.message : "Unable to save time entry.");
+        showToast(error instanceof Error ? error.message : "Unable to save time entry.");
     } finally {
         timeState.isSaving = false;
     }
@@ -564,5 +555,5 @@ function render() {
 window.addEventListener("DOMContentLoaded", () => {
     bindEvents();
     render();
-    void loadEntries();
+    void loadEntries().then(() => consumeNewRecordRequest("new-time-entry-button"));
 });

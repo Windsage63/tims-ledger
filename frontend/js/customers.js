@@ -44,8 +44,8 @@ function setEmptyState(title, message) {
     }
 
     emptyState.innerHTML = `
-        <p class="font-display text-2xl font-bold text-ink">${title}</p>
-        <p class="mt-2 text-sm leading-6 text-muted">${message}</p>
+        <p class="font-display text-lg font-semibold text-ink">${escapeHtml(title)}</p>
+        <p class="mt-2 text-sm leading-6 text-muted">${escapeHtml(message)}</p>
     `;
 }
 
@@ -143,7 +143,7 @@ function selectedCustomer() {
 
 function renderMetrics(customers) {
     if (state.isLoading) {
-        setText("customer-mode", "Loading...");
+
         setText("metric-visible-customers", "-");
         setText("metric-open-ar", "-");
         setText("metric-net-balance", "-");
@@ -155,7 +155,6 @@ function renderMetrics(customers) {
     const netBalance = customers.reduce((sum, customer) => sum + customer.net_balance_cents, 0);
     const customersWithBalance = customers.filter((customer) => customer.net_balance_cents !== 0).length;
 
-    setText("customer-mode", window.location.protocol === "file:" ? "File Mode" : "SQLite Mode");
     setText("metric-visible-customers", String(customers.length));
     setText("metric-open-ar", formatCurrency(openAr));
     setText("metric-net-balance", formatCurrency(netBalance));
@@ -163,20 +162,11 @@ function renderMetrics(customers) {
 }
 
 function renderStatusFilters() {
-    document.querySelectorAll("[data-status-filter]").forEach((button) => {
-        const isActive = button.dataset.statusFilter === state.statusFilter;
-        button.classList.toggle("bg-brand", isActive);
-        button.classList.toggle("text-stone-50", isActive);
-        button.classList.toggle("border-brand", isActive);
-        button.classList.toggle("shadow-sm", isActive);
-        button.classList.toggle("bg-panel/70", !isActive);
-        button.classList.toggle("text-ink", !isActive);
-        button.classList.toggle("border-line", !isActive);
-    });
+    syncFilterButtons("[data-status-filter]", "data-status-filter", state.statusFilter);
 }
 
-function renderCards(customers) {
-    const list = document.getElementById("customer-card-list");
+function renderCustomerRows(customers) {
+    const list = document.getElementById("customer-table-body");
     const emptyState = document.getElementById("empty-state");
     if (!list || !emptyState) {
         return;
@@ -205,44 +195,15 @@ function renderCards(customers) {
 
     emptyState.classList.add("hidden");
     list.innerHTML = customers.map((customer) => {
-        const statusMeta = getStatusMeta(customer);
-        const isSelected = customer.id === state.selectedId;
-
-        return `
-            <button class="text-left rounded-[1.35rem] border ${isSelected ? "border-brand bg-white shadow-soft" : "border-line bg-panel/35"} p-5 transition hover:-translate-y-0.5 hover:border-brand/35 hover:bg-white" data-customer-select="${customer.id}" type="button">
-                <div class="flex items-start justify-between gap-4">
-                    <div>
-                        <p class="font-display text-xl font-bold text-ink">${customer.customer_name}</p>
-                        <p class="mt-1 text-sm text-muted">${customer.contact_name}</p>
-                    </div>
-                    <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${statusMeta.classes}">${statusMeta.label}</span>
-                </div>
-                <div class="mt-4 space-y-2 text-sm text-muted">
-                    <p>${customer.email}</p>
-                    <p>${customer.phone}</p>
-                    <p>${customer.city}, ${customer.state}</p>
-                </div>
-                <div class="mt-5 grid grid-cols-2 gap-3 border-t border-line/70 pt-4 text-sm">
-                    <div>
-                        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Open A/R</p>
-                        <p class="mt-1 font-mono text-ink">${formatCurrency(customer.open_ar_cents)}</p>
-                    </div>
-                    <div>
-                        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Net Balance</p>
-                        <p class="mt-1 font-mono text-ink">${formatCurrency(customer.net_balance_cents)}</p>
-                    </div>
-                </div>
-            </button>
-        `;
+        const status = getStatusMeta(customer);
+        return `<tr class="${customer.id === state.selectedId ? "bg-brand/5" : ""}">
+            <td><button class="text-left font-semibold text-brand hover:underline" data-customer-select="${customer.id}" type="button">${escapeHtml(customer.customer_name)}</button><div class="text-xs text-muted">${escapeHtml(customer.contact_name)}</div></td>
+            <td>${escapeHtml(customer.phone)}</td><td>${escapeHtml(customer.email)}</td>
+            <td>${escapeHtml(customer.city)}, ${escapeHtml(customer.state)}</td>
+            <td class="text-right font-mono">${currency(customer.open_ar_cents)}</td>
+            <td><span class="badge ${status.classes}">${escapeHtml(status.label)}</span></td></tr>`;
     }).join("");
 
-    list.querySelectorAll("[data-customer-select]").forEach((button) => {
-        button.addEventListener("click", () => {
-            state.selectedId = Number(button.dataset.customerSelect);
-            state.draftCustomer = null;
-            render();
-        });
-    });
 }
 
 function renderEditor(customer) {
@@ -326,7 +287,7 @@ async function saveCustomer(event) {
         state.selectedId = customer.id;
         state.draftCustomer = null;
     } catch (error) {
-        window.alert(error instanceof Error ? error.message : "Unable to save customer.");
+        showToast(error instanceof Error ? error.message : "Unable to save customer.");
     } finally {
         state.isSaving = false;
     }
@@ -362,6 +323,13 @@ function clearFormToDraft(copyCurrent = false) {
 }
 
 function bindEvents() {
+    document.getElementById("customer-table-body")?.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-customer-select]");
+        if (!button) return;
+        state.selectedId = Number(button.dataset.customerSelect);
+        state.draftCustomer = null;
+        render();
+    });
     document.getElementById("customer-search")?.addEventListener("input", (event) => {
         state.searchQuery = event.target.value;
         render();
@@ -394,7 +362,7 @@ function render() {
 
     const customers = filteredCustomers();
     renderMetrics(customers);
-    renderCards(customers);
+    renderCustomerRows(customers);
 
     const customer = selectedCustomer() || state.draftCustomer;
     renderEditor(customer);
@@ -403,5 +371,5 @@ function render() {
 window.addEventListener("DOMContentLoaded", () => {
     bindEvents();
     render();
-    void loadCustomers();
+    void loadCustomers().then(() => consumeNewRecordRequest("new-customer-button"));
 });

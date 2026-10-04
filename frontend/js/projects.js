@@ -27,8 +27,8 @@ function setEmptyState(title, message) {
     }
 
     emptyState.innerHTML = `
-        <p class="font-display text-2xl font-bold text-ink">${title}</p>
-        <p class="mt-2 text-sm leading-6 text-muted">${message}</p>
+        <p class="font-display text-lg font-semibold text-ink">${escapeHtml(title)}</p>
+        <p class="mt-2 text-sm leading-6 text-muted">${escapeHtml(message)}</p>
     `;
 }
 
@@ -142,17 +142,17 @@ function renderCustomerFilterOptions() {
 
     const options = [
         '<option value="all">All Customers</option>',
-        ...projectState.customers.map((customer) => `<option value="${customer.id}">${customer.customer_name}</option>`)
+        ...projectState.customers.map((customer) => `<option value="${customer.id}">${escapeHtml(customer.customer_name)}</option>`)
     ].join("");
     select.innerHTML = options;
     select.value = projectState.customerFilter;
 
-    editorSelect.innerHTML = projectState.customers.map((customer) => `<option value="${customer.id}">${customer.customer_name}</option>`).join("");
+    editorSelect.innerHTML = projectState.customers.map((customer) => `<option value="${customer.id}">${escapeHtml(customer.customer_name)}</option>`).join("");
 }
 
 function renderMetrics(projects) {
     if (projectState.isLoading) {
-        setText("projects-mode", "Loading...");
+
         setText("metric-visible-projects", "-");
         setText("metric-linked-customers", "-");
         setText("metric-default-rate", "-");
@@ -166,7 +166,6 @@ function renderMetrics(projects) {
         : Math.round(projects.reduce((sum, project) => sum + project.default_rate_cents, 0) / projects.length);
     const customRates = projects.reduce((sum, project) => sum + project.rates.filter((rate) => !rate.is_builtin).length, 0);
 
-    setText("projects-mode", window.location.protocol === "file:" ? "File Mode" : "SQLite Mode");
     setText("metric-visible-projects", String(projects.length));
     setText("metric-linked-customers", String(linkedCustomers));
     setText("metric-default-rate", money(averageRate));
@@ -211,13 +210,13 @@ function renderProjectRows(projects) {
 
         return `
             <tr class="cursor-pointer border-t border-line/70 ${isSelected ? "bg-brand/5" : "bg-white/30 hover:bg-white/60"}" data-project-select="${project.id}">
-                <td class="px-4 py-4 align-top">
-                    <div class="font-mono text-sm font-semibold text-ink">${project.project_number}</div>
-                    <div class="mt-1 text-xs text-muted">${project.description}</div>
+                <td class="px-4 py-2 align-top">
+                    <div class="font-mono text-sm font-semibold text-ink">${escapeHtml(project.project_number)}</div>
+                    <div class="mt-1 text-xs text-muted">${escapeHtml(project.description)}</div>
                 </td>
-                <td class="px-4 py-4 align-top text-sm text-ink">${project.customer_name}</td>
-                <td class="px-4 py-4 align-top text-xs leading-6 text-muted">${rateSummary(project)}</td>
-                <td class="px-4 py-4 align-top text-right font-mono text-sm text-ink">${money(project.default_rate_cents)}</td>
+                <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(project.customer_name)}</td>
+                <td class="px-4 py-2 align-top text-xs leading-6 text-muted">${escapeHtml(rateSummary(project))}</td>
+                <td class="px-4 py-2 align-top text-right font-mono text-sm text-ink">${money(project.default_rate_cents)}</td>
             </tr>
         `;
     }).join("");
@@ -244,7 +243,7 @@ function renderBuiltinRatePreview(defaultRateCents) {
     ];
 
     preview.innerHTML = builtins.map((rate) => `
-        <div class="flex items-center justify-between rounded-2xl border border-line bg-white/70 px-4 py-3 text-sm">
+        <div class="flex items-center justify-between rounded border border-line bg-white/70 px-4 py-3 text-sm">
             <div>
                 <p class="font-mono font-semibold text-ink">${rate.code}</p>
                 <p class="text-xs text-muted">Built-in derived rate</p>
@@ -261,21 +260,21 @@ function renderCustomRateInputs(customRates) {
     }
 
     if (customRates.length === 0) {
-        list.innerHTML = '<div class="rounded-2xl border border-dashed border-line bg-white/40 px-4 py-4 text-sm text-muted">No custom rates yet. Add one when the project needs a special billing code.</div>';
+        list.innerHTML = '<div class="rounded border border-dashed border-line bg-white/40 px-4 py-2 text-sm text-muted">No custom rates yet. Add one when the project needs a special billing code.</div>';
         return;
     }
 
     list.innerHTML = customRates.map((rate, index) => `
-        <div class="grid gap-3 rounded-[1.1rem] border border-line bg-white/70 p-4 md:grid-cols-[8rem_minmax(10rem,1fr)]" data-custom-rate-index="${index}">
+        <div class="grid gap-3 rounded border border-line bg-white/70 p-4 md:grid-cols-[8rem_minmax(10rem,1fr)]" data-custom-rate-index="${index}">
             <div>
-                <label class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Code</label>
-                <input class="mt-2 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" data-field="rate_code" type="text" value="${escapeHtml(rate.rate_code)}">
+                <label class="field-label">Code</label>
+                <input class="field" data-field="rate_code" type="text" value="${escapeHtml(rate.rate_code)}">
             </div>
             <div>
-                <label class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Rate</label>
-                <input class="mt-2 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" data-field="rate_dollars" min="0" step="0.01" type="number" value="${(rate.rate_cents / 100).toFixed(2)}">
+                <label class="field-label">Rate</label>
+                <input class="field" data-field="rate_dollars" min="0" step="0.01" type="number" value="${(rate.rate_cents / 100).toFixed(2)}">
             </div>
-            <button class="inline-flex items-center justify-center rounded-full border border-danger/20 bg-danger/10 px-4 py-2 text-sm font-semibold text-danger transition hover:bg-danger/15 md:col-span-2 md:justify-self-start" data-remove-custom-rate="${index}" type="button">Remove</button>
+            <button class="btn-danger" data-remove-custom-rate="${index}" type="button">Remove</button>
         </div>
     `).join("");
 
@@ -447,7 +446,7 @@ async function saveProject(event) {
         projectState.selectedId = project.id;
         projectState.draftProject = null;
     } catch (error) {
-        window.alert(error instanceof Error ? error.message : "Unable to save project.");
+        showToast(error instanceof Error ? error.message : "Unable to save project.");
     } finally {
         projectState.isSaving = false;
     }
@@ -530,5 +529,5 @@ function bindEvents() {
 window.addEventListener("DOMContentLoaded", () => {
     bindEvents();
     render();
-    void loadProjects();
+    void loadProjects().then(() => consumeNewRecordRequest("new-project-button"));
 });

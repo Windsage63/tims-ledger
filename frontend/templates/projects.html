@@ -6,116 +6,114 @@
 
 {% extends "base.html" %}
 
-{% block content %}
-            <section class="rounded-[2rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur md:p-8">
-                <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-                    <div class="max-w-4xl">
-                        <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted">Projects Management</p>
-                        <h1 class="mt-3 font-display text-4xl font-extrabold leading-none text-ink sm:text-5xl xl:text-6xl">Projects List</h1>
-                        <p class="mt-4 max-w-3xl text-base leading-7 text-muted sm:text-lg">This follows the projects contract as a permanent customer-linked rate profile: project number, customer linkage, description, default rate, and embedded rates. Projects are never formally closed.</p>
-                    </div>
+{% block page_actions %}
+                        <button class="btn-primary" id="new-project-button" type="button">New Project</button>
+                        <button class="btn-secondary" id="reset-project-filters-button" type="button">Reset Filters</button>
+{% endblock %}
 
-                    <div class="flex flex-wrap gap-3">
-                        <button class="inline-flex min-w-44 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" id="new-project-button" type="button">New Project</button>
-                        <button class="inline-flex min-w-44 items-center justify-center rounded-full border border-brand/20 bg-white/40 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70" id="reset-project-filters-button" type="button">Reset Filters</button>
-                    </div>
-                </div>
+{% block content %}
+
+            <section class="kpi-strip" aria-label="Project summary metrics">
+                <article class="card"><p class="field-label">Visible Projects</p><p class="kpi mt-1" id="metric-visible-projects">—</p></article>
+                <article class="card"><p class="field-label">Linked Customers</p><p class="kpi mt-1" id="metric-linked-customers">—</p></article>
+                <article class="card"><p class="field-label">Average Default Rate</p><p class="kpi mt-1" id="metric-default-rate">—</p></article>
+                <article class="card"><p class="field-label">Custom Rates</p><p class="kpi mt-1" id="metric-custom-rates">—</p></article>
             </section>
 
-            <section class="mt-4 grid gap-4 2xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
-                <article class="min-w-0 rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
-                    <div class="flex flex-col gap-4 border-b border-line/80 pb-5 lg:flex-row lg:items-end lg:justify-between">
+            <section class="mt-4 grid gap-3 2xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
+                <article class="card">
+                    <div class="toolbar">
                         <div class="grid min-w-0 w-full gap-3 md:grid-cols-2 2xl:max-w-2xl 2xl:grid-cols-[minmax(0,1fr)_12rem]">
                             <div class="min-w-0">
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="project-search">Search</label>
-                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="project-search" placeholder="Search number, customer, description, or rate code" type="search">
+                                <label class="field-label" for="project-search">Search</label>
+                                <input class="field" id="project-search" placeholder="Search number, customer, description, or rate code" type="search">
                             </div>
                             <div class="min-w-0">
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="project-customer-filter">Customer</label>
-                                <select class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="project-customer-filter"></select>
+                                <label class="field-label" for="project-customer-filter">Customer</label>
+                                <select class="field" id="project-customer-filter"></select>
                             </div>
                         </div>
                     </div>
 
-                    <div class="mt-5 overflow-x-auto rounded-[1.4rem] border border-line bg-white/70">
-                        <table class="min-w-full border-collapse text-left text-sm">
+                    <div class="mt-3 overflow-x-auto rounded border border-line bg-white/70">
+                        <table class="data-table">
                             <thead class="bg-panel/65 text-muted">
                                 <tr>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Project</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Customer</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Rates</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em] text-right">Default</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Project</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Customer</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Rates</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide text-right">Default</th>
                                 </tr>
                             </thead>
                             <tbody id="projects-table-body"></tbody>
                         </table>
                     </div>
 
-                    <div class="mt-5 hidden rounded-[1.4rem] border border-dashed border-line bg-panel/40 p-8 text-center" id="projects-empty-state">
-                        <p class="font-display text-2xl font-bold text-ink">No projects match the current filter.</p>
+                    <div class="mt-3 hidden rounded border border-dashed border-line bg-panel/40 p-8 text-center" id="projects-empty-state">
+                        <p class="font-display text-lg font-semibold text-ink">No projects match the current filter.</p>
                         <p class="mt-2 text-sm leading-6 text-muted">Adjust the search, switch the customer filter, or create a new project draft.</p>
                     </div>
                 </article>
 
-                <article class="min-w-0 rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
-                    <div class="mb-5 flex items-start justify-between gap-4">
+                <article class="card">
+                    <div class="mb-5 flex items-start justify-between gap-3">
                         <div>
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Project Record</p>
-                            <h2 class="mt-2 font-display text-3xl font-bold text-ink" id="project-editor-title">Select a project</h2>
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Project Record</p>
+                            <h2 class="mt-2 font-display text-lg font-bold text-ink" id="project-editor-title">Select a project</h2>
                         </div>
-                        <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]" id="project-editor-status-chip">Draft</span>
+                        <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide" id="project-editor-status-chip">Draft</span>
                     </div>
 
-                    <div class="mb-5 rounded-[1.2rem] border border-line bg-panel/45 p-4">
+                    <div class="mb-5 rounded border border-line bg-panel/45 p-4">
                         <div class="grid gap-3 sm:grid-cols-3">
                             <div>
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Customer</p>
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Customer</p>
                                 <p class="mt-2 text-sm text-ink" id="project-detail-customer">None</p>
                             </div>
                             <div>
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Rate Codes</p>
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Rate Codes</p>
                                 <p class="mt-2 font-mono text-sm text-ink" id="project-detail-rate-count">0</p>
                             </div>
                             <div>
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Default Rate</p>
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Default Rate</p>
                                 <p class="mt-2 font-mono text-sm text-ink" id="project-detail-default-rate">$0.00</p>
                             </div>
                         </div>
                     </div>
 
-                    <form class="grid gap-4" id="project-form">
+                    <form class="grid gap-3" id="project-form">
                         <input id="project-id" type="hidden">
 
-                        <div class="grid min-w-0 gap-4 sm:grid-cols-[8rem_minmax(0,1fr)]">
+                        <div class="grid min-w-0 gap-3 sm:grid-cols-[8rem_minmax(0,1fr)]">
                             <div>
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="project-number">Project No.</label>
-                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="project-number" name="project_number" required type="text">
+                                <label class="field-label" for="project-number">Project No.</label>
+                                <input class="field" id="project-number" name="project_number" required type="text">
                             </div>
                             <div class="min-w-0">
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="project-customer">Customer</label>
-                                <select class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="project-customer" name="customer_id" required></select>
+                                <label class="field-label" for="project-customer">Customer</label>
+                                <select class="field" id="project-customer" name="customer_id" required></select>
                             </div>
                         </div>
 
                         <div>
-                            <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="project-description">Description</label>
-                            <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="project-description" name="description" required type="text">
+                            <label class="field-label" for="project-description">Description</label>
+                            <input class="field" id="project-description" name="description" required type="text">
                         </div>
 
                         <div>
                             <div>
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="project-default-rate">Default Rate</label>
-                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="project-default-rate" min="0" name="default_rate_dollars" step="0.01" type="number">
+                                <label class="field-label" for="project-default-rate">Default Rate</label>
+                                <input class="field" id="project-default-rate" min="0" name="default_rate_dollars" step="0.01" type="number">
                             </div>
                         </div>
 
-                        <div class="rounded-[1.2rem] border border-line bg-panel/45 p-4">
-                            <div class="flex items-start justify-between gap-4">
+                        <div class="rounded border border-line bg-panel/45 p-4">
+                            <div class="flex items-start justify-between gap-3">
                                 <div>
-                                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Rate Table</p>
+                                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Rate Table</p>
                                     <p class="mt-2 text-sm leading-6 text-muted">Built-in ST, OT, and TT are regenerated from the default rate. Add custom hourly-equivalent codes below.</p>
                                 </div>
-                                <button class="inline-flex items-center justify-center rounded-full border border-brand/20 bg-white/40 px-4 py-2 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70" id="add-custom-rate-button" type="button">Add Custom Rate</button>
+                                <button class="btn-secondary" id="add-custom-rate-button" type="button">Add Custom Rate</button>
                             </div>
 
                             <div class="mt-4 grid gap-3" id="builtin-rate-preview"></div>
@@ -124,9 +122,9 @@
                         </div>
 
                         <div class="grid gap-3 pt-2 sm:grid-cols-2 xl:grid-cols-3">
-                            <button class="inline-flex w-full items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" type="submit">Save Project</button>
-                            <button class="inline-flex w-full items-center justify-center rounded-full border border-brand/20 bg-white/40 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70" id="duplicate-project-button" type="button">Duplicate</button>
-                            <button class="inline-flex w-full items-center justify-center rounded-full border border-line bg-panel/50 px-5 py-3 text-sm font-semibold text-ink transition hover:bg-white sm:col-span-2 xl:col-span-1" id="clear-project-form-button" type="button">Clear Form</button>
+                            <button class="btn-primary" type="submit">Save Project</button>
+                            <button class="btn-secondary" id="duplicate-project-button" type="button">Duplicate</button>
+                            <button class="btn-secondary" id="clear-project-form-button" type="button">Clear Form</button>
                         </div>
                     </form>
                 </article>

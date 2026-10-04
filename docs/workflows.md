@@ -4,7 +4,7 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 
 ## 1. User Maintains Company Profile
 
-1. User opens the Company screen from the bottom of the sidebar menu.
+1. User opens Settings from the bottom of the sidebar menu and edits the Company profile.
 2. User enters the company name, street address, city, state, ZIP code, email, and phone.
 3. System stores a single company profile record used as invoice identity source data.
 4. Newly saved or printed invoice documents use the current company profile for the invoice header and check-payable footer.
@@ -31,7 +31,7 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 
 ## 4. User Enters Time
 
-1. User enters the work date.
+1. User enters the work date in the entry form above the time ledger. The form stays before the list at every screen width, so adding rows does not push it below the ledger.
 2. User selects the project from a dropdown showing project number and project description. The system derives the customer and available rates from the project.
 3. User enters work description, duration, and rate code. There is no separate time billable toggle. Time with a selected rate of `0` is non-billable.
 4. System stores the time entry as a source record, snapshots the selected rate, and calculates the line total.
@@ -41,7 +41,7 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 
 ## 5. User Enters Expense
 
-1. User enters the expense date.
+1. User enters the expense date in the entry form above the expense ledger. The form stays before the list at every screen width, so adding rows does not push it below the ledger.
 2. User selects the project from a dropdown showing project number and project description. The system derives the customer from the project.
 3. User enters vendor, description, quantity, unit cost, category, and billable flag.
 4. System stores the expense as a source record and calculates the line total.
@@ -52,7 +52,7 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 
 ## 6. User Creates Or Edits An Invoice
 
-1. User enters or edits the invoice date, unique invoice number, project, and notes. The project selector shows the project number and project description.
+1. User enters or edits the invoice date, unique invoice number, project, terms, and notes. Terms default to Net 30; choices are Due on receipt and Net 10 / 15 / 30 / 45 / 60. The editor previews the calendar due date and preserves other stored terms on existing invoices. The project selector shows the project number and project description.
 2. For a new invoice, the editor may hold the invoice in browser state until Save/Print. No invoice database row is required before Save/Print.
 3. For an existing invoice, the system loads the saved invoice, its selected rows, eligible rows, and totals, then closes the database connection.
 4. System lists all eligible unbilled time for the project, showing date, description, duration, rate, total, and an `invoice?` checkbox.
@@ -76,18 +76,18 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 3. System creates or updates the persisted payment record on Save Payment with the full amount initially unapplied.
 4. User applies some or all of a positive payment amount to one or more open invoices in the same editor.
 5. Save Payment persists both the payment record and current invoice applications.
-6. Delete Payment removes the selected payment and its application rows.
+6. Delete Payment asks for confirmation before removing a saved payment and its application rows. Discarding an unsaved draft does not require confirmation.
 7. System prevents over-application and updates both invoice open balances and the payment's remaining unapplied amount.
 8. Customer balance shows open AR and net balance, each derived from invoices, payments, and payment applications.
 
 ## 8. User Exports, Backs Up, Or Restores Data
 
-1. User can download the XLSX audit export from the overview page. This export is for review and audit, not disaster recovery.
-2. User can create a backup from the overview page.
+1. User can download the XLSX audit export from Settings. This export is for review and audit, not disaster recovery.
+2. User can create a backup from the Back up button in any page header or from Backup & Restore in Settings. Every header displays the last normal backup time.
 3. System creates a ZIP backup in `app-data/backups/` named `Tims-Ledger-Backup-{date-timestamp}.zip`.
 4. The backup ZIP contains `tims-ledger.db` and the saved `invoices/` directory when it exists.
 5. User can keep an unlimited number of normal backups.
-6. User can select a normal backup from the restore dropdown.
+6. User can select a normal backup from the restore dropdown in Settings and confirm Restore Backup.
 7. Before restore, system creates a safety backup of the current database and invoice documents in `app-data/backups/safety/`.
-8. System restores the selected normal backup and refreshes overview/reporting data.
+8. System restores the selected normal backup and reloads Settings to refresh the Company profile and backup list. Other pages load the restored data on their next visit.
 9. Safety backups are stored separately and are not treated as normal restore candidates.

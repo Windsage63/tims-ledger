@@ -142,7 +142,7 @@ function invoiceStatusMeta(invoice) {
     if (invoice.status === "paid") {
         return { label: "Paid", classes: "bg-brand/10 text-brand border border-brand/20" };
     }
-    return { label: "Pending", classes: "bg-calm/10 text-calm border border-calm/20" };
+    return { label: isInvoiceOverdue(invoice) ? "Overdue" : "Open", classes: "bg-calm/10 text-calm border border-calm/20" };
 }
 
 function upsertPayment(payment) {
@@ -182,7 +182,7 @@ async function loadEditor(paymentId) {
         setEditorPayload(data);
         paymentsState.loadError = "";
     } catch (error) {
-        window.alert(extractErrorMessage(error, "Unable to load payment details."));
+        showToast(extractErrorMessage(error, "Unable to load payment details."));
     }
     render();
 }
@@ -205,7 +205,7 @@ async function loadCustomerOpenInvoices(customerId) {
         );
         paymentsState.loadError = "";
     } catch (error) {
-        window.alert(extractErrorMessage(error, "Unable to load open invoices."));
+        showToast(extractErrorMessage(error, "Unable to load open invoices."));
         paymentsState.editor.applications = [];
         paymentsState.editor.open_invoices = [];
         paymentsState.applicationDrafts = {};
@@ -257,9 +257,9 @@ function renderCustomerOptions() {
         return;
     }
 
-    filter.innerHTML = ['<option value="all">All Customers</option>', ...paymentsState.customers.map((customer) => `<option value="${customer.id}">${customer.customer_name}</option>`)].join("");
+    filter.innerHTML = ['<option value="all">All Customers</option>', ...paymentsState.customers.map((customer) => `<option value="${customer.id}">${escapeHtml(customer.customer_name)}</option>`)].join("");
     filter.value = paymentsState.customerFilter;
-    editor.innerHTML = paymentsState.customers.map((customer) => `<option value="${customer.id}">${customer.customer_name}</option>`).join("");
+    editor.innerHTML = paymentsState.customers.map((customer) => `<option value="${customer.id}">${escapeHtml(customer.customer_name)}</option>`).join("");
 }
 
 function renderYearOptions() {
@@ -277,24 +277,13 @@ function renderMetrics(payments) {
     const appliedAmount = payments.reduce((sum, payment) => sum + payment.applied_amount_cents, 0);
     const unappliedAmount = payments.reduce((sum, payment) => sum + payment.unapplied_amount_cents, 0);
 
-    setText("payments-mode", paymentsState.isLoading ? "Loading" : "Served Mode");
     setText("metric-visible-receipts", currency(visibleReceipts));
     setText("metric-applied-amount", currency(appliedAmount));
     setText("metric-unapplied-amount", currency(unappliedAmount));
-    setText("metric-payment-count", String(payments.length));
 }
 
 function renderStatusFilters() {
-    document.querySelectorAll("[data-payment-status-filter]").forEach((button) => {
-        const isActive = button.dataset.paymentStatusFilter === paymentsState.statusFilter;
-        button.classList.toggle("bg-brand", isActive);
-        button.classList.toggle("text-stone-50", isActive);
-        button.classList.toggle("border-brand", isActive);
-        button.classList.toggle("shadow-sm", isActive);
-        button.classList.toggle("bg-panel/70", !isActive);
-        button.classList.toggle("text-ink", !isActive);
-        button.classList.toggle("border-line", !isActive);
-    });
+    syncFilterButtons("[data-payment-status-filter]", "data-payment-status-filter", paymentsState.statusFilter);
 }
 
 function renderPaymentRows(payments) {
@@ -311,7 +300,7 @@ function renderPaymentRows(payments) {
         return;
     }
     if (paymentsState.loadError) {
-        window.alert(paymentsState.loadError);
+        showToast(paymentsState.loadError);
         paymentsState.loadError = "";
     }
     if (payments.length === 0) {
@@ -327,12 +316,12 @@ function renderPaymentRows(payments) {
         const isSelected = payment.id === paymentsState.selectedPaymentId;
         return `
             <tr class="cursor-pointer border-t border-line/70 ${isSelected ? "bg-brand/5" : "bg-white/30 hover:bg-white/60"}" data-payment-select="${payment.id}">
-                <td class="px-4 py-4 align-top font-mono text-sm text-ink">${payment.payment_date}</td>
-                <td class="px-4 py-4 align-top text-sm text-ink">${payment.customer_name}</td>
-                <td class="px-4 py-4 align-top font-mono text-sm text-ink">${payment.reference_number}</td>
-                <td class="px-4 py-4 align-top text-right font-mono text-sm text-ink">${currency(payment.amount_cents)}</td>
-                <td class="px-4 py-4 align-top text-right font-mono text-sm text-ink">${currency(payment.unapplied_amount_cents)}</td>
-                <td class="px-4 py-4 align-top"><span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${status.classes}">${status.label}</span></td>
+                <td class="px-4 py-2 align-top font-mono text-sm text-ink">${escapeHtml(payment.payment_date)}</td>
+                <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(payment.customer_name)}</td>
+                <td class="px-4 py-2 align-top font-mono text-sm text-ink">${escapeHtml(payment.reference_number)}</td>
+                <td class="px-4 py-2 align-top text-right font-mono text-sm text-ink">${currency(payment.amount_cents)}</td>
+                <td class="px-4 py-2 align-top text-right font-mono text-sm text-ink">${currency(payment.unapplied_amount_cents)}</td>
+                <td class="px-4 py-2 align-top"><span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${status.classes}">${status.label}</span></td>
             </tr>
         `;
     }).join("");
@@ -354,19 +343,19 @@ function renderApplications(payment) {
 
     const applications = paymentsState.editor.applications || [];
     if (applications.length === 0) {
-        currentList.innerHTML = '<p class="rounded-xl border border-dashed border-line bg-panel/35 px-3 py-3 text-sm text-muted">No invoice applications saved yet.</p>';
+        currentList.innerHTML = '<p class="rounded border border-dashed border-line bg-panel/35 px-3 py-3 text-sm text-muted">No invoice applications saved yet.</p>';
     } else {
         currentList.innerHTML = applications.map((application) => {
             const invoice = (paymentsState.editor.open_invoices || []).find((row) => row.id === application.invoice_id) || { status: "pending" };
             const status = invoiceStatusMeta(invoice);
             return `
-                <div class="rounded-xl border border-line bg-panel/35 px-3 py-3">
+                <div class="rounded border border-line bg-panel/35 px-3 py-3">
                     <div class="flex items-start justify-between gap-3">
                         <div>
-                            <p class="font-mono text-xs text-ink">${application.invoice_number}</p>
-                            <p class="mt-1 text-sm text-ink">Applied on ${String(application.applied_at).slice(0, 10)}</p>
+                            <p class="font-mono text-xs text-ink">${escapeHtml(application.invoice_number)}</p>
+                            <p class="mt-1 text-sm text-ink">Applied on ${escapeHtml(String(application.applied_at).slice(0, 10))}</p>
                         </div>
-                        <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${status.classes}">${status.label}</span>
+                        <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${status.classes}">${status.label}</span>
                     </div>
                     <p class="mt-2 font-mono text-sm text-ink">${currency(application.applied_amount_cents)}</p>
                 </div>
@@ -377,7 +366,7 @@ function renderApplications(payment) {
     const openInvoices = paymentsState.editor.open_invoices || [];
     setText("open-invoices-count", `${openInvoices.length} rows`);
     if (openInvoices.length === 0) {
-        openList.innerHTML = '<p class="rounded-xl border border-dashed border-line bg-panel/35 px-3 py-3 text-sm text-muted">No open invoices for this customer.</p>';
+        openList.innerHTML = '<p class="rounded border border-dashed border-line bg-panel/35 px-3 py-3 text-sm text-muted">No open invoices for this customer.</p>';
         return;
     }
 
@@ -385,13 +374,13 @@ function renderApplications(payment) {
         const status = invoiceStatusMeta(invoice);
         const appliedDraft = paymentsState.applicationDrafts[invoice.id];
         return `
-            <div class="rounded-xl border border-line bg-panel/35 px-3 py-3">
+            <div class="rounded border border-line bg-panel/35 px-3 py-3">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <p class="font-mono text-xs text-ink">${invoice.invoice_number}</p>
-                        <p class="mt-1 text-sm text-ink">Invoice Date ${invoice.invoice_date}</p>
+                        <p class="font-mono text-xs text-ink">${escapeHtml(invoice.invoice_number)}</p>
+                        <p class="mt-1 text-sm text-ink">Invoice Date ${escapeHtml(invoice.invoice_date)}</p>
                     </div>
-                    <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${status.classes}">${status.label}</span>
+                    <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${status.classes}">${status.label}</span>
                 </div>
                 <div class="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem] sm:items-end">
                     <div>
@@ -399,8 +388,8 @@ function renderApplications(payment) {
                         <p class="mt-1 font-mono text-sm text-ink">${currency(invoice.available_to_apply_cents)}</p>
                     </div>
                     <div>
-                        <label class="text-[11px] uppercase tracking-[0.16em] text-muted" for="application-${invoice.id}">Apply</label>
-                        <input class="mt-1 w-full rounded-xl border border-line bg-white px-3 py-2 font-mono text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" data-application-input="${invoice.id}" id="application-${invoice.id}" min="0" step="0.01" type="number" value="${dollarsInput(Number.isFinite(appliedDraft) ? appliedDraft : (invoice.current_applied_cents || 0))}">
+                        <label class="field-label" for="application-${invoice.id}">Apply</label>
+                        <input class="field" data-application-input="${invoice.id}" id="application-${invoice.id}" min="0" step="0.01" type="number" value="${dollarsInput(Number.isFinite(appliedDraft) ? appliedDraft : (invoice.current_applied_cents || 0))}">
                     </div>
                 </div>
             </div>
@@ -436,7 +425,7 @@ function updateEditor(payment) {
         }
     });
 
-    setText("payment-editor-title", `${payment.reference_number} · ${payment.payment_date}`);
+    setText("payment-editor-title", payment.id ? `${payment.reference_number || "Payment " + payment.id} · ${payment.payment_date}` : "New Payment");
     setText("payment-detail-customer", payment.customer_name);
     setText("payment-detail-amount", currency(payment.amount_cents));
     setText("payment-detail-unapplied", currency(preview.unapplied_amount_cents));
@@ -571,7 +560,7 @@ async function savePayment() {
         paymentsState.loadError = "";
     } catch (error) {
         paymentsState.loadError = "";
-        window.alert(extractErrorMessage(error, "Unable to save payment."));
+        showToast(extractErrorMessage(error, "Unable to save payment."));
     } finally {
         paymentsState.isSaving = false;
         render();
@@ -618,6 +607,7 @@ async function deleteSelectedPayment() {
         return;
     }
 
+    if (!window.confirm(`Delete payment ${payment.reference_number || payment.id}? Its invoice applications will also be removed.`)) return;
     paymentsState.isSaving = true;
     render();
     try {
@@ -633,7 +623,7 @@ async function deleteSelectedPayment() {
         await loadEditor(paymentsState.selectedPaymentId);
         paymentsState.loadError = "";
     } catch (error) {
-        window.alert(extractErrorMessage(error, "Unable to delete payment."));
+        showToast(extractErrorMessage(error, "Unable to delete payment."));
     } finally {
         paymentsState.isSaving = false;
         render();
@@ -722,5 +712,5 @@ function render() {
 window.addEventListener("DOMContentLoaded", () => {
     bindEvents();
     render();
-    loadPayments();
+    void loadPayments().then(() => consumeNewRecordRequest("new-payment-button"));
 });

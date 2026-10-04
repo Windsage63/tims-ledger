@@ -6,154 +6,146 @@
 
 {% extends "base.html" %}
 
+{% block page_actions %}
+                        <button class="btn-primary" id="new-time-entry-button" type="button">New Time Entry</button>
+                        <button class="btn-secondary" id="reset-time-filters-button" type="button">Reset Filters</button>
+{% endblock %}
+
 {% block content %}
-            <section class="rounded-[2rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur md:p-8">
-                <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-                    <div class="max-w-4xl">
-                        <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted">Time Tracking</p>
-                        <h1 class="mt-3 font-display text-4xl font-extrabold leading-none text-ink sm:text-5xl xl:text-6xl">Timesheet</h1>
-                        <p class="mt-4 max-w-3xl text-base leading-7 text-muted sm:text-lg">This handles time entries and connects them to projects. Everything listed here is billable at it's indicated rates. Unbilled time should be given a $0.00 rate code.</p>
-                    </div>
 
-                    <div class="flex flex-wrap gap-3">
-                        <button class="inline-flex min-w-44 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" id="new-time-entry-button" type="button">New Time Entry</button>
-                        <button class="inline-flex min-w-44 items-center justify-center rounded-full border border-brand/20 bg-white/40 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70" id="reset-time-filters-button" type="button">Reset Filters</button>
-                    </div>
-                </div>
-            </section>
-
-            <section class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label="Time summary metrics">
-                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Billable Amount</p>
-                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-billable-amount">-</p>
+            <section class="kpi-strip" aria-label="Time summary metrics">
+                <article class="card">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Billable Amount</p>
+                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-billable-amount">-</p>
                 </article>
-                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Unbilled Hours</p>
-                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-unbilled-hours">-</p>
+                <article class="card">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Unbilled Hours</p>
+                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-unbilled-hours">-</p>
                 </article>
-                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Non-Billable Hours</p>
-                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-nonbillable-hours">-</p>
+                <article class="card">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Non-Billable Hours</p>
+                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-nonbillable-hours">-</p>
                 </article>
             </section>
 
-            <section class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.75fr)_minmax(24rem,0.95fr)]">
-                <article class="rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
-                    <div class="border-b border-line/80 pb-5">
-                        <div class="grid w-full gap-3 lg:grid-cols-[minmax(0,1fr)_12rem_10rem]">
+            <section class="mt-4 grid gap-3">
+                <article class="card" aria-labelledby="time-editor-title">
+                    <div class="mb-5 flex items-start justify-between gap-3">
+                        <div>
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Time Entry</p>
+                            <h2 class="mt-2 font-display text-lg font-bold text-ink" id="time-editor-title">Select an entry</h2>
+                        </div>
+                        <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide" id="time-editor-status-chip">Draft</span>
+                    </div>
+
+                    <div class="mb-5 rounded border border-line bg-panel/45 p-4">
+                        <div class="grid gap-3 sm:grid-cols-3">
                             <div>
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="time-search">Search</label>
-                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="time-search" placeholder="Search project, customer, description, or rate code" type="search">
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Customer</p>
+                                <p class="mt-2 text-sm text-ink" id="time-detail-customer">None</p>
                             </div>
                             <div>
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="time-project-filter">Project</label>
-                                <select class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="time-project-filter"></select>
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Rate Value</p>
+                                <p class="mt-2 font-mono text-sm text-ink" id="time-detail-rate">$0.00</p>
                             </div>
                             <div>
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="time-year-filter">Year</label>
-                                <select class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="time-year-filter"></select>
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Line Total</p>
+                                <p class="mt-2 font-mono text-sm text-ink" id="time-detail-total">$0.00</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="mt-5 flex flex-wrap gap-2" id="time-status-filter-group">
-                        <button class="time-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-time-status-filter="all" type="button">All</button>
-                        <button class="time-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-time-status-filter="unbilled" type="button">Unbilled</button>
-                        <button class="time-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-time-status-filter="invoiced" type="button">Invoiced</button>
-                        <button class="time-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-time-status-filter="nonbillable" type="button">Non-Billable</button>
+                    <form class="grid gap-3" id="time-form">
+                        <input id="time-entry-id" type="hidden">
+
+                        <div class="grid gap-3 sm:grid-cols-[11rem_minmax(0,1fr)]">
+                            <div>
+                                <label class="field-label" for="time-entry-date">Date</label>
+                                <input class="field" id="time-entry-date" name="entry_date" required type="date">
+                            </div>
+                            <div>
+                                <label class="field-label" for="time-project">Project</label>
+                                <select class="field" id="time-project" name="project_id" required></select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="field-label" for="time-description">Work Description</label>
+                            <textarea class="field" id="time-description" name="description" required></textarea>
+                        </div>
+
+                        <div class="grid gap-3 sm:grid-cols-[9rem_9rem]">
+                            <div>
+                                <label class="field-label" for="time-hours">Hours</label>
+                                <input class="field" id="time-hours" min="0.25" name="hours" required step="0.25" type="number">
+                            </div>
+                            <div>
+                                <label class="field-label" for="time-rate-code">Rate Code</label>
+                                <select class="field" id="time-rate-code" name="rate_code" required></select>
+                            </div>
+                        </div>
+
+                        <div class="rounded border border-line bg-white/70 px-4 py-3">
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Derived Billing</p>
+                            <p class="mt-2 text-sm leading-6 text-ink" id="time-derived-billing">Select a project and rate.</p>
+                        </div>
+
+                        <div class="flex flex-wrap gap-3 pt-2">
+                            <button class="btn-primary" type="submit">Save Time Entry</button>
+                            <button class="btn-secondary" id="duplicate-time-button" type="button">Duplicate</button>
+                            <button class="btn-secondary" id="clear-time-form-button" type="button">Clear Form</button>
+                        </div>
+                    </form>
+                </article>
+
+                <article class="card" aria-label="Time entries">
+                    <div class="toolbar">
+                        <div class="filter-fields">
+                        <div class="grid w-full gap-3 lg:grid-cols-[minmax(0,1fr)_12rem_10rem]">
+                            <div>
+                                <label class="field-label" for="time-search">Search</label>
+                                <input class="field" id="time-search" placeholder="Search project, customer, description, or rate code" type="search">
+                            </div>
+                            <div>
+                                <label class="field-label" for="time-project-filter">Project</label>
+                                <select class="field" id="time-project-filter"></select>
+                            </div>
+                            <div>
+                                <label class="field-label" for="time-year-filter">Year</label>
+                                <select class="field" id="time-year-filter"></select>
+                            </div>
+                        </div>
+                    </div>
+                        <div class="filter-tabs" id="time-status-filter-group">
+                        <button class="tab" data-time-status-filter="all" type="button">All</button>
+                        <button class="tab" data-time-status-filter="unbilled" type="button">Unbilled</button>
+                        <button class="tab" data-time-status-filter="invoiced" type="button">Invoiced</button>
+                        <button class="tab" data-time-status-filter="nonbillable" type="button">Non-Billable</button>
+                    </div>
                     </div>
 
-                    <div class="mt-5 overflow-x-auto rounded-[1.4rem] border border-line bg-white/70">
-                        <table class="min-w-full border-collapse text-left text-sm">
+                    <div class="mt-3 overflow-x-auto rounded border border-line bg-white/70">
+                        <table class="data-table">
                             <thead class="bg-panel/65 text-muted">
                                 <tr>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Date</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Project</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Customer</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Project Description</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Description</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em] text-right">Hours</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Rate</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Status</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Date</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Project</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Customer</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Project Description</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Description</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide text-right">Hours</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Rate</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="time-table-body"></tbody>
                         </table>
                     </div>
 
-                    <div class="mt-5 hidden rounded-[1.4rem] border border-dashed border-line bg-panel/40 p-8 text-center" id="time-empty-state">
-                        <p class="font-display text-2xl font-bold text-ink">No time entries match the current filter.</p>
+                    <div class="mt-3 hidden rounded border border-dashed border-line bg-panel/40 p-8 text-center" id="time-empty-state">
+                        <p class="font-display text-lg font-semibold text-ink">No time entries match the current filter.</p>
                         <p class="mt-2 text-sm leading-6 text-muted">Adjust the project, year, or status filter, or create a new time draft.</p>
                     </div>
-                </article>
-
-                <article class="rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
-                    <div class="mb-5 flex items-start justify-between gap-4">
-                        <div>
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Time Entry</p>
-                            <h2 class="mt-2 font-display text-3xl font-bold text-ink" id="time-editor-title">Select an entry</h2>
-                        </div>
-                        <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]" id="time-editor-status-chip">Draft</span>
-                    </div>
-
-                    <div class="mb-5 rounded-[1.2rem] border border-line bg-panel/45 p-4">
-                        <div class="grid gap-3 sm:grid-cols-3">
-                            <div>
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Customer</p>
-                                <p class="mt-2 text-sm text-ink" id="time-detail-customer">None</p>
-                            </div>
-                            <div>
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Rate Value</p>
-                                <p class="mt-2 font-mono text-sm text-ink" id="time-detail-rate">$0.00</p>
-                            </div>
-                            <div>
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Line Total</p>
-                                <p class="mt-2 font-mono text-sm text-ink" id="time-detail-total">$0.00</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <form class="grid gap-4" id="time-form">
-                        <input id="time-entry-id" type="hidden">
-
-                        <div class="grid gap-4 sm:grid-cols-[11rem_minmax(0,1fr)]">
-                            <div>
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="time-entry-date">Date</label>
-                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="time-entry-date" name="entry_date" required type="date">
-                            </div>
-                            <div>
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="time-project">Project</label>
-                                <select class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="time-project" name="project_id" required></select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="time-description">Work Description</label>
-                            <textarea class="mt-2 min-h-28 w-full rounded-[1.4rem] border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="time-description" name="description" required></textarea>
-                        </div>
-
-                        <div class="grid gap-4 sm:grid-cols-[9rem_9rem]">
-                            <div>
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="time-hours">Hours</label>
-                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="time-hours" min="0.25" name="hours" required step="0.25" type="number">
-                            </div>
-                            <div>
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="time-rate-code">Rate Code</label>
-                                <select class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="time-rate-code" name="rate_code" required></select>
-                            </div>
-                        </div>
-
-                        <div class="rounded-[1.2rem] border border-line bg-white/70 px-4 py-3">
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Derived Billing</p>
-                            <p class="mt-2 text-sm leading-6 text-ink" id="time-derived-billing">Select a project and rate.</p>
-                        </div>
-
-                        <div class="flex flex-wrap gap-3 pt-2">
-                            <button class="inline-flex min-w-40 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" type="submit">Save Time Entry</button>
-                            <button class="inline-flex min-w-32 items-center justify-center rounded-full border border-brand/20 bg-white/40 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70" id="duplicate-time-button" type="button">Duplicate</button>
-                            <button class="inline-flex min-w-32 items-center justify-center rounded-full border border-line bg-panel/50 px-5 py-3 text-sm font-semibold text-ink transition hover:bg-white" id="clear-time-form-button" type="button">Clear Form</button>
-                        </div>
-                    </form>
                 </article>
             </section>
 {% endblock %}

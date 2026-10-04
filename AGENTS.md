@@ -77,7 +77,7 @@ Normal backups live in `app-data/backups/` as `Tims-Ledger-Backup-{date-timestam
 ## Frontend Conventions
 
   - Screens extend `frontend/templates/base.html`; keep document setup, shared theme, sidebar, and script loading in that base template.
-  - Define menu entries and screen metadata once in `backend/app/pages.py`. Server-rendered page URLs remain `/frontend/html/{page_name}`; only registry filenames are allowed. Company is the bottom settings link.
+  - Define menu entries and screen metadata once in `backend/app/pages.py`. Server-rendered page URLs remain `/frontend/html/{page_name}`; only registry filenames are allowed. Settings is the bottom sidebar link and includes the Company profile, Backup & Restore, and XLSX audit export. Navigation groups are Home, Sales (Invoices, Receive Payments, Customers), and Work (Projects, Time, Expenses).
   - Pages require the running app; direct file opening is unsupported. Serve JavaScript at `/frontend/js/`, and never expose template source through a broad static mount.
   - Navigation active styling and `aria-current` are server-rendered. Do not reintroduce browser-side navigation highlighting.
   - Each screen owns its state in `frontend/js/{screen}.js` and talks directly to its matching API endpoints.
@@ -93,7 +93,8 @@ Normal backups live in `app-data/backups/` as `Tims-Ledger-Backup-{date-timestam
   - Invoice source-row checkbox changes stay browser-local until Save/Print. Save/Print creates or updates the invoice, replaces time/expense invoice links, writes the saved invoice HTML, and opens it for printing.
   - Printed invoice project references should read `{project number} - {project description}`.
   - PO number is not part of the active invoice UI.
-  - Overview should prioritize metrics, accounts receivable, customer statement detail, XLSX audit export, and backup/restore controls.
+  - Home (Overview) should prioritize metrics, accounts receivable, and customer statement detail. Settings owns Backup & Restore and XLSX audit export; every page header offers Back up and the last-backup indicator.
+  - Invoice terms are user-editable: Due on receipt / Net 10 / 15 / 30 / 45 / 60. Preserve other stored terms when editing existing invoices. Display Draft for unprinted invoices, Open for printed unpaid invoices, Overdue for printed positive balances due before today, and Paid for settled invoices.
 
 ## Documentation
 

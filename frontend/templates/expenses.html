@@ -6,179 +6,171 @@
 
 {% extends "base.html" %}
 
+{% block page_actions %}
+                        <button class="btn-primary" id="new-expense-button" type="button">Log New Expense</button>
+                        <button class="btn-secondary" id="reset-expense-filters-button" type="button">Reset Filters</button>
+{% endblock %}
+
 {% block content %}
-            <section class="rounded-[2rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur md:p-8">
-                <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-                    <div class="max-w-4xl">
-                        <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted">Expenses Management</p>
-                        <h1 class="mt-3 font-display text-4xl font-extrabold leading-none text-ink sm:text-5xl xl:text-6xl">Expenses</h1>
-                        <p class="mt-4 max-w-3xl text-base leading-7 text-muted sm:text-lg">This handles company and project expenses, and ties them to a project. Expenses can be billable or unbillable. Unbillable expenses can be associated with a project but will not appear on an invoice.</p>
-                    </div>
 
-                    <div class="flex flex-wrap gap-3">
-                        <button class="inline-flex min-w-44 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" id="new-expense-button" type="button">Log New Expense</button>
-                        <button class="inline-flex min-w-44 items-center justify-center rounded-full border border-brand/20 bg-white/40 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70" id="reset-expense-filters-button" type="button">Reset Filters</button>
-                    </div>
-                </div>
-            </section>
-
-            <section class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Expense summary metrics">
-                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Visible Total</p>
-                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-visible-spend">-</p>
+            <section class="kpi-strip" aria-label="Expense summary metrics">
+                <article class="card">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Visible Total</p>
+                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-visible-spend">-</p>
                 </article>
-                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Billable Unbilled</p>
-                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-billable-unbilled">-</p>
+                <article class="card">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Billable Unbilled</p>
+                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-billable-unbilled">-</p>
                 </article>
-                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Invoiced</p>
-                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-invoiced-spend">-</p>
+                <article class="card">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Invoiced</p>
+                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-invoiced-spend">-</p>
                 </article>
-                <article class="rounded-[1.4rem] border border-line/80 bg-surface/90 p-5 shadow-soft backdrop-blur">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Non-Billable</p>
-                    <p class="mt-2 font-display text-4xl font-bold text-ink" id="metric-nonbillable-spend">-</p>
+                <article class="card">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Non-Billable</p>
+                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-nonbillable-spend">-</p>
                 </article>
             </section>
 
-            <section class="mt-4 grid gap-4 2xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
-                <article class="min-w-0 rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
-                    <div class="flex flex-col gap-4 border-b border-line/80 pb-5 lg:flex-row lg:items-end lg:justify-between">
-                        <div class="grid min-w-0 w-full gap-3 md:grid-cols-4 2xl:max-w-4xl 2xl:grid-cols-[minmax(0,1fr)_12rem_10rem_10rem]">
-                            <div class="min-w-0">
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="expense-search">Search</label>
-                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="expense-search" placeholder="Search" type="search">
-                            </div>
-                            <div class="min-w-0">
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="expense-project-filter">Project</label>
-                                <select class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="expense-project-filter"></select>
-                            </div>
-                            <div class="min-w-0">
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="expense-year-filter">Year</label>
-                                <select class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="expense-year-filter"></select>
-                            </div>
-                            <div class="min-w-0">
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="expense-category-filter">Category</label>
-                                <select class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="expense-category-filter"></select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-5 flex flex-wrap gap-2" id="expense-status-filter-group">
-                        <button class="expense-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-expense-status-filter="all" type="button">All</button>
-                        <button class="expense-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-expense-status-filter="unbilled" type="button">Unbilled</button>
-                        <button class="expense-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-expense-status-filter="invoiced" type="button">Invoiced</button>
-                        <button class="expense-status-filter rounded-full border border-line bg-panel/70 px-4 py-2 text-sm font-medium text-ink transition hover:border-brand/35 hover:bg-white" data-expense-status-filter="nonbillable" type="button">Non-Billable</button>
-                    </div>
-
-                    <div class="mt-5 overflow-x-auto rounded-[1.4rem] border border-line bg-white/70">
-                        <table class="min-w-full border-collapse text-left text-sm">
-                            <thead class="bg-panel/65 text-muted">
-                                <tr>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Date</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Project</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Vendor</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Description</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Category</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em] text-right">Total</th>
-                                    <th class="px-4 py-4 font-semibold uppercase tracking-[0.18em]">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="expense-table-body"></tbody>
-                        </table>
-                    </div>
-
-                    <div class="mt-5 hidden rounded-[1.4rem] border border-dashed border-line bg-panel/40 p-8 text-center" id="expense-empty-state">
-                        <p class="font-display text-2xl font-bold text-ink">No expenses match the current filter.</p>
-                        <p class="mt-2 text-sm leading-6 text-muted">Adjust the project, year, category, or status filter, or create a new expense draft.</p>
-                    </div>
-                </article>
-
-                <article class="min-w-0 rounded-[1.8rem] border border-line/80 bg-surface/90 p-6 shadow-soft backdrop-blur sm:p-7">
-                    <div class="mb-5 flex items-start justify-between gap-4">
+            <section class="mt-4 grid gap-3">
+                <article class="card" aria-labelledby="expense-editor-title">
+                    <div class="mb-5 flex items-start justify-between gap-3">
                         <div>
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Expense Entry</p>
-                            <h2 class="mt-2 font-display text-3xl font-bold text-ink" id="expense-editor-title">Select an expense</h2>
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Expense Entry</p>
+                            <h2 class="mt-2 font-display text-lg font-bold text-ink" id="expense-editor-title">Select an expense</h2>
                         </div>
-                        <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]" id="expense-editor-status-chip">Draft</span>
+                        <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide" id="expense-editor-status-chip">Draft</span>
                     </div>
 
-                    <div class="mb-5 rounded-[1.2rem] border border-line bg-panel/45 p-4">
+                    <div class="mb-5 rounded border border-line bg-panel/45 p-4">
                         <div class="grid gap-3 sm:grid-cols-3">
                             <div>
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Customer</p>
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Customer</p>
                                 <p class="mt-2 text-sm text-ink" id="expense-detail-customer">None</p>
                             </div>
                             <div>
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Line Total</p>
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Line Total</p>
                                 <p class="mt-2 font-mono text-sm text-ink" id="expense-detail-total">$0.00</p>
                             </div>
                             <div>
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Invoice Link</p>
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Invoice Link</p>
                                 <p class="mt-2 text-sm text-ink" id="expense-detail-invoice">Not linked</p>
                             </div>
                         </div>
                     </div>
 
-                    <form class="grid gap-4" id="expense-form">
+                    <form class="grid gap-3" id="expense-form">
                         <input id="expense-entry-id" type="hidden">
 
-                        <div class="grid min-w-0 gap-4 sm:grid-cols-[11rem_minmax(0,1fr)]">
+                        <div class="grid min-w-0 gap-3 sm:grid-cols-[11rem_minmax(0,1fr)]">
                             <div class="min-w-0">
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="expense-entry-date">Date</label>
-                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="expense-entry-date" name="entry_date" required type="date">
+                                <label class="field-label" for="expense-entry-date">Date</label>
+                                <input class="field" id="expense-entry-date" name="entry_date" required type="date">
                             </div>
                             <div class="min-w-0">
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="expense-project">Project</label>
-                                <select class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="expense-project" name="project_id" required></select>
+                                <label class="field-label" for="expense-project">Project</label>
+                                <select class="field" id="expense-project" name="project_id" required></select>
                             </div>
                         </div>
 
-                        <div class="grid min-w-0 gap-4 sm:grid-cols-[minmax(0,1fr)_12rem]">
+                        <div class="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_12rem]">
                             <div class="min-w-0">
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="expense-vendor">Vendor</label>
-                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="expense-vendor" name="vendor" required type="text">
+                                <label class="field-label" for="expense-vendor">Vendor</label>
+                                <input class="field" id="expense-vendor" name="vendor" required type="text">
                             </div>
                             <div class="min-w-0">
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="expense-category">Category</label>
-                                <select class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="expense-category" name="category" required></select>
+                                <label class="field-label" for="expense-category">Category</label>
+                                <select class="field" id="expense-category" name="category" required></select>
                             </div>
                         </div>
 
                         <div>
-                            <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="expense-description">Expense Description</label>
-                            <textarea class="mt-2 min-h-28 w-full rounded-[1.4rem] border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="expense-description" name="description" required></textarea>
+                            <label class="field-label" for="expense-description">Expense Description</label>
+                            <textarea class="field" id="expense-description" name="description" required></textarea>
                         </div>
 
-                        <div class="grid min-w-0 gap-4 sm:grid-cols-[8rem_10rem_minmax(0,1fr)] sm:items-end">
+                        <div class="grid min-w-0 gap-3 sm:grid-cols-[8rem_10rem_minmax(0,1fr)] sm:items-end">
                             <div class="min-w-0">
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="expense-quantity">Quantity</label>
-                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="expense-quantity" min="0.25" name="quantity" required step="0.25" type="number">
+                                <label class="field-label" for="expense-quantity">Quantity</label>
+                                <input class="field" id="expense-quantity" min="0.25" name="quantity" required step="0.25" type="number">
                             </div>
                             <div class="min-w-0">
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted" for="expense-unit-cost">Unit Cost</label>
-                                <input class="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20" id="expense-unit-cost" min="0" name="unit_cost" required step="0.01" type="number">
+                                <label class="field-label" for="expense-unit-cost">Unit Cost</label>
+                                <input class="field" id="expense-unit-cost" min="0" name="unit_cost" required step="0.01" type="number">
                             </div>
                             <div class="min-w-0">
-                                <label class="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted">Billing</label>
-                                <label class="mt-2 inline-flex max-w-full items-center gap-3 rounded-full border border-line bg-panel/55 px-4 py-3 text-sm font-medium text-ink">
+                                <label class="field-label">Billing</label>
+                                <label class="btn-secondary">
                                     <input class="rounded border-line text-brand focus:ring-brand/30" id="expense-is-billable" name="is_billable" type="checkbox">
                                     Billable
                                 </label>
                             </div>
                         </div>
 
-                        <div class="rounded-[1.2rem] border border-line bg-white/70 px-4 py-3">
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Derived Billing</p>
+                        <div class="rounded border border-line bg-white/70 px-4 py-3">
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Derived Billing</p>
                             <p class="mt-2 text-sm leading-6 text-ink" id="expense-derived-billing">Select project, cost, and billable treatment.</p>
                         </div>
 
                         <div class="grid gap-3 pt-2 sm:grid-cols-2 xl:grid-cols-3">
-                            <button class="inline-flex w-full items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-stone-50 transition hover:bg-branddeep" type="submit">Save Expense</button>
-                            <button class="inline-flex w-full items-center justify-center rounded-full border border-brand/20 bg-white/40 px-5 py-3 text-sm font-semibold text-branddeep transition hover:border-brand/35 hover:bg-white/70" id="duplicate-expense-button" type="button">Duplicate</button>
-                            <button class="inline-flex w-full items-center justify-center rounded-full border border-line bg-panel/50 px-5 py-3 text-sm font-semibold text-ink transition hover:bg-white sm:col-span-2 xl:col-span-1" id="clear-expense-form-button" type="button">Clear Form</button>
+                            <button class="btn-primary" type="submit">Save Expense</button>
+                            <button class="btn-secondary" id="duplicate-expense-button" type="button">Duplicate</button>
+                            <button class="btn-secondary" id="clear-expense-form-button" type="button">Clear Form</button>
                         </div>
                     </form>
+                </article>
+
+                <article class="card" aria-label="Expense entries">
+                    <div class="toolbar">
+                        <div class="filter-fields">
+                        <div class="grid min-w-0 w-full gap-3 md:grid-cols-4 2xl:max-w-4xl 2xl:grid-cols-[minmax(0,1fr)_12rem_10rem_10rem]">
+                            <div class="min-w-0">
+                                <label class="field-label" for="expense-search">Search</label>
+                                <input class="field" id="expense-search" placeholder="Search" type="search">
+                            </div>
+                            <div class="min-w-0">
+                                <label class="field-label" for="expense-project-filter">Project</label>
+                                <select class="field" id="expense-project-filter"></select>
+                            </div>
+                            <div class="min-w-0">
+                                <label class="field-label" for="expense-year-filter">Year</label>
+                                <select class="field" id="expense-year-filter"></select>
+                            </div>
+                            <div class="min-w-0">
+                                <label class="field-label" for="expense-category-filter">Category</label>
+                                <select class="field" id="expense-category-filter"></select>
+                            </div>
+                        </div>
+                    </div>
+                        <div class="filter-tabs" id="expense-status-filter-group">
+                        <button class="tab" data-expense-status-filter="all" type="button">All</button>
+                        <button class="tab" data-expense-status-filter="unbilled" type="button">Unbilled</button>
+                        <button class="tab" data-expense-status-filter="invoiced" type="button">Invoiced</button>
+                        <button class="tab" data-expense-status-filter="nonbillable" type="button">Non-Billable</button>
+                    </div>
+                    </div>
+
+                    <div class="mt-3 overflow-x-auto rounded border border-line bg-white/70">
+                        <table class="data-table">
+                            <thead class="bg-panel/65 text-muted">
+                                <tr>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Date</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Project</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Vendor</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Description</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Category</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide text-right">Total</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expense-table-body"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-3 hidden rounded border border-dashed border-line bg-panel/40 p-8 text-center" id="expense-empty-state">
+                        <p class="font-display text-lg font-semibold text-ink">No expenses match the current filter.</p>
+                        <p class="mt-2 text-sm leading-6 text-muted">Adjust the project, year, category, or status filter, or create a new expense draft.</p>
+                    </div>
                 </article>
             </section>
 {% endblock %}
