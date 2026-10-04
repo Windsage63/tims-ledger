@@ -120,7 +120,7 @@ Each invoice:
 Invoice lines derived from time and expenses must remain traceable back to their source records.
 Printed invoices must show the project reference as `{project number} - {project description}` so the customer can identify what the invoice is for.
 Printed invoices must show the company identity from the Company profile at Save/Print time.
-Invoices do not need a draft state. New invoice creation may begin in browser state, but the database row and source-record links are created or updated only when the user clicks Save/Print. Existing invoices may be edited and reissued even though that changes accounting history; an immutable invoice audit trail is out of scope for this application.
+New invoices do not require a persisted draft row before Save/Print. Existing unissued records display Draft. New invoice creation may begin in browser state, but the database row and source-record links are created or updated only when the user clicks Save/Print. Existing invoices may be edited and reissued with Edit Mode enabled even though that changes accounting history; an immutable invoice audit trail is out of scope for this application.
 
 ### 4.7 Payments And Payment Applications
 
@@ -218,7 +218,7 @@ The invoice editor should preserve the printable invoice experience while keepin
 ### 5.6 Invoice Ledger
 
 1. Provide an invoice ledger listing saved invoices with search, filtering, and row actions.
-2. Support All, Draft, Open, Overdue, and Paid views. Draft means unprinted; Open includes printed unpaid invoices, including overdue invoices. Overdue means a printed invoice has a positive balance and its due date is before the local calendar date. Show Due and Balance columns, plus Open Balance, Overdue, and Draft Total metrics for the filtered rows.
+2. Support All, Draft, Open, Overdue, and Paid views. Draft means unprinted; Open includes printed unpaid invoices, including overdue invoices. Overdue means a printed invoice has a positive balance and its due date is before the local calendar date. Display the exact count as Overdue 1 day or Overdue N days, with color severity changing at 31, 61, and 91 days past terms. Share the calendar calculation with customer statements and payment invoice rows, while preserving backend status values. Show Due and Balance columns, plus Open Balance, Overdue, and Draft Total metrics for the filtered rows.
 3. Derive invoice status from issuance state and open balance.
 4. Support viewing saved invoice HTML documents by invoice number.
 
@@ -233,13 +233,14 @@ The invoice editor should preserve the printable invoice experience while keepin
 7. The user must be able to open a payment and apply or remove allocations across open invoices.
 8. The user must be prevented from applying more than the remaining unapplied amount.
 9. Payment applications must update invoice open balances and customer balances immediately.
+10. Business totals on Receive Payments cover all saved records in the current database. Total Income includes unapplied payments and negative corrections. Open A/R excludes draft invoices. Total Expenses includes all recorded expense costs, and Non-Billable Expenses is its non-billable subset. Refresh totals after saves/deletes without replacing the editor draft. No annual reset is automatic.
 
 ### 5.8 Customer Balance And Accounts Receivable Reporting
 
 1. Customer-level views must distinguish current invoice charges, open AR, unapplied credits, and net balance.
 2. Overdue indicators must be derived from invoice due date, issuance state, and positive open balance rather than entered manually. A due date equal to today is not overdue.
 3. Summary cards, customer status chips, and invoice ledger filters are acceptable presentation elements if they remain derived views of ledger data.
-4. Home (Overview) should prioritize financial metrics, accounts receivable, and customer statement detail. Settings owns XLSX audit export and backup/restore controls.
+4. Home is a welcome splash screen. Receive Payments shows all-record Total Income, Open A/R, Total Expenses, and Non-Billable Expenses totals, independently of payment filters. Customers owns statement detail in a read-only Statement tab beside Contact. Settings owns XLSX audit export and backup/restore controls.
 
 ### 5.9 Backup And Restore
 
@@ -254,7 +255,7 @@ The invoice editor should preserve the printable invoice experience while keepin
 
 ## 6. Screen Strategy
 
-1. Keep the desktop-first, high-density layout, sidebar navigation, data tables, and editor panels.
+1. Keep the desktop-first, high-density layout, sidebar navigation, data tables, and editor panels. The application has a minimum layout width of 1024px. Narrower windows scroll horizontally while the sidebar stays beside the content; navigation never moves above the screen.
 2. Keep the project list layout, especially the rate summary per project and project-number orientation.
 3. Keep customers as a browse-plus-editor surface backed by the full customer master record.
 4. Keep the time tracking table, including rate code and invoice-link visibility.
@@ -262,17 +263,21 @@ The invoice editor should preserve the printable invoice experience while keepin
 6. Keep the invoice ledger screen.
 7. Keep the printable invoice layout, but route line selection through source-record checkbox lists.
 8. Keep the payments ledger and payment-application screen family to complete the workflow.
-9. Keep Home focused on Open A/R, Unapplied Credit, Net Receivables, and Unbilled Work metrics, accounts receivable, and customer statements.
+9. Keep Home as a simple welcome splash screen and place the business totals on Receive Payments. Put the selected customer statement on Customers and avoid duplicate customer browsing on Home.
 10. Keep the Company profile as a simple single-record editor in Settings, alongside backup/restore and audit export. Group sidebar navigation into Home, Sales (Invoices, Receive Payments, Customers), and Work (Projects, Time, Expenses). Every page uses a compact header with contextual help, page actions, and a + New menu.
 
 ## 7. UX And Interaction Guidance
 
 1. Optimize for desktop widths with room for dense tables and side panels.
-2. Favor direct manipulation of stored records over wizard-heavy flows.
+2. Allow intentional changes to stored records through Edit Mode rather than wizard-heavy flows. Protect saved Customers, Projects, Time, Expenses, Invoices, and Payments by default, including associated source selections, rates, payment allocations, and saved-record deletes.
 3. Make invoice linkage visible wherever time or expenses appear.
 4. Use consistent ledger language across screens: unbilled, invoiced, open balance, unapplied, printed, and paid.
 5. Preserve printable invoice polish without allowing the printed layout to bypass accounting rules.
 6. Make backup and restore actions explicit, visible, and hard to confuse with XLSX audit export.
+7. Show EDIT MODE in the shared header on the six protected record screens. Red background with black letters indicates editing is enabled. Reset mode on screen changes, cached-page return, successful saves/deletes, and new/duplicate records. New records are editable with mode off.
+8. Keep editable drafts detached from saved browse records. Confirm before discarding modified drafts through navigation, record selection, New, Duplicate, or Clear/Discard; cancellation retains the complete draft. Failed saves retain intent. Turning mode off while dirty restores the saved baseline only after confirmation.
+9. Protected existing invoices offer Print Saved Invoice through the saved-document GET without regenerating the HTML. Existing-record Save/Print requires Edit Mode; new invoices keep the current Save/Print flow.
+10. Customer Contact and Statement tabs share one browse selection. Statement refresh and tab changes retain contact drafts, and stale responses cannot appear under another customer. Settings is outside record Edit Mode protection.
 
 ## 8. Out Of Scope For Initial Delivery
 

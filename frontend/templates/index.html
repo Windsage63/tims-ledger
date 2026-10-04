@@ -1,5 +1,5 @@
 <!--
-@fileoverview Render Home metrics, accounts receivable, and customer statements.
+@fileoverview Render the Tim's Ledger welcome splash screen.
 @license Apache-2.0
 @copyright 2026 Timothy Mallory
 -->
@@ -7,90 +7,14 @@
 {% extends "base.html" %}
 
 {% block content %}
-
-            <section class="kpi-strip" aria-label="Overview metrics">
-                <article class="card">
-                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Open A/R</p>
-                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="ar-total-open">-</p>
-                </article>
-                <article class="card">
-                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Unapplied Credit</p>
-                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="ar-total-credit">-</p>
-                </article>
-                <article class="card">
-                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Net Receivables</p>
-                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="ar-total-net">-</p>
-                </article>
-                <article class="card">
-                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Unbilled Work</p>
-                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-assets">-</p>
-                </article>
-            </section>
-
-            <section class="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1.5fr)_minmax(20rem,0.9fr)]" id="accounts-receivable">
-                <article class="card">
-                    <h2 class="text-lg font-semibold">Accounts receivable</h2>
-
-                    <div class="mt-3 overflow-hidden rounded border border-line/80 bg-white/60">
-                        <div class="overflow-x-auto">
-                            <table class="data-table">
-                                <thead class="bg-panel/50 text-[11px] font-semibold uppercase tracking-wide text-muted">
-                                    <tr>
-                                        <th class="px-4 py-3">Customer</th>
-                                        <th class="px-4 py-3">Open AR</th>
-                                        <th class="px-4 py-3">Unapplied</th>
-                                        <th class="px-4 py-3">Net</th>
-                                        <th class="px-4 py-3">Open Invoices</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-line/70 text-sm text-ink" id="ar-customers-body">
-                                    <tr>
-                                        <td class="px-4 py-2 text-muted" colspan="5">Loading accounts receivable report...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+            <section class="flex min-h-0 w-full flex-1 items-start justify-center" aria-labelledby="welcome-title">
+                <div class="flex h-[90%] min-h-0 w-full flex-col items-center justify-start gap-6 py-2 text-center">
+                    <img class="mx-auto min-h-0" style="flex: 0 1 auto; width: clamp(384px, 60%, 1536px); max-width: 100%; height: auto; object-fit: contain;" src="/frontend/assets/splash-ledger.png?v=20261004" width="1536" height="1024" alt="" decoding="async">
+                    <div class="w-full shrink-0">
+                        <h2 class="font-display text-4xl font-bold tracking-tight text-ink lg:text-5xl" id="welcome-title">Tim's Ledger</h2>
+                        <p class="mt-4 text-lg text-muted">Project billing, simply organized.</p>
+                        <p class="mx-auto mt-6 max-w-md text-sm leading-6 text-muted">Use the sidebar to record your work, manage invoices, and receive payments.</p>
                     </div>
-                </article>
-
-                <article class="card">
-                    <div class="mb-5">
-                        <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Customer Statement</p>
-                        <h2 class="mt-2 font-display text-lg font-bold text-ink" id="statement-customer-name">Loading...</h2>
-                        <p class="mt-3 text-sm leading-7 text-muted" id="statement-customer-meta">Statement detail will load from the reporting endpoint.</p>
-                    </div>
-
-                    <div class="grid gap-3 sm:grid-cols-3">
-                        <article class="rounded border border-line/80 bg-panel/35 p-4">
-                            <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Open AR</p>
-                            <p class="mt-2 font-display text-lg font-semibold text-ink" id="statement-open-ar">-</p>
-                        </article>
-                        <article class="rounded border border-line/80 bg-panel/35 p-4">
-                            <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Unapplied Credit</p>
-                            <p class="mt-2 font-display text-lg font-semibold text-ink" id="statement-unapplied-credit">-</p>
-                        </article>
-                        <article class="rounded border border-line/80 bg-panel/35 p-4">
-                            <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Net Balance</p>
-                            <p class="mt-2 font-display text-lg font-semibold text-ink" id="statement-net-balance">-</p>
-                        </article>
-                    </div>
-
-                    <div class="mt-3">
-                        <div class="flex items-center justify-between gap-3">
-                            <h3 class="font-display text-xl font-bold text-ink">Printed Invoices</h3>
-                            <p class="text-xs font-semibold uppercase tracking-wide text-muted" id="statement-generated-at">-</p>
-                        </div>
-                        <div class="mt-3 grid gap-3" id="statement-invoices-list">
-                            <p class="rounded border border-line/80 bg-panel/35 px-4 py-2 text-sm text-muted">Loading invoices...</p>
-                        </div>
-                    </div>
-
-                    <div class="mt-3">
-                        <h3 class="font-display text-xl font-bold text-ink">Unapplied Payments</h3>
-                        <div class="mt-3 grid gap-3" id="statement-payments-list">
-                            <p class="rounded border border-line/80 bg-panel/35 px-4 py-2 text-sm text-muted">Loading unapplied payments...</p>
-                        </div>
-                    </div>
-                </article>
+                </div>
             </section>
 {% endblock %}

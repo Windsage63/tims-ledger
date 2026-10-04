@@ -69,6 +69,11 @@
                         <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide" id="editor-status-chip">Draft</span>
                     </div>
 
+                    <div class="filter-tabs mb-4" role="tablist" aria-label="Customer details">
+                        <button class="tab" data-customer-tab="contact" id="customer-contact-tab" role="tab" aria-controls="customer-contact-panel" aria-selected="true" type="button">Contact</button>
+                        <button class="tab" data-customer-tab="statement" id="customer-statement-tab" role="tab" aria-controls="customer-statement-panel" aria-selected="false" type="button">Statement</button>
+                    </div>
+                    <div id="customer-contact-panel" role="tabpanel" aria-labelledby="customer-contact-tab">
                     <div class="mb-5 rounded border border-line bg-panel/45 p-4">
                         <div class="grid gap-3 sm:grid-cols-2">
                             <div>
@@ -137,6 +142,23 @@
                             <button class="btn-secondary" id="clear-form-button" type="button">Clear Form</button>
                         </div>
                     </form>
+                    </div>
+                    <div id="customer-statement-panel" role="tabpanel" aria-labelledby="customer-statement-tab" hidden>
+                        <div class="mb-3 flex items-center justify-between gap-3"><h3 class="font-semibold">Customer Statement</h3><button class="btn-secondary" id="refresh-statement-button" type="button">Refresh</button></div>
+                        <p class="text-sm text-muted" id="statement-message"></p>
+                        <div id="statement-detail" hidden>
+                            <h3 class="font-semibold" id="statement-customer-name"></h3>
+                            <p class="mt-1 text-xs text-muted" id="statement-customer-meta"></p>
+                            <div class="my-4 grid grid-cols-3 gap-2 text-xs">
+                                <div><p>Open A/R</p><p class="mt-1 font-mono" id="statement-open-ar"></p></div>
+                                <div><p>Unapplied Credit</p><p class="mt-1 font-mono" id="statement-unapplied-credit"></p></div>
+                                <div><p>Net Balance</p><p class="mt-1 font-mono" id="statement-net-balance"></p></div>
+                            </div>
+                            <p class="mb-3 text-xs text-muted" id="statement-generated-at"></p>
+                            <h4 class="mb-2 font-semibold">Issued invoices</h4><div class="grid gap-2" id="statement-invoices-list"></div>
+                            <h4 class="mb-2 mt-4 font-semibold">Unapplied payments</h4><div class="grid gap-2" id="statement-payments-list"></div>
+                        </div>
+                    </div>
                 </article>
             </section>
 {% endblock %}

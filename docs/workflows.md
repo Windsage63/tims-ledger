@@ -12,7 +12,7 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 
 ## 2. User Enters Customer
 
-1. User creates or updates a customer master record before entering project work.
+1. User creates a customer master record before entering project work, or enables Edit Mode to update an existing customer.
 2. User enters customer name, street address, city, state, ZIP code, contact name, email, and phone.
 3. System validates that the customer record is complete enough for project setup, invoice printing, and payment receipt.
 4. System stores the customer record in the `customers` table.
@@ -54,7 +54,7 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 
 1. User enters or edits the invoice date, unique invoice number, project, terms, and notes. Terms default to Net 30; choices are Due on receipt and Net 10 / 15 / 30 / 45 / 60. The editor previews the calendar due date and preserves other stored terms on existing invoices. The project selector shows the project number and project description.
 2. For a new invoice, the editor may hold the invoice in browser state until Save/Print. No invoice database row is required before Save/Print.
-3. For an existing invoice, the system loads the saved invoice, its selected rows, eligible rows, and totals, then closes the database connection.
+3. For an existing invoice, the system loads the saved invoice, its selected rows, eligible rows, and totals, then closes the database connection. Fields and source selections are protected until Edit Mode is enabled.
 4. System lists all eligible unbilled time for the project, showing date, description, duration, rate, total, and an `invoice?` checkbox.
 5. System lists all eligible unbilled expenses for the project, showing date, description, category, unit cost, total, and an `invoice?` checkbox.
 6. If the project bills a fixed fee, that amount appears through the one-hour custom-rate time entry that represents the fee. There are no separate HD, non-hourly, or manual billing lines.
@@ -64,7 +64,7 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 10. When the user clicks Save/Print, the system creates or updates the invoice, replaces all selected time and expense links, generates or overwrites the current invoice HTML, and opens the saved HTML for browser printing.
 11. Checked time entries are saved with the invoice ID. Unchecked prior time entries have their invoice linkage cleared and return to the unbilled pool.
 12. Checked expenses are saved with the invoice ID. Unchecked prior expenses have their invoice linkage cleared and return to the unbilled pool.
-13. Existing issued invoices may be viewed, edited, saved, and reprinted by invoice number.
+13. Existing issued invoices may be viewed and reprinted by invoice number. While protected, Print Saved Invoice opens the saved HTML without updating any invoice data, links, or documents. If the document is missing, enable Edit Mode and Save/Print to generate it. Editing and regenerating existing invoices requires Edit Mode.
 14. The printed invoice shows project references as `{project number} - {project description}`.
 15. The printed invoice company header and check-payable footer come from the current Company profile at Save/Print time.
 16. Editing and reissuing an invoice intentionally changes accounting history. This application does not require an immutable invoice audit trail.
@@ -76,9 +76,11 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 3. System creates or updates the persisted payment record on Save Payment with the full amount initially unapplied.
 4. User applies some or all of a positive payment amount to one or more open invoices in the same editor.
 5. Save Payment persists both the payment record and current invoice applications.
-6. Delete Payment asks for confirmation before removing a saved payment and its application rows. Discarding an unsaved draft does not require confirmation.
+6. Editing payment fields, changing applications, or deleting a saved payment requires Edit Mode. Delete Payment also asks for confirmation. Discarding a modified unsaved draft asks for the shared unsaved-change confirmation.
 7. System prevents over-application and updates both invoice open balances and the payment's remaining unapplied amount.
 8. Customer balance shows open AR and net balance, each derived from invoices, payments, and payment applications.
+9. Receive Payments shows Business totals for all records in the current database: Total Income sums saved payments, including unapplied amounts and negative corrections; Open A/R sums issued invoice balances and excludes drafts; Total Expenses sums all recorded expense line totals; Non-Billable Expenses is the portion marked non-billable and is included in Total Expenses. Search, customer, year, and status filters affect only the payment list. Totals refresh when the screen loads and after payment saves/deletes, including saves that partially succeed. They represent a year's activity only when the current dataset is limited to that year; there is no automatic annual reset.
+10. Payment and application saves use multiple existing requests. If a later step fails, retain the intended draft and any created payment ID, reconcile the persisted state, and allow an intentional retry without creating another payment. If a creation response is lost before an ID is known, require inspection of the saved ledger before another create attempt.
 
 ## 8. User Exports, Backs Up, Or Restores Data
 
@@ -91,3 +93,29 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 7. Before restore, system creates a safety backup of the current database and invoice documents in `app-data/backups/safety/`.
 8. System restores the selected normal backup and reloads Settings to refresh the Company profile and backup list. Other pages load the restored data on their next visit.
 9. Safety backups are stored separately and are not treated as normal restore candidates.
+
+## 9. User Reviews Customer Statements
+
+1. Home is a welcome splash screen with a ledger illustration and application title; users navigate to Customers for statement detail.
+2. User selects a customer once in Customers and opens its Statement tab. Contact remains the editable master-record tab.
+3. Statement shows customer identity, Open A/R, Unapplied Credit, Net Balance, generation time, issued invoice detail, and unapplied payments. It stays read-only even with Edit Mode enabled.
+4. Switching detail tabs or refreshing the statement preserves a contact draft. Selecting another customer asks before discarding any modified draft. Older statement responses cannot replace the newer customer's statement.
+5. New customers have no statement until saved. Customers with no invoices or with credit alone have explicit empty sections rather than another customer's default statement.
+
+## 10. User Intentionally Edits Existing Records
+
+1. Customers, Projects, Time, Expenses, Invoices, and Payments open with saved records protected. New records and duplicates remain editable without enabling mode.
+2. User enables the header EDIT MODE button. Its red background with black lettering means existing-record editing is enabled; a normal button means protection is on.
+3. Mode resets on screen changes, cached-page return, successful save/delete, and starting a new or duplicate record. Clean saved-record selection within one screen retains the mode.
+4. Modified drafts are compared with their saved baselines. Record selection, New, Duplicate, Clear/Discard, and screen navigation ask before losing changes. Cancel keeps the values and selections intact. Browser refresh/close uses the browser's native warning, whose wording and availability are browser-controlled.
+5. Turning mode off with unsaved changes asks before discarding them and restoring the saved baseline. Save failures preserve the draft and do not falsely mark it clean or relock it.
+6. Search/filter changes do not overwrite the draft. Existing eligibility and validation rules continue to apply with mode enabled. Settings retains its current company/backup/export workflows.
+7. This prevents accidental edits in the UI; it is not API authorization or an immutable accounting audit trail.
+
+## 11. User Reviews Overdue Invoice Tags
+
+1. Invoice displays use Draft, Open, Paid, and Overdue N days. The first overdue day reads Overdue 1 day.
+2. Due date is the invoice calendar date plus its stored terms. Due today is Open; tomorrow is one day overdue. Draft and Paid take precedence, and issued zero-value invoices retain their existing Open treatment.
+3. Tags use amber at 1–30 days, orange at 31–60, red at 61–90, and dark red at 91 or more. Exact-day text remains visible at every level.
+4. The Invoice list/editor, customer statements, and payment invoice rows share the calculation. Open includes issued unpaid invoices, including overdue ones; Overdue includes every positive overdue count. The overdue balance metric uses the same rule.
+5. Age-dependent displays refresh when the date changes without regenerating saved documents or replacing an editor draft.

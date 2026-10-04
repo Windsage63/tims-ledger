@@ -129,6 +129,7 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
     app.state.startup_migrations_applied = []
     templates = Jinja2Templates(directory=str(frontend_dir / "templates"))
     app.mount("/frontend/js", StaticFiles(directory=str(frontend_dir / "js")), name="frontend_js")
+    app.mount("/frontend/assets", StaticFiles(directory=str(frontend_dir / "assets")), name="frontend_assets")
 
     @app.get("/frontend/html/{page_name}", response_class=HTMLResponse, include_in_schema=False)
     def frontend_page(page_name: str, request: Request) -> Response:

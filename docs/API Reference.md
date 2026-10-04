@@ -106,7 +106,8 @@ Here is a concise route map of the current API, grouped by function.
 ## Payments
 
   - GET /api/payments/bootstrap
-    - Loads payment screen data, optionally filtered by `year`.
+    - Loads `payments` and `customers`, with the payment list optionally filtered by `year`.
+    - Also returns `business_summary` with integer cent totals: `total_income_cents`, `total_open_ar_cents`, `total_expenses_cents`, and `non_billable_expenses_cents`. These totals always cover all records, even when `year` is supplied. Income sums recorded payments including unapplied amounts and negative corrections. Open A/R sums issued invoice balances, excluding drafts. Expenses sum recorded line totals; non-billable expenses are included in total expenses.
   - GET /api/payments/{payment_id}/editor
     - Loads the payment editor payload for one payment.
   - POST /api/payments

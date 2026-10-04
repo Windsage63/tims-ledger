@@ -13,18 +13,30 @@
 
 {% block content %}
 
-            <section class="kpi-strip" aria-label="Payment summary metrics">
+            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <h2 class="text-sm font-semibold text-ink">Business totals</h2>
+                <p class="text-xs text-muted">All records · Unaffected by payment filters</p>
+            </div>
+            <section class="kpi-strip" aria-label="Business totals for all records">
                 <article class="card">
-                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Total Received</p>
-                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-visible-receipts">-</p>
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Total Income</p>
+                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-total-income">—</p>
+                    <p class="mt-1 text-xs text-muted">Payments received</p>
                 </article>
                 <article class="card">
-                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Applied Amount</p>
-                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-applied-amount">-</p>
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Open A/R</p>
+                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-open-ar">—</p>
+                    <p class="mt-1 text-xs text-muted">Outstanding issued invoices</p>
                 </article>
                 <article class="card">
-                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Unapplied Amount</p>
-                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-unapplied-amount">-</p>
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Total Expenses</p>
+                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-total-expenses">—</p>
+                    <p class="mt-1 text-xs text-muted">All recorded expenses</p>
+                </article>
+                <article class="card">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Non-Billable Expenses</p>
+                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-non-billable-expenses">—</p>
+                    <p class="mt-1 text-xs text-muted">Included in total expenses</p>
                 </article>
             </section>
 

@@ -125,7 +125,9 @@ async function apiRequestJson(apiRoot, path = "", options = {}, fallbackMessage 
     });
     const payload = await response.json();
     if (!response.ok) {
-        throw new Error(extractErrorMessage(payload, fallbackMessage));
+        const error = new Error(extractErrorMessage(payload, fallbackMessage));
+        error.httpStatus = response.status;
+        throw error;
     }
     return payload.data || {};
 }
@@ -165,8 +167,8 @@ function consumeNewRecordRequest(buttonId) {
     if (window.location.hash !== "#new") return;
     const button = document.getElementById(buttonId);
     if (!button || button.disabled) return;
-    history.replaceState(null, "", window.location.pathname + window.location.search);
     button.click();
+    history.replaceState(null, "", window.location.pathname + window.location.search);
 }
 
 function invoiceTermsLabel(days) {
@@ -178,11 +180,43 @@ function invoiceDueDate(invoice) {
     const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(invoice?.invoice_date || ""));
     if (!match) return "";
     const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
-    date.setUTCDate(date.getUTCDate() + Math.max(0, Number(invoice.terms_days ?? 30)));
+    if (date.toISOString().slice(0, 10) !== match[0]) return "";
+    const terms = Number(invoice.terms_days ?? 30);
+    if (!Number.isInteger(terms) || terms < 0) return "";
+    date.setUTCDate(date.getUTCDate() + terms);
+    if (!Number.isFinite(date.getTime())) return "";
     return date.toISOString().slice(0, 10);
 }
 
 function isInvoiceOverdue(invoice, today = todayDateInputValue()) {
+    return invoiceOverdueDays(invoice, today) > 0;
+}
+
+function invoiceOverdueDays(invoice, today = todayDateInputValue()) {
+    if (!["printed", "pending"].includes(invoice?.status) || !(Number(invoice.open_balance_cents) > 0)) return 0;
     const due = invoiceDueDate(invoice);
-    return invoice?.status === "printed" && Number(invoice.open_balance_cents) > 0 && due !== "" && due < today;
+    const validToday = invoiceDueDate({ invoice_date: today, terms_days: 0 });
+    if (!due || !validToday) return 0;
+    return Math.max(0, Math.round((Date.parse(`${validToday}T00:00:00Z`) - Date.parse(`${due}T00:00:00Z`)) / 86400000));
+}
+
+function invoiceDisplayStatus(invoice, today = todayDateInputValue()) {
+    if (invoice?.status === "paid") return { key: "paid", label: "Paid", classes: "status-paid" };
+    if (!["printed", "pending"].includes(invoice?.status)) return { key: "draft", label: "Draft", classes: "status-draft" };
+    const days = invoiceOverdueDays(invoice, today);
+    if (!days) return { key: "printed", label: "Open", classes: "status-open" };
+    return { key: "overdue", label: `Overdue ${days} ${days === 1 ? "day" : "days"}`, classes:
+        days <= 30 ? "status-overdue-30" : days <= 60 ? "status-overdue-60" : days <= 90 ? "status-overdue-90" : "status-overdue-old" };
+}
+
+// Repaint age-sensitive displays without loading or replacing browser drafts.
+function onInvoiceCalendarChange(callback) {
+    let day = todayDateInputValue();
+    const check = () => {
+        const next = todayDateInputValue();
+        if (next !== day) { day = next; callback(); }
+    };
+    window.setInterval(check, 30000);
+    window.addEventListener("focus", check);
+    document.addEventListener("visibilitychange", check);
 }

@@ -223,9 +223,12 @@ function renderProjectRows(projects) {
 
     tbody.querySelectorAll("[data-project-select]").forEach((row) => {
         row.addEventListener("click", () => {
-            projectState.selectedId = Number(row.dataset.projectSelect);
+            const nextId = Number(row.dataset.projectSelect);
+            if (nextId === projectState.selectedId || !editorProtection.allowTransition()) return;
+            projectState.selectedId = nextId;
             projectState.draftProject = null;
             render();
+            editorProtection.accept();
         });
     });
 }
@@ -318,6 +321,8 @@ function renderCustomRateInputs(customRates) {
 }
 
 function updateEditorRates(customRatesOnly, options = {}) {
+    if (!editorProtection.canWrite() || projectState.isSaving) return;
+    syncProjectFields();
     const source = projectState.draftProject || selectedProject() || emptyProjectDraft();
     const defaultRateCents = readDefaultRateInput();
     const customer = projectState.customers.find((item) => item.id === Number(document.getElementById("project-customer")?.value || source.customer_id));
@@ -373,6 +378,7 @@ function renderEditor(project) {
 
     renderBuiltinRatePreview(current.default_rate_cents);
     renderCustomRateInputs(current.rates.filter((rate) => !rate.is_builtin));
+    editorProtection.refresh();
 }
 
 function render() {
@@ -382,14 +388,14 @@ function render() {
     renderMetrics(projects);
     renderProjectRows(projects);
 
-    const project = selectedProject() || projectState.draftProject;
+    const project = projectState.draftProject || selectedProject();
     renderEditor(project);
 }
 
 async function saveProject(event) {
     event.preventDefault();
 
-    if (projectState.isSaving) {
+    if (projectState.isSaving || !editorProtection.canWrite()) {
         return;
     }
 
@@ -421,6 +427,7 @@ async function saveProject(event) {
 
     try {
         projectState.isSaving = true;
+        editorProtection.refresh();
         const response = await fetch(projectsUrl(path), {
             method,
             headers: {
@@ -445,6 +452,8 @@ async function saveProject(event) {
         });
         projectState.selectedId = project.id;
         projectState.draftProject = null;
+        render();
+        editorProtection.saved();
     } catch (error) {
         showToast(error instanceof Error ? error.message : "Unable to save project.");
     } finally {
@@ -455,6 +464,7 @@ async function saveProject(event) {
 }
 
 function clearProjectDraft(copyCurrent = false) {
+    if (!editorProtection.allowTransition()) return;
     if (copyCurrent && selectedProject()) {
         const original = selectedProject();
         projectState.selectedId = null;
@@ -468,15 +478,26 @@ function clearProjectDraft(copyCurrent = false) {
             spent_to_date_cents: 0
         });
         render();
+        editorProtection.accept({ lock: true, duplicate: copyCurrent });
         return;
     }
 
     projectState.selectedId = null;
     projectState.draftProject = emptyProjectDraft();
     render();
+    editorProtection.accept({ lock: true, duplicate: copyCurrent });
+}
+
+function syncProjectFields() {
+    if (!editorProtection.canWrite() || projectState.isSaving) return;
+    const source = projectState.draftProject || selectedProject() || emptyProjectDraft();
+    projectState.draftProject = { ...source, rates: cloneEditorData(source.rates),
+        project_number: document.getElementById("project-number").value,
+        description: document.getElementById("project-description").value };
 }
 
 function bindEvents() {
+    document.getElementById("project-form")?.addEventListener("input", syncProjectFields);
     document.getElementById("project-search")?.addEventListener("input", (event) => {
         projectState.searchQuery = event.target.value;
         render();
@@ -502,6 +523,8 @@ function bindEvents() {
     });
 
     document.getElementById("project-customer")?.addEventListener("change", () => {
+        if (!editorProtection.canWrite() || projectState.isSaving) return;
+        syncProjectFields();
         const source = projectState.draftProject || selectedProject() || emptyProjectDraft();
         const customer = projectState.customers.find((item) => item.id === Number(document.getElementById("project-customer")?.value || source.customer_id));
         projectState.draftProject = {
@@ -527,6 +550,16 @@ function bindEvents() {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
+    editorProtection.register({
+        formId: "project-form",
+        recordId: () => projectState.selectedId,
+        busy: () => projectState.isLoading || projectState.isSaving,
+        snapshot: () => editorFormSnapshot("project-form"),
+        capture: () => projectState.draftProject || selectedProject() || emptyProjectDraft(),
+        restore: (record) => { projectState.draftProject = record; },
+        render,
+        mutationControls: "#add-custom-rate-button, [data-remove-custom-rate]",
+    });
     bindEvents();
     render();
     void loadProjects().then(() => consumeNewRecordRequest("new-project-button"));

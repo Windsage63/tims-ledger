@@ -7,6 +7,7 @@
 const paymentsState = {
     customers: [],
     payments: [],
+    businessSummary: null,
     editor: {
         payment: null,
         applications: [],
@@ -20,6 +21,10 @@ const paymentsState = {
     selectedPaymentId: null,
     isLoading: true,
     isSaving: false,
+    isEditorLoading: false,
+    needsReconcile: false,
+    allocationLoadFailed: false,
+    creationUncertain: false,
     loadError: ""
 };
 
@@ -138,12 +143,10 @@ function updatePaymentHeader(payment) {
     updatePaymentSummary(payment);
 }
 
-function invoiceStatusMeta(invoice) {
-    if (invoice.status === "paid") {
-        return { label: "Paid", classes: "bg-brand/10 text-brand border border-brand/20" };
-    }
-    return { label: isInvoiceOverdue(invoice) ? "Overdue" : "Open", classes: "bg-calm/10 text-calm border border-calm/20" };
-}
+function invoiceStatusMeta(invoice) { return invoiceDisplayStatus(invoice); }
+
+let paymentEditorRequest = 0;
+let paymentSaveAuthorized = false;
 
 function upsertPayment(payment) {
     const index = paymentsState.payments.findIndex((currentPayment) => currentPayment.id === payment.id);
@@ -156,7 +159,7 @@ function upsertPayment(payment) {
 
 function setEditorPayload(data) {
     paymentsState.editor = {
-        payment: data.payment || null,
+        payment: cloneEditorData(data.payment) || null,
         applications: Array.isArray(data.applications) ? data.applications : [],
         open_invoices: Array.isArray(data.open_invoices) ? data.open_invoices : []
     };
@@ -170,47 +173,49 @@ function setEditorPayload(data) {
 }
 
 async function loadEditor(paymentId) {
-    if (!paymentId) {
-        paymentsState.editor = { payment: null, applications: [], open_invoices: [] };
-        paymentsState.applicationDrafts = {};
-        render();
-        return;
-    }
-
-    try {
-        const data = await requestJson(`/${paymentId}/editor`, {}, "Unable to load payment details.");
-        setEditorPayload(data);
-        paymentsState.loadError = "";
-    } catch (error) {
-        showToast(extractErrorMessage(error, "Unable to load payment details."));
-    }
+    const request = ++paymentEditorRequest;
+    paymentsState.isEditorLoading = true;
     render();
+    try {
+        const data = paymentId ? await requestJson(`/${paymentId}/editor`, {}, "Unable to load payment details.") : {};
+        if (request !== paymentEditorRequest) return false;
+        setEditorPayload(data);
+        paymentsState.selectedPaymentId = data.payment?.id || null;
+        paymentsState.needsReconcile = false;
+        paymentsState.creationUncertain = false;
+        paymentsState.allocationLoadFailed = false;
+        render();
+        editorProtection.accept();
+        return true;
+    } catch (error) {
+        if (request === paymentEditorRequest) showToast(extractErrorMessage(error, "Unable to load payment details."));
+        return false;
+    } finally {
+        if (request === paymentEditorRequest) { paymentsState.isEditorLoading = false; render(); }
+    }
 }
 
 async function loadCustomerOpenInvoices(customerId) {
-    if (!customerId) {
-        paymentsState.editor.applications = [];
-        paymentsState.editor.open_invoices = [];
-        paymentsState.applicationDrafts = {};
-        render();
-        return;
-    }
-
-    try {
-        const data = await requestJson(`/customers/${customerId}/open-invoices`, {}, "Unable to load open invoices.");
-        paymentsState.editor.applications = [];
-        paymentsState.editor.open_invoices = Array.isArray(data.open_invoices) ? data.open_invoices : [];
-        paymentsState.applicationDrafts = Object.fromEntries(
-            paymentsState.editor.open_invoices.map((invoice) => [invoice.id, invoice.current_applied_cents || 0])
-        );
-        paymentsState.loadError = "";
-    } catch (error) {
-        showToast(extractErrorMessage(error, "Unable to load open invoices."));
-        paymentsState.editor.applications = [];
-        paymentsState.editor.open_invoices = [];
-        paymentsState.applicationDrafts = {};
-    }
+    const request = ++paymentEditorRequest;
+    paymentsState.isEditorLoading = true;
     render();
+    try {
+        const data = customerId ? await requestJson(`/customers/${customerId}/open-invoices`, {}, "Unable to load open invoices.") : {};
+        if (request !== paymentEditorRequest || selectedPayment()?.customer_id !== customerId) return false;
+        paymentsState.editor.applications = [];
+        paymentsState.editor.open_invoices = cloneEditorData(data.open_invoices || []);
+        paymentsState.applicationDrafts = Object.fromEntries(paymentsState.editor.open_invoices.map((invoice) => [invoice.id, 0]));
+        paymentsState.allocationLoadFailed = false;
+        return true;
+    } catch (error) {
+        if (request === paymentEditorRequest) {
+            paymentsState.allocationLoadFailed = true;
+            showToast(extractErrorMessage(error, "Unable to load open invoices. Select the customer again before saving."));
+        }
+        return false;
+    } finally {
+        if (request === paymentEditorRequest) { paymentsState.isEditorLoading = false; render(); }
+    }
 }
 
 async function loadPayments() {
@@ -222,12 +227,14 @@ async function loadPayments() {
         const data = await requestJson("/bootstrap", {}, "Unable to load payments.");
         paymentsState.customers = Array.isArray(data.customers) ? data.customers : [];
         paymentsState.payments = Array.isArray(data.payments) ? data.payments : [];
+        paymentsState.businessSummary = data.business_summary || null;
         paymentsState.selectedPaymentId = paymentsState.payments[0]?.id || null;
         await loadEditor(paymentsState.selectedPaymentId);
     } catch (error) {
         paymentsState.loadError = extractErrorMessage(error, "Unable to load payments.");
         paymentsState.customers = [];
         paymentsState.payments = [];
+        paymentsState.businessSummary = null;
         paymentsState.selectedPaymentId = null;
         paymentsState.editor = { payment: null, applications: [], open_invoices: [] };
         paymentsState.applicationDrafts = {};
@@ -272,14 +279,28 @@ function renderYearOptions() {
     filter.value = paymentsState.yearFilter;
 }
 
-function renderMetrics(payments) {
-    const visibleReceipts = payments.reduce((sum, payment) => sum + payment.amount_cents, 0);
-    const appliedAmount = payments.reduce((sum, payment) => sum + payment.applied_amount_cents, 0);
-    const unappliedAmount = payments.reduce((sum, payment) => sum + payment.unapplied_amount_cents, 0);
+function renderMetrics() {
+    const summary = paymentsState.businessSummary;
+    for (const [id, key] of [
+        ["metric-total-income", "total_income_cents"],
+        ["metric-open-ar", "total_open_ar_cents"],
+        ["metric-total-expenses", "total_expenses_cents"],
+        ["metric-non-billable-expenses", "non_billable_expenses_cents"]
+    ]) {
+        setText(id, Number.isFinite(summary?.[key]) ? currency(summary[key]) : "—");
+    }
+}
 
-    setText("metric-visible-receipts", currency(visibleReceipts));
-    setText("metric-applied-amount", currency(appliedAmount));
-    setText("metric-unapplied-amount", currency(unappliedAmount));
+async function refreshBusinessSummary() {
+    try {
+        const data = await requestJson("/bootstrap", {}, "Unable to refresh business totals.");
+        paymentsState.businessSummary = data.business_summary || null;
+    } catch (error) {
+        paymentsState.businessSummary = null;
+        showToast(extractErrorMessage(error, "Unable to refresh business totals."));
+    }
+    // Updating totals must not replace an editor draft or reset its protection baseline.
+    renderMetrics();
 }
 
 function renderStatusFilters() {
@@ -328,8 +349,9 @@ function renderPaymentRows(payments) {
 
     tbody.querySelectorAll("[data-payment-select]").forEach((row) => {
         row.addEventListener("click", async () => {
-            paymentsState.selectedPaymentId = Number(row.dataset.paymentSelect);
-            await loadEditor(paymentsState.selectedPaymentId);
+            const id = Number(row.dataset.paymentSelect);
+            if (id === paymentsState.selectedPaymentId || !editorProtection.allowTransition()) return;
+            await loadEditor(id);
         });
     });
 }
@@ -454,6 +476,7 @@ function paymentPayloadFromForm(currentPayment) {
 }
 
 function syncSelectedPaymentFromForm(clearApplicationsOnCustomerChange = false) {
+    if (!editorProtection.canWrite() || paymentsState.isSaving || paymentsState.isEditorLoading) return;
     const payment = selectedPayment();
     if (!payment) {
         return;
@@ -477,6 +500,7 @@ function syncSelectedPaymentFromForm(clearApplicationsOnCustomerChange = false) 
 }
 
 async function createDraftPayment(sourcePayment = null) {
+    if (!editorProtection.allowTransition()) return;
     if (paymentsState.isSaving) {
         return;
     }
@@ -493,11 +517,14 @@ async function createDraftPayment(sourcePayment = null) {
     };
     paymentsState.applicationDrafts = {};
     paymentsState.loadError = "";
-    render();
+    paymentsState.needsReconcile = false;
+    paymentsState.creationUncertain = false;
     await loadCustomerOpenInvoices(customer.id);
+    editorProtection.accept({ lock: true, duplicate: Boolean(sourcePayment) });
 }
 
 function updateApplicationDraft(invoiceId, requestedCents, input = null) {
+    if (!editorProtection.canWrite() || paymentsState.isSaving || paymentsState.isEditorLoading) return;
     const payment = selectedPayment();
     if (!payment) {
         return;
@@ -526,44 +553,89 @@ function updateApplicationDraft(invoiceId, requestedCents, input = null) {
     updatePaymentSummary(payment);
 }
 
+async function reconcilePaymentDraft() {
+    const intended = cloneEditorData({ editor: paymentsState.editor, applicationDrafts: paymentsState.applicationDrafts });
+    const id = intended.editor.payment?.id;
+    if (!id) return false;
+    try {
+        const data = await requestJson(`/${id}/editor`, {}, "Unable to reconcile saved payment.");
+        if (data.payment.customer_id === intended.editor.payment.customer_id) {
+            const availableIds = new Set((data.open_invoices || []).map((invoice) => String(invoice.id)));
+            const unavailable = Object.entries(intended.applicationDrafts).find(([invoiceId, cents]) => cents > 0 && !availableIds.has(invoiceId));
+            if (unavailable) {
+                showToast(`Invoice ${unavailable[0]} is no longer available for this payment. Set its allocation to zero before retrying. Your draft is retained.`);
+                throw new Error("An intended allocation is no longer available.");
+            }
+        }
+        setEditorPayload(data);
+        render();
+        editorProtection.accept();
+        // Restore user intent over the persisted baseline, using fresh allocation limits.
+        if (data.payment.customer_id === intended.editor.payment.customer_id) {
+            intended.editor.open_invoices = cloneEditorData(data.open_invoices || []);
+            intended.editor.applications = cloneEditorData(data.applications || []);
+        }
+        paymentsState.editor = intended.editor;
+        paymentsState.applicationDrafts = intended.applicationDrafts;
+        paymentsState.needsReconcile = false;
+        editorProtection.enableRetry();
+        return true;
+    } catch (error) {
+        paymentsState.editor = intended.editor;
+        paymentsState.applicationDrafts = intended.applicationDrafts;
+        paymentsState.needsReconcile = true;
+        editorProtection.enableRetry();
+        return false;
+    }
+}
+
 async function savePayment() {
     const payment = selectedPayment();
-    if (!payment || paymentsState.isSaving) {
-        return;
-    }
-
+    if (!payment || paymentsState.isSaving || paymentsState.isEditorLoading || !editorProtection.canWrite()) return;
+    if (paymentsState.creationUncertain) { showToast("The previous save may have created a payment. Reload this screen and inspect saved payments before creating another."); return; }
+    if (paymentsState.allocationLoadFailed) { showToast("Load the customer's invoices before saving. Select the customer again to retry."); return; }
     paymentsState.isSaving = true;
+    paymentSaveAuthorized = true;
     render();
+    let writeStarted = false;
     try {
-        const isSavedPayment = Boolean(payment.id);
-        const existingPayment = isSavedPayment
-            ? paymentsState.payments.find((currentPayment) => currentPayment.id === payment.id)
-            : null;
-        if (isSavedPayment && existingPayment && existingPayment.customer_id === payment.customer_id) {
+        if (paymentsState.needsReconcile && !await reconcilePaymentDraft()) throw new Error("Saved state could not be checked. Your draft is retained; retry when the server is available.");
+        const existingPayment = paymentsState.payments.find((entry) => entry.id === payment.id);
+        // Release allocations first when reducing a saved amount for the same customer.
+        // When increasing it, the payment must be updated before larger allocations fit.
+        if (existingPayment && existingPayment.customer_id === payment.customer_id && payment.amount_cents <= existingPayment.amount_cents) {
             await saveApplicationsForPayment(payment.id);
         }
-
-        const data = await requestJson(
-            isSavedPayment ? `/${payment.id}` : "",
-            {
-                method: isSavedPayment ? "PUT" : "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(paymentPayloadFromForm(payment))
-            },
-            "Unable to save payment."
-        );
-        if (data.payment) {
-            upsertPayment(data.payment);
-            await saveApplicationsForPayment(data.payment.id);
-            await loadEditor(data.payment.id);
-        }
-        paymentsState.loadError = "";
+        writeStarted = true;
+        const data = await requestJson(payment.id ? `/${payment.id}` : "", {
+            method: payment.id ? "PUT" : "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(paymentPayloadFromForm(payment))
+        }, "Unable to save payment.");
+        if (!data.payment) throw new Error("Payment save returned no record. Check the payment ledger before retrying.");
+        // Keep the new ID immediately; an application failure must never create it again.
+        paymentsState.editor.payment.id = data.payment.id;
+        paymentsState.selectedPaymentId = data.payment.id;
+        upsertPayment(data.payment);
+        await saveApplicationsForPayment(data.payment.id);
+        const persisted = await requestJson(`/${data.payment.id}/editor`, {}, "Payment saved, but details could not be refreshed.");
+        setEditorPayload(persisted);
+        paymentsState.needsReconcile = false;
+        render();
+        editorProtection.saved();
     } catch (error) {
-        paymentsState.loadError = "";
-        showToast(extractErrorMessage(error, "Unable to save payment."));
+        const id = selectedPayment()?.id;
+        if (id) await reconcilePaymentDraft();
+        else if (writeStarted && (!error.httpStatus || error.httpStatus >= 500)) {
+            paymentsState.creationUncertain = true;
+            showToast("The save result is uncertain. Your draft is retained. Reload and inspect saved payments before creating another.");
+        }
+        showToast(extractErrorMessage(error, "Unable to save payment. Your draft is retained."));
     } finally {
+        paymentSaveAuthorized = false;
         paymentsState.isSaving = false;
         render();
+        await refreshBusinessSummary();
     }
 }
 
@@ -579,6 +651,7 @@ function applicationPayloadFromDrafts() {
 }
 
 async function saveApplicationsForPayment(paymentId) {
+    if (!paymentSaveAuthorized || !paymentsState.isSaving) throw new Error("Use Save Payment with Edit Mode enabled for a saved payment.");
     if (!paymentId) {
         return null;
     }
@@ -594,19 +667,18 @@ async function saveApplicationsForPayment(paymentId) {
 }
 
 async function deleteSelectedPayment() {
+    if (!editorProtection.allowTransition()) return;
     const payment = selectedPayment();
     if (!payment || paymentsState.isSaving) {
         return;
     }
 
     if (!payment.id) {
-        paymentsState.editor = { payment: null, applications: [], open_invoices: [] };
-        paymentsState.applicationDrafts = {};
-        paymentsState.selectedPaymentId = paymentsState.payments[0]?.id || null;
-        await loadEditor(paymentsState.selectedPaymentId);
+        if (await loadEditor(paymentsState.payments[0]?.id || null)) editorProtection.saved();
         return;
     }
 
+    if (!editorProtection.canWrite()) return;
     if (!window.confirm(`Delete payment ${payment.reference_number || payment.id}? Its invoice applications will also be removed.`)) return;
     paymentsState.isSaving = true;
     render();
@@ -621,12 +693,14 @@ async function deleteSelectedPayment() {
         paymentsState.applicationDrafts = {};
         paymentsState.selectedPaymentId = paymentsState.payments[0]?.id || null;
         await loadEditor(paymentsState.selectedPaymentId);
+        editorProtection.saved();
         paymentsState.loadError = "";
     } catch (error) {
         showToast(extractErrorMessage(error, "Unable to delete payment."));
     } finally {
         paymentsState.isSaving = false;
         render();
+        await refreshBusinessSummary();
     }
 }
 
@@ -673,6 +747,7 @@ function bindEvents() {
     });
 
     document.getElementById("payment-customer")?.addEventListener("change", async () => {
+        if (!editorProtection.canWrite() || paymentsState.isSaving || paymentsState.isEditorLoading) return;
         syncSelectedPaymentFromForm(true);
         await loadCustomerOpenInvoices(Number(document.getElementById("payment-customer")?.value || 0));
     });
@@ -700,16 +775,34 @@ function render() {
     renderStatusFilters();
 
     const payments = filteredPayments();
-    renderMetrics(payments);
+    renderMetrics();
     renderPaymentRows(payments);
 
     const payment = paymentsState.editor.payment || selectedPayment();
     if (payment) {
         updateEditor(payment);
     }
+    editorProtection.refresh();
 }
 
 window.addEventListener("DOMContentLoaded", () => {
+    editorProtection.register({
+        formId: "payment-form",
+        recordId: () => selectedPayment()?.id,
+        busy: () => paymentsState.isLoading || paymentsState.isSaving || paymentsState.isEditorLoading,
+        snapshot: () => ({ payment: paymentPayloadFromForm(selectedPayment()), applications: applicationPayloadFromDrafts().sort((a, b) => a.invoice_id - b.invoice_id) }),
+        capture: () => ({ editor: paymentsState.editor, applicationDrafts: paymentsState.applicationDrafts }),
+        restore: (saved) => { paymentsState.editor = saved.editor; paymentsState.applicationDrafts = saved.applicationDrafts; },
+        mutationControls: "#save-payment-button, #delete-payment-button, [data-application-input]",
+        applyProtection: (blocked) => {
+            if (!selectedPayment()) document.querySelectorAll("#payment-form input, #payment-form select, #payment-form textarea, #save-payment-button, #delete-payment-button").forEach((control) => { control.disabled = true; });
+            document.getElementById("save-payment-button").disabled = blocked || !selectedPayment() || paymentsState.allocationLoadFailed || paymentsState.creationUncertain;
+            if (!selectedPayment()?.id) document.getElementById("delete-payment-button").disabled = paymentsState.isLoading || paymentsState.isSaving || paymentsState.isEditorLoading || !selectedPayment();
+        },
+        render
+    });
+    onInvoiceCalendarChange(render);
+    document.getElementById("payment-form")?.addEventListener("submit", (event) => { event.preventDefault(); void savePayment(); });
     bindEvents();
     render();
     void loadPayments().then(() => consumeNewRecordRequest("new-payment-button"));

@@ -15,6 +15,72 @@ const state = {
     loadError: ""
 };
 
+const customerStatement = { customerId: undefined, request: 0, data: null, loading: false, error: "", tab: "contact" };
+
+function renderCustomerTabs() {
+    document.querySelectorAll("[data-customer-tab]").forEach((button) => {
+        button.setAttribute("aria-selected", String(button.dataset.customerTab === customerStatement.tab));
+        button.setAttribute("aria-pressed", String(button.dataset.customerTab === customerStatement.tab));
+        button.tabIndex = button.dataset.customerTab === customerStatement.tab ? 0 : -1;
+    });
+    document.getElementById("customer-contact-panel").hidden = customerStatement.tab !== "contact";
+    document.getElementById("customer-statement-panel").hidden = customerStatement.tab !== "statement";
+}
+
+async function loadCustomerStatement(force = false) {
+    const id = state.selectedId;
+    if (!force && customerStatement.customerId === id) return;
+    const request = ++customerStatement.request;
+    customerStatement.customerId = id;
+    customerStatement.data = null;
+    customerStatement.error = "";
+    customerStatement.loading = Boolean(id);
+    renderCustomerStatement();
+    if (!id) return;
+    try {
+        const data = await apiRequestJson("/api/reports/accounts-receivable", `?customer_id=${id}`, {}, "Unable to load customer statement.");
+        if (request !== customerStatement.request || state.selectedId !== id) return;
+        customerStatement.data = data.statement;
+    } catch (error) {
+        if (request !== customerStatement.request) return;
+        customerStatement.error = extractErrorMessage(error, "Unable to load customer statement.");
+    } finally {
+        if (request === customerStatement.request) {
+            customerStatement.loading = false;
+            renderCustomerStatement();
+        }
+    }
+}
+
+function renderCustomerStatement() {
+    const statement = customerStatement.data;
+    const message = customerStatement.loading ? "Loading statement..." : customerStatement.error ||
+        (!state.selectedId ? "Save the new customer to view its statement." : !statement ? "No statement available." : "");
+    setText("statement-message", message);
+    document.getElementById("statement-detail").hidden = Boolean(message);
+    if (message || !statement) return;
+    const customer = statement.customer;
+    setText("statement-customer-name", customer.customer_name);
+    setText("statement-customer-meta", [customer.contact_name, customer.email, customer.phone,
+        customer.street_address, [customer.city, customer.state, customer.zip].filter(Boolean).join(" "), customer.notes].filter(Boolean).join(" · "));
+    setText("statement-open-ar", currency(statement.totals?.open_ar_cents));
+    setText("statement-unapplied-credit", currency(statement.totals?.unapplied_credit_cents));
+    setText("statement-net-balance", currency(statement.totals?.net_balance_cents));
+    const generated = new Date(statement.generated_at);
+    setText("statement-generated-at", Number.isNaN(generated.getTime()) ? "" : `Generated ${generated.toLocaleString()}`);
+    setHtml("statement-invoices-list", (statement.invoices || []).map((invoice) => {
+        const status = invoiceDisplayStatus(invoice);
+        return `<article class="rounded border border-line bg-panel/35 p-3">
+            <div class="flex flex-wrap justify-between gap-2"><strong>${escapeHtml(invoice.invoice_number)}</strong><span class="badge ${status.classes}">${status.label}</span></div>
+            <p class="mt-1 text-xs text-muted">${escapeHtml(invoice.project_number)} · ${escapeHtml(invoice.invoice_date)} · Due ${escapeHtml(invoiceDueDate(invoice))}</p>
+            <div class="mt-2 flex flex-wrap gap-3 text-xs"><span>Amount ${currency(invoice.invoice_amount_cents)}</span><span>Paid ${currency(invoice.paid_amount_cents)}</span><span>Open ${currency(invoice.open_balance_cents)}</span></div>
+        </article>`;
+    }).join("") || '<p class="text-sm text-muted">No issued invoices for this customer.</p>');
+    setHtml("statement-payments-list", (statement.unapplied_payments || []).map((payment) =>
+        `<article class="rounded border border-line bg-panel/35 p-3"><div class="flex justify-between gap-2"><strong>${escapeHtml(payment.reference_number || `Payment ${payment.id}`)}</strong><span class="font-mono">${currency(payment.unapplied_amount_cents)}</span></div><p class="mt-1 text-xs text-muted">${escapeHtml(payment.payment_date)} · Unapplied credit</p></article>`
+    ).join("") || '<p class="text-sm text-muted">No unapplied payments for this customer.</p>');
+}
+
 function customersUrl(path = "") {
     return `/api/customers${path}`;
 }
@@ -240,7 +306,7 @@ function renderEditor(customer) {
 async function saveCustomer(event) {
     event.preventDefault();
 
-    if (state.isSaving) {
+    if (state.isSaving || !editorProtection.canWrite()) {
         return;
     }
 
@@ -265,6 +331,7 @@ async function saveCustomer(event) {
 
     try {
         state.isSaving = true;
+        editorProtection.refresh();
         const response = await fetch(customersUrl(path), {
             method,
             headers: {
@@ -286,6 +353,9 @@ async function saveCustomer(event) {
         upsertCustomer(customer);
         state.selectedId = customer.id;
         state.draftCustomer = null;
+        render();
+        editorProtection.saved();
+        void loadCustomerStatement(true);
     } catch (error) {
         showToast(error instanceof Error ? error.message : "Unable to save customer.");
     } finally {
@@ -296,6 +366,7 @@ async function saveCustomer(event) {
 }
 
 function clearFormToDraft(copyCurrent = false) {
+    if (!editorProtection.allowTransition()) return;
     if (copyCurrent && selectedCustomer()) {
         const original = selectedCustomer();
         state.selectedId = null;
@@ -314,21 +385,47 @@ function clearFormToDraft(copyCurrent = false) {
             net_balance_cents: 0
         });
         render();
+        editorProtection.accept({ lock: true, duplicate: copyCurrent });
         return;
     }
 
     state.selectedId = null;
     state.draftCustomer = blankCustomerDraft();
     render();
+    editorProtection.accept({ lock: true, duplicate: copyCurrent });
+}
+
+function syncCustomerDraft() {
+    if (!editorProtection.canWrite() || state.isSaving) return;
+    const source = state.draftCustomer || selectedCustomer() || blankCustomerDraft();
+    state.draftCustomer = { ...source };
+    const fields = { customer_name: 'customer-name', contact_name: 'contact-name', email: 'email', phone: 'phone', street_address: 'street-address', city: 'city', state: 'state', zip: 'zip', notes: 'notes' };
+    Object.entries(fields).forEach(([key, id]) => { state.draftCustomer[key] = document.getElementById(id).value; });
 }
 
 function bindEvents() {
+    document.querySelectorAll("[data-customer-tab]").forEach((button) => button.addEventListener("click", () => {
+        customerStatement.tab = button.dataset.customerTab;
+        renderCustomerTabs();
+    }));
+    document.querySelectorAll("[data-customer-tab]").forEach((button) => button.addEventListener("keydown", (event) => {
+        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+        event.preventDefault();
+        customerStatement.tab = event.key === "Home" ? "contact" : event.key === "End" ? "statement" : customerStatement.tab === "contact" ? "statement" : "contact";
+        renderCustomerTabs();
+        document.querySelector(`[data-customer-tab="${customerStatement.tab}"]`).focus();
+    }));
+    document.getElementById("refresh-statement-button")?.addEventListener("click", () => void loadCustomerStatement(true));
+    document.getElementById("customer-form")?.addEventListener("input", syncCustomerDraft);
     document.getElementById("customer-table-body")?.addEventListener("click", (event) => {
         const button = event.target.closest("[data-customer-select]");
         if (!button) return;
-        state.selectedId = Number(button.dataset.customerSelect);
+        const nextId = Number(button.dataset.customerSelect);
+        if (nextId === state.selectedId || !editorProtection.allowTransition()) return;
+        state.selectedId = nextId;
         state.draftCustomer = null;
         render();
+        editorProtection.accept();
     });
     document.getElementById("customer-search")?.addEventListener("input", (event) => {
         state.searchQuery = event.target.value;
@@ -364,11 +461,24 @@ function render() {
     renderMetrics(customers);
     renderCustomerRows(customers);
 
-    const customer = selectedCustomer() || state.draftCustomer;
+    const customer = state.draftCustomer || selectedCustomer();
     renderEditor(customer);
+    editorProtection.refresh();
+    renderCustomerTabs();
+    void loadCustomerStatement();
 }
 
 window.addEventListener("DOMContentLoaded", () => {
+    onInvoiceCalendarChange(renderCustomerStatement);
+    editorProtection.register({
+        formId: "customer-form",
+        recordId: () => state.selectedId,
+        busy: () => state.isLoading || state.isSaving,
+        snapshot: () => editorFormSnapshot("customer-form"),
+        capture: () => state.draftCustomer || selectedCustomer() || blankCustomerDraft(),
+        restore: (record) => { state.draftCustomer = record; },
+        render,
+    });
     bindEvents();
     render();
     void loadCustomers().then(() => consumeNewRecordRequest("new-customer-button"));

@@ -45,6 +45,15 @@
     </style>
     <style>
         button:disabled { opacity: .55; cursor: not-allowed; }
+        .card { min-width: 0; }
+        input:disabled, select:disabled, textarea:disabled { background: #f3f4f6; color: #475569; cursor: not-allowed; }
+        .edit-mode-active { background: #ef4444 !important; color: #000 !important; border-color: #b91c1c !important; }
+        .status-paid { background: #dcfce7; color: #166534; }
+        .status-draft { background: #e7e5e4; color: #44403c; }
+        .status-open, .status-overdue-30 { background: #fef3c7; color: #92400e; }
+        .status-overdue-60 { background: #ffedd5; color: #9a3412; }
+        .status-overdue-90 { background: #fee2e2; color: #991b1b; }
+        .status-overdue-old { background: #7f1d1d; color: #fff; }
         summary { list-style: none; cursor: pointer; }
         summary::-webkit-details-marker { display: none; }
         :focus-visible { outline: 2px solid #167347; outline-offset: 2px; }
@@ -62,9 +71,9 @@
         .toolbar .filter-tabs { display: flex; flex-wrap: wrap; gap: 4px; }
     </style>
 </head>
-<body class="min-h-screen bg-background font-sans text-ink">
-    <div class="min-h-screen lg:grid lg:grid-cols-[13rem_minmax(0,1fr)]">
-        <aside class="flex flex-col gap-5 bg-forest px-3 py-5 text-white lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto">
+<body class="min-h-screen min-w-[1024px] bg-background font-sans text-ink">
+    <div class="grid min-h-screen grid-cols-[13rem_minmax(0,1fr)]">
+        <aside class="flex flex-col gap-5 bg-forest px-3 py-5 text-white sticky top-0 h-screen overflow-y-auto">
             <div class="px-2"><a class="text-xl font-semibold" href="/frontend/html/index.html">Tim's Ledger</a>
                 <p class="mt-1 text-xs text-stone-300">Non-GAAP bookkeeping</p></div>
             {% macro nav_link(item) -%}
@@ -78,12 +87,12 @@
                 {{ nav_link(item) }}
                 {% endfor %}
             </nav>
-            <nav class="border-t border-white/15 pt-3 lg:mt-auto" aria-label="Settings">
+            <nav class="mt-auto border-t border-white/15 pt-3" aria-label="Settings">
                 {% for item in pages if item.is_settings %}{{ nav_link(item) }}{% endfor %}
             </nav>
         </aside>
-        <div class="min-w-0">
-            <header class="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-white px-5 py-3">
+        <div class="min-w-0{% if page.filename == 'index.html' %} flex h-dvh flex-col{% endif %}">
+            <header class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-line bg-white px-5 py-3">
                 <div class="flex items-center gap-2"><h1 class="text-xl font-semibold">{{ page.heading }}</h1>
                     <details class="shell-menu shell-help"><summary class="btn-secondary" aria-label="Page help">?</summary>
                         <div class="menu-panel card w-72 text-sm text-muted">{{ page.help_text }}</div>
@@ -91,6 +100,9 @@
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                     {% block page_actions %}{% endblock %}
+                    {% if page.supports_edit_mode %}
+                    <button class="btn-secondary" id="edit-mode-button" type="button" aria-pressed="false" aria-label="EDIT MODE. Pressed means editing is enabled." disabled>EDIT MODE</button>
+                    {% endif %}
                     <details class="shell-menu"><summary class="btn-primary">+ New</summary>
                         <div class="menu-panel card grid gap-1">
                             {% for item in pages if item.new_label %}<a class="rounded px-2 py-2 text-sm hover:bg-panel" href="/frontend/html/{{ item.filename }}#new">{{ item.new_label }}</a>{% endfor %}
@@ -100,14 +112,15 @@
                     <span class="text-xs text-muted" id="last-backup">Loading backups…</span>
                 </div>
             </header>
-            <main class="min-w-0 p-4 lg:p-5"{% if page.main_id %} id="{{ page.main_id }}"{% endif %}>
+            <main class="min-w-0 p-4 lg:p-5{% if page.filename == 'index.html' %} flex min-h-0 flex-1{% endif %}"{% if page.main_id %} id="{{ page.main_id }}"{% endif %}>
                 {% block content %}{% endblock %}
             </main>
         </div>
     </div>
     <div class="pointer-events-none fixed bottom-4 right-4 z-50 grid w-96 max-w-[calc(100%-2rem)] gap-2" id="toast-region" role="status" aria-live="polite" aria-relevant="additions"></div>
-    <script src="/frontend/js/utils.js?v=20261004-phase1" defer></script>
-    <script src="/frontend/js/shell.js?v=20261004-phase1" defer></script>
+    <script src="/frontend/js/utils.js?v=20261004-phase2" defer></script>
+    <script src="/frontend/js/editor-protection.js?v=20261004-phase2" defer></script>
+    <script src="/frontend/js/shell.js?v=20261004-phase2" defer></script>
     <script src="{{ page.script_url }}" defer></script>
 </body>
 </html>

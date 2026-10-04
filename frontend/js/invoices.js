@@ -21,6 +21,9 @@ const invoicesState = {
     selectedInvoiceId: null,
     isLoading: true,
     isSaving: false,
+    isEditorLoading: false,
+    needsReconcile: false,
+    creationUncertain: false,
     loadError: ""
 };
 
@@ -56,29 +59,18 @@ function deriveInvoiceStatus(invoice) {
 }
 
 function invoiceStatusMeta(invoice) {
-    const status = deriveInvoiceStatus(invoice);
-    if (status === "new") {
-        return { key: status, label: "Unsaved", classes: "bg-calm/10 text-calm border border-calm/20" };
-    }
-    if (status === "paid") {
-        return { key: status, label: "Paid", classes: "bg-brand/10 text-brand border border-brand/20" };
-    }
-    if (isInvoiceOverdue(invoice)) {
-        return { key: "overdue", label: "Overdue", classes: "bg-danger/10 text-danger border border-danger/20" };
-    }
-    if (status === "printed") {
-        return { key: status, label: "Open", classes: "bg-warn/10 text-warn border border-warn/20" };
-    }
-    return { key: status, label: "Draft", classes: "bg-stone-200/70 text-stone-700 border border-stone-300" };
+    return invoiceDisplayStatus(invoice);
 }
 
 function selectedInvoice() {
-    return invoicesState.invoices.find((invoice) => invoice.id === invoicesState.selectedInvoiceId) || invoicesState.editor.invoice || null;
+    return invoicesState.editor.invoice || null;
 }
+
+let invoiceEditorRequest = 0;
 
 function setEditorPayload(data) {
     invoicesState.editor = {
-        invoice: data.invoice || null,
+        invoice: cloneEditorData(data.invoice) || null,
         selected_time_entries: Array.isArray(data.selected_time_entries) ? data.selected_time_entries : [],
         selected_expenses: Array.isArray(data.selected_expenses) ? data.selected_expenses : [],
         eligible_time_entries: Array.isArray(data.eligible_time_entries) ? data.eligible_time_entries : [],
@@ -132,34 +124,36 @@ async function requestJson(path, options = {}, fallbackMessage = "Request failed
 }
 
 async function loadEditor(invoiceId) {
-    if (!invoiceId) {
-        invoicesState.editor = {
-            invoice: null,
-            selected_time_entries: [],
-            selected_expenses: [],
-            eligible_time_entries: [],
-            eligible_expenses: [],
-            summary: {}
-        };
-        render();
-        return;
-    }
-
-    try {
-        const data = await requestJson(`/${invoiceId}/editor`, {}, "Unable to load invoice details.");
-        setEditorPayload(data);
-        if (data.invoice) {
-            invoicesState.selectedInvoiceId = data.invoice.id;
-            upsertInvoice(data.invoice);
-        }
-        invoicesState.loadError = "";
-    } catch (error) {
-        showToast(extractErrorMessage(error, "Unable to load invoice details."));
-    }
+    const request = ++invoiceEditorRequest;
+    invoicesState.isEditorLoading = true;
     render();
+    try {
+        const data = invoiceId ? await requestJson(`/${invoiceId}/editor`, {}, "Unable to load invoice details.") : {};
+        if (request !== invoiceEditorRequest) return false;
+        setEditorPayload(data);
+        invoicesState.selectedInvoiceId = data.invoice?.id || null;
+        invoicesState.needsReconcile = false;
+        invoicesState.creationUncertain = false;
+        if (data.invoice) upsertInvoice(data.invoice);
+        invoicesState.loadError = "";
+        render();
+        editorProtection.accept();
+        return true;
+    } catch (error) {
+        if (request === invoiceEditorRequest) showToast(extractErrorMessage(error, "Unable to load invoice details."));
+        return false;
+    } finally {
+        if (request === invoiceEditorRequest) {
+            invoicesState.isEditorLoading = false;
+            render();
+        }
+    }
 }
 
 async function loadNewEditor(projectId, sourceInvoice = null) {
+    const request = ++invoiceEditorRequest;
+    invoicesState.isEditorLoading = true;
+    render();
     const invoiceDate = sourceInvoice?.invoice_date || document.getElementById("invoice-date")?.value || todayDateInputValue();
     const termsDays = Number(sourceInvoice?.terms_days ?? 30);
     const query = new URLSearchParams({
@@ -169,6 +163,7 @@ async function loadNewEditor(projectId, sourceInvoice = null) {
     });
     try {
         const data = await requestJson(`/new/editor?${query.toString()}`, {}, "Unable to load project invoice rows.");
+        if (request !== invoiceEditorRequest) return false;
         setEditorPayload(data);
         if (sourceInvoice && invoicesState.editor.invoice) {
             invoicesState.editor.invoice.id = sourceInvoice.id || null;
@@ -182,10 +177,13 @@ async function loadNewEditor(projectId, sourceInvoice = null) {
         }
         invoicesState.selectedInvoiceId = sourceInvoice?.id || null;
         invoicesState.loadError = "";
+        return true;
     } catch (error) {
-        showToast(extractErrorMessage(error, "Unable to load project invoice rows."));
+        if (request === invoiceEditorRequest) showToast(extractErrorMessage(error, "Unable to load project invoice rows."));
+        return false;
+    } finally {
+        if (request === invoiceEditorRequest) { invoicesState.isEditorLoading = false; render(); }
     }
-    render();
 }
 
 async function loadInvoices() {
@@ -296,8 +294,9 @@ function renderInvoiceRows(invoices) {
     }).join("");
     tbody.querySelectorAll("[data-invoice-select]").forEach((row) => {
         row.addEventListener("click", async () => {
-            invoicesState.selectedInvoiceId = Number(row.dataset.invoiceSelect);
-            await loadEditor(invoicesState.selectedInvoiceId);
+            const id = Number(row.dataset.invoiceSelect);
+            if (id === invoicesState.selectedInvoiceId || !editorProtection.allowTransition()) return;
+            await loadEditor(id);
         });
     });
 }
@@ -413,7 +412,7 @@ function renderEditor(invoice) {
     if (saveButton) {
         saveButton.disabled = invoicesState.isSaving;
         saveButton.classList.toggle("opacity-60", invoicesState.isSaving);
-        saveButton.textContent = invoicesState.isSaving ? "Saving..." : "Save/Print Invoice";
+        saveButton.textContent = invoicesState.isSaving ? "Saving..." : editorProtection.locked() ? "Print Saved Invoice" : "Save/Print Invoice";
     }
     const deleteButton = document.getElementById("delete-invoice-button");
     if (deleteButton) {
@@ -425,9 +424,9 @@ function renderEditor(invoice) {
 }
 
 function invoicePayloadFromForm(currentInvoice) {
-    const invoiceDate = String(document.getElementById("invoice-date")?.value || currentInvoice?.invoice_date || todayDateInputValue());
+    const invoiceDate = String(document.getElementById("invoice-date")?.value ?? currentInvoice?.invoice_date ?? todayDateInputValue());
     return {
-        invoice_number: String(document.getElementById("invoice-number")?.value || currentInvoice?.invoice_number || "").trim() || null,
+        invoice_number: String(document.getElementById("invoice-number")?.value ?? currentInvoice?.invoice_number ?? "").trim() || null,
         project_id: Number(document.getElementById("invoice-project")?.value || currentInvoice?.project_id || 0),
         invoice_date: invoiceDate,
         terms_days: Number(document.getElementById("invoice-terms")?.value ?? currentInvoice?.terms_days ?? 30),
@@ -436,13 +435,14 @@ function invoicePayloadFromForm(currentInvoice) {
 }
 
 function syncSelectedInvoiceFromForm() {
+    if (!editorProtection.canWrite() || invoicesState.isSaving || invoicesState.isEditorLoading) return;
     const invoice = selectedInvoice();
     if (!invoice) {
         return;
     }
     const payload = invoicePayloadFromForm(invoice);
     const project = projectById(payload.project_id);
-    invoice.invoice_number = payload.invoice_number || invoice.invoice_number;
+    invoice.invoice_number = payload.invoice_number || "";
     invoice.project_id = payload.project_id;
     invoice.project_number = project?.project_number || invoice.project_number;
     invoice.customer_id = project?.customer_id || invoice.customer_id;
@@ -454,7 +454,7 @@ function syncSelectedInvoiceFromForm() {
 
 function toggleSelection(type, itemId, checked) {
     const invoice = selectedInvoice();
-    if (!invoice || invoicesState.isSaving) {
+    if (!invoice || invoicesState.isSaving || invoicesState.isEditorLoading || !editorProtection.canWrite()) {
         return;
     }
     const timeEntryIds = currentSelectedTimeIds();
@@ -478,12 +478,31 @@ function toggleSelection(type, itemId, checked) {
 }
 
 async function createDraftInvoice(sourceInvoice = null) {
+    if (!editorProtection.allowTransition()) return;
     if (invoicesState.isSaving || invoicesState.projects.length === 0) {
         return;
     }
-    await loadNewEditor(sourceInvoice?.project_id || invoicesState.projects[0].id, sourceInvoice);
+    if (!await loadNewEditor(sourceInvoice?.project_id || invoicesState.projects[0].id, sourceInvoice)) return;
+    invoicesState.needsReconcile = false;
+    invoicesState.creationUncertain = false;
+    editorProtection.accept({ lock: true });
     invoicesState.loadError = "";
     render();
+}
+
+async function printSavedInvoice(invoice) {
+    if (!invoice.pdf_file_name) {
+        showToast("No saved document. Enable Edit Mode and use Save/Print to generate it.");
+        return;
+    }
+    const printWindow = window.open("about:blank", "_blank");
+    if (!printWindow) { showToast("Allow pop-ups to print the saved invoice."); return; }
+    try {
+        const url = invoicesUrl(`/${invoice.id}/document?autoprint=1`);
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("The saved document is unavailable. Enable Edit Mode and use Save/Print to generate it.");
+        printWindow.location.replace(url);
+    } catch (error) { printWindow.close(); showToast(error.message); }
 }
 
 async function savePrintInvoice() {
@@ -492,6 +511,9 @@ async function savePrintInvoice() {
         return;
     }
 
+    if (invoicesState.isEditorLoading) return;
+    if (!editorProtection.canWrite()) { await printSavedInvoice(invoice); return; }
+    if (invoicesState.creationUncertain) { showToast("The previous save may have created an invoice. Reload this screen and inspect saved invoices before creating another."); return; }
     const printWindow = window.open("about:blank", "_blank");
     if (!printWindow) {
         showToast("Allow pop-ups to save and print the invoice.");
@@ -500,7 +522,10 @@ async function savePrintInvoice() {
 
     invoicesState.isSaving = true;
     render();
+    let writeStarted = false;
     try {
+        if (invoicesState.needsReconcile && !await reconcileInvoiceDraft()) throw new Error("Saved invoice state could not be checked. Your draft is retained; retry when the server is available.");
+        writeStarted = true;
         const data = await requestJson(
             "/save-print",
             {
@@ -517,15 +542,22 @@ async function savePrintInvoice() {
             },
             "Unable to save and print invoice."
         );
+        if (!data.invoice?.id) throw new Error("The save returned no invoice. Inspect the saved invoice ledger before retrying.");
         if (data.invoice) {
+            invoicesState.editor.invoice.id = data.invoice.id;
             upsertInvoice(data.invoice);
             invoicesState.selectedInvoiceId = data.invoice.id;
         }
         if (data.editor) {
             setEditorPayload(data.editor);
         } else if (data.invoice) {
-            await loadEditor(data.invoice.id);
+            // The save endpoint normally supplies the editor. Retain its ID if refresh fails.
+            invoicesState.editor.invoice.id = data.invoice.id;
+            if (!await loadEditor(data.invoice.id)) throw new Error("Invoice saved, but details could not be refreshed. Reload before another save.");
         }
+        render();
+        invoicesState.needsReconcile = false;
+        editorProtection.saved();
         if (data.printable_url) {
             printWindow.location.replace(`${data.printable_url}?autoprint=1`);
         } else {
@@ -534,6 +566,11 @@ async function savePrintInvoice() {
         invoicesState.loadError = "";
     } catch (error) {
         printWindow.close();
+        if (selectedInvoice()?.id) await reconcileInvoiceDraft();
+        else if (writeStarted && (!error.httpStatus || error.httpStatus >= 500)) {
+            invoicesState.creationUncertain = true;
+            showToast("The save result is uncertain. Your draft is retained. Reload and inspect saved invoices before creating another.");
+        }
         showToast(extractErrorMessage(error, "Unable to save and print invoice."));
     } finally {
         invoicesState.isSaving = false;
@@ -541,26 +578,34 @@ async function savePrintInvoice() {
     }
 }
 
+async function reconcileInvoiceDraft() {
+    const intended = cloneEditorData(invoicesState.editor);
+    try {
+        const persisted = await requestJson(`/${intended.invoice.id}/editor`, {}, "Unable to check saved invoice.");
+        setEditorPayload(persisted);
+        if (persisted.invoice) upsertInvoice(persisted.invoice);
+        render();
+        editorProtection.accept();
+        invoicesState.editor = intended;
+        invoicesState.needsReconcile = false;
+        editorProtection.enableRetry();
+        return true;
+    } catch (error) {
+        invoicesState.editor = intended;
+        invoicesState.needsReconcile = true;
+        editorProtection.enableRetry();
+        return false;
+    }
+}
+
 async function deleteDraftInvoice() {
+    if (!editorProtection.allowTransition()) return;
     const invoice = selectedInvoice();
     if (!invoice || invoice.id || invoicesState.isSaving) {
         return;
     }
 
-    invoicesState.editor = {
-        invoice: null,
-        selected_time_entries: [],
-        selected_expenses: [],
-        eligible_time_entries: [],
-        eligible_expenses: [],
-        summary: {}
-    };
-    invoicesState.selectedInvoiceId = invoicesState.invoices[0]?.id || null;
-    if (invoicesState.selectedInvoiceId) {
-        await loadEditor(invoicesState.selectedInvoiceId);
-        return;
-    }
-    render();
+    if (await loadEditor(invoicesState.invoices[0]?.id || null)) editorProtection.saved();
 }
 
 function bindEvents() {
@@ -606,6 +651,8 @@ function bindEvents() {
         render();
     });
     document.getElementById("invoice-project")?.addEventListener("change", (event) => {
+        if (!editorProtection.canWrite() || invoicesState.isSaving || invoicesState.isEditorLoading) return;
+        if ((currentSelectedTimeIds().size || currentSelectedExpenseIds().size) && !window.confirm("Changing project will clear the selected Time and Expenses. Continue?")) { render(); return; }
         const currentInvoice = selectedInvoice();
         const payload = invoicePayloadFromForm(currentInvoice);
         const sourceInvoice = {
@@ -633,9 +680,28 @@ function render() {
     renderMetrics(invoices);
     renderInvoiceRows(invoices);
     renderEditor(invoicesState.editor.invoice || selectedInvoice());
+    editorProtection.refresh();
 }
 
 window.addEventListener("DOMContentLoaded", () => {
+    editorProtection.register({
+        formId: "invoice-form",
+        mutationControls: "[data-selection-type]",
+        recordId: () => selectedInvoice()?.id,
+        busy: () => invoicesState.isLoading || invoicesState.isSaving || invoicesState.isEditorLoading,
+        snapshot: () => ({ invoice: selectedInvoice() ? invoicePayloadFromForm(selectedInvoice()) : null,
+            time: [...currentSelectedTimeIds()].sort((a, b) => a - b), expenses: [...currentSelectedExpenseIds()].sort((a, b) => a - b) }),
+        capture: () => invoicesState.editor,
+        restore: (editor) => { invoicesState.editor = editor; },
+        applyProtection: () => {
+            const save = document.getElementById("save-invoice-button");
+            save.disabled = invoicesState.isLoading || invoicesState.isSaving || invoicesState.isEditorLoading || !selectedInvoice() || invoicesState.creationUncertain;
+            save.textContent = invoicesState.isSaving ? "Saving..." : editorProtection.locked() ? "Print Saved Invoice" : "Save/Print Invoice";
+        },
+        render
+    });
+    onInvoiceCalendarChange(render);
+    document.getElementById("invoice-form")?.addEventListener("submit", (event) => { event.preventDefault(); void savePrintInvoice(); });
     bindEvents();
     render();
     void loadInvoices().then(() => consumeNewRecordRequest("new-invoice-button"));

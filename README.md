@@ -66,9 +66,9 @@ Pages require the running application; opening template files directly in a brow
 
 ## Shared Frontend Layout
 
-`frontend/templates/base.html` owns the document setup, theme, sidebar, main wrapper, and shared script loading. Each screen extends it with its main content and page actions. `utils.js` supplies toasts, segmented filter state, calendar due-date helpers, and the post-bootstrap `#new` hook; `shell.js` owns menus and shared backup state/events. Update the shared theme or layout here once for all screens.
+`frontend/templates/base.html` owns the document setup, theme, sidebar, main wrapper, and shared script loading. Each screen extends it with its main content and page actions. `utils.js` supplies toasts, segmented filter state, calendar due-date helpers, and the post-bootstrap `#new` hook; `shell.js` owns menus and shared backup state/events. `editor-protection.js` owns Edit Mode, normalized draft baselines, discard confirmation, and navigation/unload protection. Update the shared theme or layout here once for all screens. The application maintains a minimum layout width of 1024px and keeps the sidebar beside the content at every window width; narrower windows use horizontal scrolling.
 
-`backend/app/pages.py` contains the ordered page registry: page filenames, titles, navigation labels, controller URLs, navigation groups, headings, help text, and new-record labels. Update this registry to change menu entries. Navigation groups are Home, Sales (Invoices, Receive Payments, Customers), and Work (Projects, Time, Expenses), with Settings at the bottom. Navigation highlighting and `aria-current` are rendered on the server.
+`backend/app/pages.py` contains the ordered page registry: page filenames, titles, navigation labels, controller URLs, navigation groups, headings, help text, new-record labels, and Edit Mode capability. Update this registry to change menu entries. Navigation groups are Home, Sales (Invoices, Receive Payments, Customers), and Work (Projects, Time, Expenses), with Settings at the bottom. Navigation highlighting and `aria-current` are rendered on the server.
 
 ## Configuration
 
@@ -93,20 +93,24 @@ The startup script also reads:
 
 Use the application backup and restore workflow instead of manually replacing the database. Normal backups are written to `app-data/backups/` as `Tims-Ledger-Backup-{date-timestamp}.zip`. Restore safety backups are written under `app-data/backups/safety/` and are not listed as normal restore choices.
 
-Settings contains the Company profile, Backup & Restore, and XLSX audit export. Every page header provides Back up and a last-backup indicator. Home keeps financial metrics, accounts receivable, and customer statements. The XLSX export is for audit and readability. It is not the backup format.
+Settings contains the Company profile, Backup & Restore, and XLSX audit export. Every page header provides Back up and a last-backup indicator. Home is a welcome splash screen with an original ledger illustration in `frontend/assets/splash-ledger.png`; its generation prompt is saved beside the image. Static artwork is served only from `/frontend/assets/`. Receive Payments shows four unfiltered business totals: Total Income, Open A/R, Total Expenses, and Non-Billable Expenses. Total Income sums recorded payments (including unapplied amounts and negative corrections); Open A/R sums issued invoice balances; Non-Billable Expenses is included in Total Expenses. Totals cover every record in the current database and refresh after payment saves/deletes. Customers provides Contact and Statement tabs for the selected customer, including invoice detail and unapplied payments. The XLSX export is for audit and readability. It is not the backup format.
 
-The + New menu opens a browser-local draft after the destination screen finishes loading. Invoice terms are selectable as Due on receipt or Net 10 / 15 / 30 / 45 / 60. The ledger shows due date and balance with Draft, Open, Overdue, and Paid labels. Overdue means a printed invoice has a positive balance and a due date before the local calendar date; Open includes all printed unpaid invoices, including overdue ones.
+The + New menu opens a browser-local draft after the destination screen finishes loading. Invoice terms are selectable as Due on receipt or Net 10 / 15 / 30 / 45 / 60. The ledger shows due date and balance with Draft, Open, Paid, and exact-day overdue labels such as `Overdue 1 day` or `Overdue 47 days`. Overdue tag colors progress at 31, 61, and 91 days past terms. Overdue means a printed invoice has a positive balance and a due date before the local calendar date; Open includes all printed unpaid invoices, including overdue ones.
+
+Customers, Projects, Time, Expenses, Invoices, and Payments start with saved records protected. Enable the header's EDIT MODE button to change them; red with black letters indicates editing is enabled. Mode resets on screen changes and after successful saves/deletes. New records and duplicates remain editable without it. Discarding a modified draft asks for confirmation, including record selection and navigation; browser refresh/close uses the browser's native unsaved-change warning.
+
+While an invoice is protected, Print Saved Invoice reads its existing HTML document without saving or regenerating it. Enable Edit Mode to use Save/Print for an existing invoice. Settings is outside this record protection workflow.
 
 ## Verification
 
-There is currently no automated test suite. For Python changes, run the lightweight syntax check:
+Focused frontend regression checks are available with `node --test tests/frontend-phase2.test.cjs`; they need no extra packages. Manual workflow verification remains required. For Python changes, run the lightweight syntax check:
 
 ```powershell
 . .\.venv\Scripts\Activate.ps1
 python -m py_compile (Get-ChildItem backend\app -Filter *.py | ForEach-Object { $_.FullName })
 ```
 
-For frontend and workflow changes, start the app with `.\startup.bat` and verify the affected screen manually.
+For frontend and workflow changes, start the app with `.\startup.bat` and verify the affected screen manually. Use an isolated data directory and separate port for mutation checks; confirm `/api/system/status` points to the intended test database before writing.
 
 ## Current Product Rules
 

@@ -214,10 +214,32 @@ def payment_editor_payload(connection: sqlite3.Connection, payment_id: int) -> d
     }
 
 
+def business_summary_payload(connection: sqlite3.Connection) -> dict[str, int]:
+    """Summarize all saved records, independently of payment ledger filters."""
+    row = connection.execute(
+        """
+        SELECT
+            COALESCE((SELECT SUM(amount_cents) FROM payments), 0) AS total_income_cents,
+            COALESCE((
+                SELECT SUM(ibv.open_amount_cents)
+                FROM invoices i
+                JOIN invoice_balance_view ibv ON ibv.invoice_id = i.id
+                WHERE i.issued_at IS NOT NULL
+            ), 0) AS total_open_ar_cents,
+            COALESCE((SELECT SUM(line_total_cents) FROM expenses), 0) AS total_expenses_cents,
+            COALESCE((
+                SELECT SUM(line_total_cents) FROM expenses WHERE is_billable = 0
+            ), 0) AS non_billable_expenses_cents
+        """
+    ).fetchone()
+    return {key: int(row[key]) for key in row.keys()}
+
+
 def payments_bootstrap_payload(connection: sqlite3.Connection, year: str | None = None) -> dict[str, object]:
     return {
         "payments": fetch_payments(connection, year=year),
         "customers": customer_lookup(connection),
+        "business_summary": business_summary_payload(connection),
     }
 
 

@@ -115,7 +115,7 @@ function normalizedTimeDraft(entry) {
     const fallback = emptyTimeDraft();
     const project = projectById(entry?.project_id) || timeState.projects[0] || null;
     const rate = rateForProject(project?.id, entry?.rate_code) || project?.rates?.[0] || null;
-    const minutes = Number(entry?.minutes || fallback.minutes);
+    const minutes = Number(entry?.minutes ?? fallback.minutes);
 
     return {
         ...fallback,
@@ -246,9 +246,12 @@ function renderEntryRows(entries) {
 
     tbody.querySelectorAll("[data-time-select]").forEach((row) => {
         row.addEventListener("click", () => {
-            timeState.selectedId = Number(row.dataset.timeSelect);
+            const nextId = Number(row.dataset.timeSelect);
+            if (nextId === timeState.selectedId || !editorProtection.allowTransition()) return;
+            timeState.selectedId = nextId;
             timeState.draftEntry = null;
             render();
+            editorProtection.accept();
         });
     });
 }
@@ -303,9 +306,11 @@ function renderEditor(entry) {
     renderRateOptions(current.project_id, current.rate_code);
     document.getElementById("time-rate-code").value = current.rate_code;
     updateDerivedPreview(current);
+    editorProtection.refresh();
 }
 
 function syncDraftFromForm() {
+    if (!editorProtection.canWrite() || timeState.isSaving) return;
     const projectId = Number(document.getElementById("time-project")?.value || 0);
     const rateCode = String(document.getElementById("time-rate-code")?.value || "");
     const project = projectById(projectId);
@@ -320,7 +325,7 @@ function syncDraftFromForm() {
         project_description: project?.description || source.project_description,
         customer_id: project?.customer_id || source.customer_id,
         customer_name: project?.customer_name || source.customer_name,
-        description: String(document.getElementById("time-description")?.value || source.description),
+        description: String(document.getElementById("time-description")?.value ?? source.description),
         minutes,
         rate_code: rateCode,
         rate_cents: rate?.rate_cents || 0,
@@ -418,7 +423,7 @@ async function loadEntries() {
 async function saveEntry(event) {
     event.preventDefault();
 
-    if (timeState.isSaving) {
+    if (timeState.isSaving || !editorProtection.canWrite()) {
         return;
     }
 
@@ -438,6 +443,7 @@ async function saveEntry(event) {
 
     try {
         timeState.isSaving = true;
+        editorProtection.refresh();
         const response = await fetch(timeEntriesUrl(path), {
             method,
             headers: {
@@ -459,6 +465,8 @@ async function saveEntry(event) {
         upsertEntry(saved);
         timeState.selectedId = saved.id;
         timeState.draftEntry = null;
+        render();
+        editorProtection.saved();
     } catch (error) {
         showToast(error instanceof Error ? error.message : "Unable to save time entry.");
     } finally {
@@ -469,6 +477,7 @@ async function saveEntry(event) {
 }
 
 function clearEntryDraft(copyCurrent = false) {
+    if (!editorProtection.allowTransition()) return;
     if (copyCurrent && selectedEntry()) {
         const original = selectedEntry();
         timeState.selectedId = null;
@@ -487,12 +496,14 @@ function clearEntryDraft(copyCurrent = false) {
             invoice_number: null
         });
         render();
+        editorProtection.accept({ lock: true, duplicate: copyCurrent });
         return;
     }
 
     timeState.selectedId = null;
     timeState.draftEntry = emptyTimeDraft();
     render();
+    editorProtection.accept({ lock: true, duplicate: copyCurrent });
 }
 
 function bindEvents() {
@@ -548,11 +559,20 @@ function render() {
     const entries = filteredEntries();
     renderMetrics(entries);
     renderEntryRows(entries);
-    const entry = selectedEntry() || timeState.draftEntry;
+    const entry = timeState.draftEntry || selectedEntry();
     renderEditor(entry);
 }
 
 window.addEventListener("DOMContentLoaded", () => {
+    editorProtection.register({
+        formId: "time-form",
+        recordId: () => timeState.selectedId,
+        busy: () => timeState.isLoading || timeState.isSaving,
+        snapshot: () => editorFormSnapshot("time-form"),
+        capture: () => timeState.draftEntry || selectedEntry() || emptyTimeDraft(),
+        restore: (record) => { timeState.draftEntry = record; },
+        render,
+    });
     bindEvents();
     render();
     void loadEntries().then(() => consumeNewRecordRequest("new-time-entry-button"));

@@ -228,9 +228,12 @@ function renderExpenseRows(expenses) {
     }).join("");
     tbody.querySelectorAll("[data-expense-select]").forEach((row) => {
         row.addEventListener("click", () => {
-            expensesState.selectedId = Number(row.dataset.expenseSelect);
+            const nextId = Number(row.dataset.expenseSelect);
+            if (nextId === expensesState.selectedId || !editorProtection.allowTransition()) return;
+            expensesState.selectedId = nextId;
             expensesState.draftExpense = null;
             render();
+            editorProtection.accept();
         });
     });
 }
@@ -273,9 +276,11 @@ function renderEditor(expense) {
     document.getElementById("expense-unit-cost").value = dollarsInput(current.unit_cost_cents);
     document.getElementById("expense-is-billable").checked = current.is_billable;
     updateDerivedPreview(current);
+    editorProtection.refresh();
 }
 
 function syncDraftFromForm() {
+    if (!editorProtection.canWrite() || expensesState.isSaving) return;
     const projectId = Number(document.getElementById("expense-project")?.value || 0);
     const project = projectById(projectId);
     const quantity = Number(document.getElementById("expense-quantity")?.value || 0);
@@ -288,8 +293,8 @@ function syncDraftFromForm() {
         project_number: project?.project_number || source.project_number,
         customer_id: project?.customer_id || source.customer_id,
         customer_name: project?.customer_name || source.customer_name,
-        vendor: String(document.getElementById("expense-vendor")?.value || source.vendor),
-        description: String(document.getElementById("expense-description")?.value || source.description),
+        vendor: String(document.getElementById("expense-vendor")?.value ?? source.vendor),
+        description: String(document.getElementById("expense-description")?.value ?? source.description),
         quantity: quantity || 0,
         unit_cost_cents: unitCostCents,
         line_total_cents: Math.round(quantity * unitCostCents),
@@ -303,7 +308,7 @@ function syncDraftFromForm() {
 
 async function saveExpense(event) {
     event.preventDefault();
-    if (expensesState.isSaving) {
+    if (expensesState.isSaving || !editorProtection.canWrite()) {
         return;
     }
     syncDraftFromForm();
@@ -345,6 +350,8 @@ async function saveExpense(event) {
         upsertExpense(saved);
         expensesState.selectedId = saved.id;
         expensesState.draftExpense = null;
+        render();
+        editorProtection.saved();
         expensesState.loadError = "";
     } catch (error) {
         showToast(extractErrorMessage(error, "Unable to save expense."));
@@ -355,6 +362,7 @@ async function saveExpense(event) {
 }
 
 function clearExpenseDraft(copyCurrent = false) {
+    if (!editorProtection.allowTransition()) return;
     if (copyCurrent && selectedExpense()) {
         const original = selectedExpense();
         expensesState.selectedId = null;
@@ -373,11 +381,13 @@ function clearExpenseDraft(copyCurrent = false) {
             is_billable: original.is_billable
         });
         render();
+        editorProtection.accept({ lock: true, duplicate: copyCurrent });
         return;
     }
     expensesState.selectedId = null;
     expensesState.draftExpense = emptyExpenseDraft();
     render();
+    editorProtection.accept({ lock: true, duplicate: copyCurrent });
 }
 
 function bindEvents() {
@@ -437,11 +447,20 @@ function render() {
     const expenses = filteredExpenses();
     renderMetrics(expenses);
     renderExpenseRows(expenses);
-    const expense = selectedExpense() || expensesState.draftExpense || emptyExpenseDraft();
+    const expense = expensesState.draftExpense || selectedExpense() || emptyExpenseDraft();
     renderEditor(expense);
 }
 
 window.addEventListener("DOMContentLoaded", () => {
+    editorProtection.register({
+        formId: "expense-form",
+        recordId: () => expensesState.selectedId,
+        busy: () => expensesState.isLoading || expensesState.isSaving,
+        snapshot: () => editorFormSnapshot("expense-form"),
+        capture: () => expensesState.draftExpense || selectedExpense() || emptyExpenseDraft(),
+        restore: (record) => { expensesState.draftExpense = record; },
+        render,
+    });
     bindEvents();
     render();
     void loadExpenses().then(() => consumeNewRecordRequest("new-expense-button"));

@@ -33,7 +33,7 @@ Use the lightweight backend syntax check when changing Python:
 python -m py_compile (Get-ChildItem backend\app -Filter *.py | ForEach-Object { $_.FullName })
 ```
 
-There is no formal automated test suite yet. For frontend or workflow changes, run the app with `.\startup.bat` and verify the affected screen manually.
+Focused frontend regression checks run with `node --test tests/frontend-phase2.test.cjs` without extra packages. Backend business-total checks run in the venv with `python -m unittest discover -s tests -p "test_*.py"`; they use disposable in-memory databases. For frontend or workflow changes, run the app with `.\startup.bat` and verify the affected screen manually.
 
 ## Architecture
 
@@ -93,8 +93,11 @@ Normal backups live in `app-data/backups/` as `Tims-Ledger-Backup-{date-timestam
   - Invoice source-row checkbox changes stay browser-local until Save/Print. Save/Print creates or updates the invoice, replaces time/expense invoice links, writes the saved invoice HTML, and opens it for printing.
   - Printed invoice project references should read `{project number} - {project description}`.
   - PO number is not part of the active invoice UI.
-  - Home (Overview) should prioritize metrics, accounts receivable, and customer statement detail. Settings owns Backup & Restore and XLSX audit export; every page header offers Back up and the last-backup indicator.
-  - Invoice terms are user-editable: Due on receipt / Net 10 / 15 / 30 / 45 / 60. Preserve other stored terms when editing existing invoices. Display Draft for unprinted invoices, Open for printed unpaid invoices, Overdue for printed positive balances due before today, and Paid for settled invoices.
+  - Home is a simple welcome splash screen. Receive Payments shows all-record business totals: Total Income (recorded payments, including unapplied amounts and negative corrections), Open A/R (issued invoice balances), Total Expenses, and Non-Billable Expenses (included in Total Expenses). These totals are independent of ledger filters. Customers owns customer statements in its read-only Statement tab. Settings owns Backup & Restore and XLSX audit export; every page header offers Back up and the last-backup indicator.
+  - Invoice terms are user-editable: Due on receipt / Net 10 / 15 / 30 / 45 / 60. Preserve other stored terms when editing existing invoices. Display Draft for unprinted invoices, Open for printed unpaid invoices, Overdue N days for printed positive balances due before today, and Paid for settled invoices.
+
+  - Saved Customers, Projects, Time, Expenses, Invoices, and Payments require browser-local Edit Mode for mutations, including rate controls, invoice source selection, payment applications, and saved-record deletes. Enforce this in handlers as well as controls. Mode resets on screen changes and successful saves/deletes; new records remain editable without it.
+  - Keep editable drafts detached from saved browse records and warn before discarding modified drafts. Protected invoice printing reads the saved HTML through the document GET and must never call Save/Print.
 
 ## Documentation
 
