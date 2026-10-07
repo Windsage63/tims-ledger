@@ -24,13 +24,13 @@ This phase adds protection against accidental edits, moves customer statement de
 
 The following details make the requirements concrete. They are proposed implementation choices rather than additional decisions explicitly made by the user:
 
-- Reset Edit Mode after a successful save, a successful delete, and when starting a new or duplicate record.
-- New records and duplicates can be filled in and saved without enabling Edit Mode. A duplicate has no saved record ID and cannot overwrite its source.
-- Selecting another saved record on the same screen keeps the current mode, after resolving any unsaved changes. Switching screens always resets it.
-- Turning Edit Mode off with unsaved changes offers a discard confirmation. Cancel keeps the draft and mode; confirm restores the saved baseline and locks the editor.
-- Existing invoices can print their previously saved document while protected. Updating an invoice and regenerating its document requires Edit Mode.
-- Use amber for 1 through 30 overdue days, orange for 31 through 60, red for 61 through 90, and dark red for 91 or more. The tag always includes the exact count.
-- Settings is outside the six protected record screens. Company profile editing, backup, restore, and audit export retain their current workflows in this phase.
+  - Reset Edit Mode after a successful save, a successful delete, and when starting a new or duplicate record.
+  - New records and duplicates can be filled in and saved without enabling Edit Mode. A duplicate has no saved record ID and cannot overwrite its source.
+  - Selecting another saved record on the same screen keeps the current mode, after resolving any unsaved changes. Switching screens always resets it.
+  - Turning Edit Mode off with unsaved changes offers a discard confirmation. Cancel keeps the draft and mode; confirm restores the saved baseline and locks the editor.
+  - Existing invoices can print their previously saved document while protected. Updating an invoice and regenerating its document requires Edit Mode.
+  - Use amber for 1 through 30 overdue days, orange for 31 through 60, red for 61 through 90, and dark red for 91 or more. The tag always includes the exact count.
+  - Settings is outside the six protected record screens. Company profile editing, backup, restore, and audit export retain their current workflows in this phase.
 
 ## 2 Shared edit protection
 
@@ -129,10 +129,10 @@ Use the existing APIs for this work. Consolidating payment saving into a new ato
 
 Keep the existing invoice editor and separate Time and Expenses sections. Source-row selections remain browser-local until Save/Print.
 
-- For a new invoice, Save/Print works as it does now without needing Edit Mode.
-- For an existing invoice with mode on, Save/Print can update the record, replace its source links, and regenerate the saved HTML using the existing flow.
-- For an existing invoice with mode off, offer `Print Saved Invoice`. Open `/api/invoices/{id}/document?autoprint=1`; do not call `/api/invoices/save-print`.
-- If there is no saved document, explain that Edit Mode and Save/Print are needed to generate one. Do not generate or overwrite a document through the protected print action.
+  - For a new invoice, Save/Print works as it does now without needing Edit Mode.
+  - For an existing invoice with mode on, Save/Print can update the record, replace its source links, and regenerate the saved HTML using the existing flow.
+  - For an existing invoice with mode off, offer `Print Saved Invoice`. Open `/api/invoices/{id}/document?autoprint=1`; do not call `/api/invoices/save-print`.
+  - If there is no saved document, explain that Edit Mode and Save/Print are needed to generate one. Do not generate or overwrite a document through the protected print action.
 
 The document GET already reads the saved HTML file. Preserve that read-only behavior. Handle a missing document or blocked popup visibly. Check edit protection before opening a save popup or sending a write request.
 
@@ -182,11 +182,11 @@ Keep one customer browse table as the customer selector. Add Contact and Stateme
 
 Move these statement details:
 
-- Customer identity and contact information.
-- Open A/R, unapplied credit, and net balance.
-- Statement generation time.
-- Issued invoice detail, including due date, amounts, remaining balance, and the shared status tag.
-- Unapplied payment detail and remaining credit.
+  - Customer identity and contact information.
+  - Open A/R, unapplied credit, and net balance.
+  - Statement generation time.
+  - Issued invoice detail, including due date, amounts, remaining balance, and the shared status tag.
+  - Unapplied payment detail and remaining credit.
 
 Use `/api/reports/accounts-receivable?customer_id={id}` for the selected saved customer. This endpoint already supplies the statement and totals. Keep its existing financial definitions, including customers with credit but no open invoices and issued invoices that have been paid.
 
@@ -281,14 +281,14 @@ Use focused checks for the shared status calculation and state/dirty transitions
 
 ## 9 Completion criteria
 
-- All six saved-record editors require Edit Mode for changes, including invoice sources and payment applications.
-- Header state is clear, resets on screen changes, and follows the documented save/failure transitions.
-- Unsaved-change cancellation preserves the complete browser draft without a mutation request.
-- Protected printing reads the existing invoice document without rewriting data.
-- Exact overdue tags agree with filters and metrics and remain correct as the date changes.
-- Customers owns statement detail; Home keeps its financial summary without duplicate customer browsing.
-- Current invoice layout, separate Time/Expense selection, entry-form placement, and business rules are preserved.
-- Documentation and isolated verification results accompany the implementation.
+  - All six saved-record editors require Edit Mode for changes, including invoice sources and payment applications.
+  - Header state is clear, resets on screen changes, and follows the documented save/failure transitions.
+  - Unsaved-change cancellation preserves the complete browser draft without a mutation request.
+  - Protected printing reads the existing invoice document without rewriting data.
+  - Exact overdue tags agree with filters and metrics and remain correct as the date changes.
+  - Customers owns statement detail; Home keeps its financial summary without duplicate customer browsing.
+  - Current invoice layout, separate Time/Expense selection, entry-form placement, and business rules are preserved.
+  - Documentation and isolated verification results accompany the implementation.
 
 ## 10 Deferred work
 
@@ -298,14 +298,14 @@ Audit history, multiuser authorization, permanent financial-record locking, and 
 
 ## 11 Implementation results
 
-- Added shared browser-local protection and dirty-baseline handling in `frontend/js/editor-protection.js`, loaded by the base template. The module handles header toggling and navigation directly; no additional shell controller changes were needed.
-- Enabled protection on Customers, Projects, Time, Expenses, Invoices, and Payments through page registry metadata. New and duplicate records stay editable; saved records relock after successful saves. Invoice sources, custom rates, payment allocations, and saved payment deletion are covered as well as form fields.
-- Detached editable invoice/payment objects from saved browse records and retained ordinary editor drafts across search/filter rerenders. Added guarded transitions, dirty-state restoration, native unload warnings, cached-page mode reset, and loading/request protection.
-- Added saved-document printing while protected. Existing Save/Print retains its current document and source-link behavior when editing is enabled.
-- Added payment partial-save reconciliation and immediate retention of created IDs. Uncertain invoice/payment creation results disable another save until the user inspects the saved ledger; the draft is retained. Unavailable intended payment allocations must be resolved before retrying.
-- Added shared exact-day invoice tags and severity colors across Invoices, Receive Payments, and Customer Statements, including calendar-change refresh.
-- Moved statements to Contact/Statement tabs on Customers and removed the duplicate Home directory/statement. Home keeps its four financial summary metrics. Time and Expense forms remain above their lists.
-- Updated README, AGENTS guidance, workflows, and the product reference. No API contract, schema, or migration changes were required.
+  - Added shared browser-local protection and dirty-baseline handling in `frontend/js/editor-protection.js`, loaded by the base template. The module handles header toggling and navigation directly; no additional shell controller changes were needed.
+  - Enabled protection on Customers, Projects, Time, Expenses, Invoices, and Payments through page registry metadata. New and duplicate records stay editable; saved records relock after successful saves. Invoice sources, custom rates, payment allocations, and saved payment deletion are covered as well as form fields.
+  - Detached editable invoice/payment objects from saved browse records and retained ordinary editor drafts across search/filter rerenders. Added guarded transitions, dirty-state restoration, native unload warnings, cached-page mode reset, and loading/request protection.
+  - Added saved-document printing while protected. Existing Save/Print retains its current document and source-link behavior when editing is enabled.
+  - Added payment partial-save reconciliation and immediate retention of created IDs. Uncertain invoice/payment creation results disable another save until the user inspects the saved ledger; the draft is retained. Unavailable intended payment allocations must be resolved before retrying.
+  - Added shared exact-day invoice tags and severity colors across Invoices, Receive Payments, and Customer Statements, including calendar-change refresh.
+  - Moved statements to Contact/Statement tabs on Customers and removed the duplicate Home directory/statement. Home keeps its four financial summary metrics. Time and Expense forms remain above their lists.
+  - Updated README, AGENTS guidance, workflows, and the product reference. No API contract, schema, or migration changes were required.
 
 ### Verification performed
 
@@ -319,7 +319,6 @@ Audit history, multiuser authorization, permanent financial-record locking, and 
 8. Restarted the existing normal server through `startup.bat` on port 8004 with startup migrations disabled, retaining its production data paths. All eight pages render the current script versions and the expected six Edit Mode controls. Stopped the isolated verification server and closed its temporary browser tab.
 
 Production records and saved invoice documents were not used for mutation checks. Verification fixtures and screenshots are gitignored under `outputs/`; they are not application runtime data or repository fixtures.
-
 
 ## Subsequent business snapshot refinement — October 4, 2026
 
