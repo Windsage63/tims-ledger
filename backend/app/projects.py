@@ -327,3 +327,15 @@ def update_project(
     insert_project_rates(connection, project_id, normalize_rates(payload), timestamp=timestamp)
     connection.commit()
     return fetch_project(connection, project_id)
+
+
+def delete_project(connection: sqlite3.Connection, project_id: int) -> bool:
+    if fetch_project(connection, project_id) is None:
+        return False
+    for table in ("time_entries", "expenses", "invoices"):
+        if connection.execute(f"SELECT 1 FROM {table} WHERE project_id = ? LIMIT 1", (project_id,)).fetchone():
+            raise ValueError("Remove this project's time, expenses, and invoices before deleting the project.")
+    with connection:
+        connection.execute("DELETE FROM project_rates WHERE project_id = ?", (project_id,))
+        connection.execute("DELETE FROM projects WHERE id = ?", (project_id,))
+    return True

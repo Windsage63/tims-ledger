@@ -33,18 +33,18 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 
 1. User enters the work date in the entry form above the time ledger. The form stays before the list at every screen width, so adding rows does not push it below the ledger.
 2. User selects the project from a dropdown showing project number and project description. The system derives the customer and available rates from the project.
-3. User enters work description, duration, and rate code. There is no separate time billable toggle. Time with a selected rate of `0` is non-billable.
+3. User enters work description, duration, and rate code. Time has no billable flag. A rate of `0` is an ordinary price, with no special status or exclusion.
 4. System stores the time entry as a source record, snapshots the selected rate, and calculates the line total.
 5. Invoice linkage is empty until Save/Print succeeds for an invoice that includes the time entry.
-6. Unbilled time with a non-zero rate is eligible for invoice building. In the invoice editor, checking or unchecking time is browser-local until Save/Print. When Save/Print succeeds, checked time entries are stamped to the invoice and unchecked prior entries have their invoice linkage cleared.
+6. All unbilled time is eligible for invoice building regardless of its rate. In the invoice editor, checking or unchecking time is browser-local until Save/Print. When Save/Print succeeds, checked time entries are stamped to the invoice and unchecked prior entries have their invoice linkage cleared. A zero-dollar invoice can be saved when it contains selected source rows; an empty invoice cannot.
 7. Fixed-fee billing is represented by a one-hour time entry that uses a custom rate equal to the fixed fee. There are no separate manual invoice lines.
 
 ## 5. User Enters Expense
 
 1. User enters the expense date in the entry form above the expense ledger. The form stays before the list at every screen width, so adding rows does not push it below the ledger.
 2. User selects the project from a dropdown showing project number and project description. The system derives the customer from the project.
-3. User enters vendor, description, quantity, unit cost, category, and billable flag.
-4. System stores the expense as a source record and calculates the line total.
+3. User enters vendor, description, quantity, unit cost, category, and billable flag. Unit cost accepts up to four decimal places in dollars, including fractional-cent mileage rates such as $0.725.
+4. System stores the exact unit rate as integer ten-thousandths of a dollar and calculates the line total with decimal arithmetic, rounding half up once to cents after multiplying quantity by rate. For example, 41 at $0.725 is $29.73. Line totals remain integer cents; editing, duplication, and audit export preserve the unit rate.
 5. Invoice linkage is empty until Save/Print succeeds for an invoice that includes the expense.
 6. Unbilled billable expenses are eligible for invoice building. In the invoice editor, checking or unchecking expenses is browser-local until Save/Print. When Save/Print succeeds, checked expenses are stamped to the invoice and unchecked prior expenses have their invoice linkage cleared.
 7. Non-billable expenses remain available for internal cost tracking and must not appear as invoice charges.
@@ -60,14 +60,24 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 6. If the project bills a fixed fee, that amount appears through the one-hour custom-rate time entry that represents the fee. There are no separate HD, non-hourly, or manual billing lines.
 7. User checks and unchecks time and expense source records in the browser editor.
 8. Checkbox changes update browser-side preview totals only. They do not write to the database until Save/Print.
-9. Prior customer balance is shown separately from the current invoice charges. Unapplied credits may be displayed and optionally applied through payment application logic, not by rewriting invoice lines.
+9. The editor summary shows Time Total, Expense Total, and Total Invoice. Its separate Open Balance reflects only the selected invoice's charges less applied payments. Customer account balances and statements remain on Customers; unapplied credits are allocated through Receive Payments, not invoice lines.
 10. When the user clicks Save/Print, the system creates or updates the invoice, replaces all selected time and expense links, generates or overwrites the current invoice HTML, and opens the saved HTML for browser printing.
 11. Checked time entries are saved with the invoice ID. Unchecked prior time entries have their invoice linkage cleared and return to the unbilled pool.
 12. Checked expenses are saved with the invoice ID. Unchecked prior expenses have their invoice linkage cleared and return to the unbilled pool.
-13. Existing issued invoices may be viewed and reprinted by invoice number. While protected, Print Saved Invoice opens the saved HTML without updating any invoice data, links, or documents. If the document is missing, enable Edit Mode and Save/Print to generate it. Editing and regenerating existing invoices requires Edit Mode.
+13. Existing issued invoices may be viewed and reprinted by invoice number. While protected, Print Saved Invoice opens the saved HTML without updating any invoice data, links, or documents. If the document is missing, enable Edit Mode and Save/Print to generate it. Editing and regenerating existing invoices requires Edit Mode. Template changes do not rewrite existing HTML. To update an existing document's layout, take an application backup, review the saved fields and source selection, then enable Edit Mode and Save/Print without changing them. Regeneration uses current invoice data and the current Company profile.
 14. The printed invoice shows project references as `{project number} - {project description}`.
 15. The printed invoice company header and check-payable footer come from the current Company profile at Save/Print time.
 16. Editing and reissuing an invoice intentionally changes accounting history. This application does not require an immutable invoice audit trail.
+17. Generated invoices end with one summary row labeled Total Invoice, equal to the selected time and expense charges. Prior Balance, Unapplied Credit, and Total Due are not printed. Other invoices and payment activity do not change that charge total; section subtotals and payment terms remain visible.
+
+### Deleting saved records
+
+Select a saved record, enable Edit Mode, and click its Delete button. Confirm the deletion. Canceling confirmation leaves the record and draft unchanged. Successful deletion resets Edit Mode.
+
+- Customers can be deleted after their projects, time, expenses, invoices, and payments have been removed.
+- Projects can be deleted when they have no time, expenses, or invoices. Their project rates are removed with them.
+- Time and expenses can be deleted when they are not linked to an invoice. To correct or delete an invoiced source row, first remove it from the invoice and Save/Print, or delete that invoice.
+- Deleting an invoice removes the invoice and saved HTML document, releases all linked time and expenses, and removes its payment applications. Payment records remain, with those amounts available to apply again. Other invoices and their applications are retained.
 
 ## 7. User Records and Applies a Payment
 

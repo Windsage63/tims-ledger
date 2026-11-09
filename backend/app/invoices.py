@@ -180,7 +180,7 @@ def render_invoice_table_rows(payload: dict[str, object]) -> str:
         )
 
     if not rows:
-        rows.append('<tr><td colspan="6" class="empty-row">No billable items selected.</td></tr>')
+        rows.append('<tr><td colspan="6" class="empty-row">No items selected.</td></tr>')
 
     return "\n".join(rows)
 
@@ -466,10 +466,7 @@ def build_invoice_print_html(payload: dict[str, object], company_profile: dict[s
         <div class="summary-wrap">
             <table class="summary-table">
                 <tbody>
-                    <tr><td>Sub-Total Invoice</td><td class="numeric">{invoice_total}</td></tr>
-                    <tr><td>Prior Balance</td><td class="numeric">{prior_balance}</td></tr>
-                    <tr><td>Unapplied Credit</td><td class="numeric">{unapplied_credit}</td></tr>
-                    <tr><td>Total Due</td><td class="numeric">{open_balance}</td></tr>
+                    <tr><td>Total Invoice</td><td class="numeric">{invoice_total}</td></tr>
                 </tbody>
             </table>
         </div>
@@ -494,9 +491,6 @@ def build_invoice_print_html(payload: dict[str, object], company_profile: dict[s
         project_number=escape(project_reference(invoice)),
         table_rows=render_invoice_table_rows(payload),
         invoice_total=escape(currency(int(summary["invoice_total_cents"]))),
-        prior_balance=escape(currency(int(summary["prior_balance_cents"]))),
-        unapplied_credit=escape(currency(int(summary["unapplied_credit_cents"]))),
-        open_balance=escape(currency(int(summary["open_balance_after_issue_cents"]))),
         notes_block=notes_block,
         terms_notice=escape(invoice_terms_notice(int(invoice["terms_days"]))),
     )
@@ -568,7 +562,7 @@ def prior_balance_cents(connection: sqlite3.Connection, customer_id: int, invoic
 def derive_invoice_status(invoice: dict[str, object]) -> str:
     if not invoice["issued_at"]:
         return "draft"
-    if int(invoice["invoice_amount_cents"] or 0) > 0 and int(invoice["open_balance_cents"] or 0) <= 0:
+    if int(invoice["open_balance_cents"] or 0) <= 0:
         return "paid"
     return "printed"
 
@@ -645,7 +639,7 @@ def fetch_selected_expenses(connection: sqlite3.Connection, invoice_id: int) -> 
 def fetch_eligible_time_entries(connection: sqlite3.Connection, invoice: dict[str, object]) -> list[dict[str, object]]:
     rows = connection.execute(
         time_entry_select_sql()
-        + " WHERE te.project_id = ? AND te.rate_cents > 0 AND (te.invoice_id IS NULL OR te.invoice_id = ?) ORDER BY te.entry_date, te.id",
+        + " WHERE te.project_id = ? AND (te.invoice_id IS NULL OR te.invoice_id = ?) ORDER BY te.entry_date, te.id",
         (invoice["project_id"], invoice["id"]),
     ).fetchall()
     return [dict(row) for row in rows]
@@ -672,12 +666,6 @@ def invoice_editor_payload(connection: sqlite3.Connection, invoice_id: int) -> d
         "time_total_cents": sum(entry["line_total_cents"] for entry in selected_time_entries),
         "expense_total_cents": sum(expense["line_total_cents"] for expense in selected_expenses),
         "invoice_total_cents": invoice["invoice_amount_cents"],
-        "prior_balance_cents": invoice["prior_balance_cents"],
-        "unapplied_credit_cents": invoice["unapplied_credit_cents"],
-        "open_balance_after_issue_cents": max(
-            0,
-            int(invoice["prior_balance_cents"]) + int(invoice["invoice_amount_cents"]) - int(invoice["unapplied_credit_cents"]),
-        ),
     }
     return {
         "invoice": invoice,
@@ -763,9 +751,6 @@ def invoice_new_editor_payload(
             "time_total_cents": 0,
             "expense_total_cents": 0,
             "invoice_total_cents": 0,
-            "prior_balance_cents": invoice["prior_balance_cents"],
-            "unapplied_credit_cents": 0,
-            "open_balance_after_issue_cents": int(invoice["prior_balance_cents"]),
         },
     }
 
@@ -809,7 +794,7 @@ def validate_selection_rows(
         if len(rows) != len(set(time_entry_ids)):
             raise ValueError("One or more time entries were not found.")
         for row in rows:
-            if row["project_id"] != invoice["project_id"] or row["rate_cents"] <= 0:
+            if row["project_id"] != invoice["project_id"]:
                 raise ValueError("Time entry selection is not eligible for this invoice.")
             if row["invoice_id"] not in (None, invoice["id"]):
                 raise ValueError("A selected time entry is already assigned to another invoice.")
@@ -932,7 +917,7 @@ def replace_invoice_selection_without_commit(
     time_entry_ids = list(dict.fromkeys(payload.time_entry_ids))
     expense_ids = list(dict.fromkeys(payload.expense_ids))
     if not time_entry_ids and not expense_ids:
-        raise ValueError("Select at least one billable row before saving the invoice.")
+        raise ValueError("Select at least one time or expense row before saving the invoice.")
 
     validate_selection_rows(connection, invoice, time_entry_ids, expense_ids)
     clear_invoice_selection(connection, invoice_id)
@@ -970,8 +955,8 @@ def save_invoice_html_without_commit(
         raise ValueError("Invoice not found.")
 
     invoice = payload["invoice"]
-    if int(invoice["invoice_amount_cents"]) <= 0:
-        raise ValueError("Select at least one billable row before saving the invoice.")
+    if not payload["selected_time_entries"] and not payload["selected_expenses"]:
+        raise ValueError("Select at least one time or expense row before saving the invoice.")
 
     company_profile = fetch_company_profile(connection)
     document_html = build_invoice_print_html(payload, company_profile)
@@ -1051,3 +1036,34 @@ def fetch_saved_invoice_document(
     if not resolved_file.exists() or not resolved_file.is_file():
         return None
     return resolved_file.read_text(encoding="utf-8")
+
+
+def delete_invoice(connection: sqlite3.Connection, invoice_id: int, data_dir: Path) -> bool:
+    invoice = fetch_invoice(connection, invoice_id)
+    if invoice is None:
+        return False
+
+    document_path = None
+    document_bytes = None
+    if invoice["pdf_file_name"]:
+        document_path = (data_dir / str(invoice["pdf_file_name"])).resolve()
+        if (data_dir / "invoices").resolve() not in document_path.parents:
+            raise ValueError("The saved invoice document path is invalid.")
+        if document_path.exists():
+            document_bytes = document_path.read_bytes()
+
+    document_removed = False
+    try:
+        connection.execute("DELETE FROM payment_applications WHERE invoice_id = ?", (invoice_id,))
+        clear_invoice_selection(connection, invoice_id)
+        connection.execute("DELETE FROM invoices WHERE id = ?", (invoice_id,))
+        if document_bytes is not None:
+            document_path.unlink()
+            document_removed = True
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        if document_removed:
+            document_path.write_bytes(document_bytes)
+        raise
+    return True

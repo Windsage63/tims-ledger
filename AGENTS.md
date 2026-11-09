@@ -87,7 +87,7 @@ Normal backups live in `app-data/backups/` as `Tims-Ledger-Backup-{date-timestam
 
 ## Product Rules To Preserve
 
-  - Time billability comes from the selected rate. Rate `0` is non-billable; there is no separate time billable toggle.
+  - Time has no billable flag or rate-based billability classification. Rate `0` is an ordinary price and remains eligible for invoicing, just like other prices.
   - Fixed-fee and materials-order style billing is represented through custom project rates and unit entries in time, not manual invoice lines.
   - Expense categories are exactly: `Materials`, `Lodging`, `Airfare`, `Mileage`, `Perdiem`, `Rental Car`, `Gas`, `Parking`, `Tolls`, `Meals`, `Entertainment`, `Gifts`, `Freight`, `Misc.`.
   - Invoice source-row checkbox changes stay browser-local until Save/Print. Save/Print creates or updates the invoice, replaces time/expense invoice links, writes the saved invoice HTML, and opens it for printing.

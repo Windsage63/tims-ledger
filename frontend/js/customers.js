@@ -403,7 +403,30 @@ function syncCustomerDraft() {
     Object.entries(fields).forEach(([key, id]) => { state.draftCustomer[key] = document.getElementById(id).value; });
 }
 
+async function deleteCustomer() {
+    const record = selectedCustomer();
+    if (!record?.id || state.isLoading || state.isSaving || !editorProtection.canWrite()) return;
+    if (!window.confirm(`Delete customer ${record.customer_name}? This cannot be undone.`)) return;
+    try {
+        state.isSaving = true;
+        editorProtection.refresh();
+        await apiRequestJson(customersUrl(), `/${record.id}`, { method: "DELETE" }, "Unable to delete customer.");
+        state.customers = state.customers.filter((row) => row.id !== record.id);
+        state.selectedId = state.customers[0]?.id || null;
+        state.draftCustomer = null;
+        render();
+        editorProtection.saved();
+        showToast("Customer deleted.", "success");
+    } catch (error) {
+        showToast(error instanceof Error ? error.message : "Unable to delete customer.");
+    } finally {
+        state.isSaving = false;
+        render();
+    }
+}
+
 function bindEvents() {
+    document.getElementById("delete-customer-button")?.addEventListener("click", () => { void deleteCustomer(); });
     document.querySelectorAll("[data-customer-tab]").forEach((button) => button.addEventListener("click", () => {
         customerStatement.tab = button.dataset.customerTab;
         renderCustomerTabs();
@@ -472,6 +495,8 @@ window.addEventListener("DOMContentLoaded", () => {
     onInvoiceCalendarChange(renderCustomerStatement);
     editorProtection.register({
         formId: "customer-form",
+        mutationControls: "#delete-customer-button",
+        applyProtection: () => { document.getElementById("delete-customer-button").disabled = !state.selectedId || state.isLoading || state.isSaving || !editorProtection.canWrite(); },
         recordId: () => state.selectedId,
         busy: () => state.isLoading || state.isSaving,
         snapshot: () => editorFormSnapshot("customer-form"),

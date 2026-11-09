@@ -23,16 +23,18 @@ from .backups import (
 )
 from .company import CompanyProfileWrite, fetch_company_profile, upsert_company_profile
 from .config import Settings, load_settings
-from .customers import CustomerWrite, create_customer, fetch_customers, update_customer
+from .customers import CustomerWrite, create_customer, delete_customer, fetch_customers, update_customer
 from .db import apply_pending_migrations, connect, get_database_status
 from .expenses import (
     ExpenseWrite,
     create_expense,
+    delete_expense,
     expense_bootstrap_payload,
     update_expense,
 )
 from .invoices import (
     InvoiceSavePrintWrite,
+    delete_invoice,
     fetch_saved_invoice_document,
     invoice_bootstrap_payload,
     invoice_editor_payload,
@@ -55,6 +57,7 @@ from .payments import (
 from .projects import (
     ProjectWrite,
     create_project,
+    delete_project,
     customer_lookup,
     fetch_projects,
     update_project,
@@ -63,6 +66,7 @@ from .reporting import accounts_receivable_report_payload, build_audit_export_by
 from .time_entries import (
     TimeEntryWrite,
     create_time_entry,
+    delete_time_entry,
     time_bootstrap_payload,
     update_time_entry,
 )
@@ -291,6 +295,17 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
 
         return response_envelope({"customer": customer}, screen="customers")
 
+    @app.delete("/api/customers/{customer_id}")
+    def customers_delete(customer_id: int, request: Request) -> dict[str, object]:
+        with connect(request.app.state.settings.database_path) as connection:
+            try:
+                deleted = delete_customer(connection, customer_id)
+            except ValueError as exc:
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Customer not found.")
+        return response_envelope({"deleted": True, "customer_id": customer_id}, screen="customers")
+
     @app.get("/api/projects/bootstrap")
     def projects_bootstrap(request: Request) -> dict[str, object]:
         with connect(request.app.state.settings.database_path) as connection:
@@ -336,6 +351,17 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
 
         return response_envelope({"project": project}, screen="projects")
 
+    @app.delete("/api/projects/{project_id}")
+    def projects_delete(project_id: int, request: Request) -> dict[str, object]:
+        with connect(request.app.state.settings.database_path) as connection:
+            try:
+                deleted = delete_project(connection, project_id)
+            except ValueError as exc:
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Project not found.")
+        return response_envelope({"deleted": True, "project_id": project_id}, screen="projects")
+
     @app.get("/api/time/bootstrap")
     def time_bootstrap(request: Request, year: str | None = None) -> dict[str, object]:
         with connect(request.app.state.settings.database_path) as connection:
@@ -370,6 +396,17 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
 
         return response_envelope({"entry": entry}, screen="time")
 
+    @app.delete("/api/time-entries/{entry_id}")
+    def time_entries_delete(entry_id: int, request: Request) -> dict[str, object]:
+        with connect(request.app.state.settings.database_path) as connection:
+            try:
+                deleted = delete_time_entry(connection, entry_id)
+            except ValueError as exc:
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Time entry not found.")
+        return response_envelope({"deleted": True, "entry_id": entry_id}, screen="time")
+
     @app.get("/api/expenses/bootstrap")
     def expenses_bootstrap(request: Request, year: str | None = None) -> dict[str, object]:
         with connect(request.app.state.settings.database_path) as connection:
@@ -403,6 +440,17 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
             raise HTTPException(status_code=404, detail="Expense not found.")
 
         return response_envelope({"expense": expense}, screen="expenses")
+
+    @app.delete("/api/expenses/{expense_id}")
+    def expenses_delete(expense_id: int, request: Request) -> dict[str, object]:
+        with connect(request.app.state.settings.database_path) as connection:
+            try:
+                deleted = delete_expense(connection, expense_id)
+            except ValueError as exc:
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Expense not found.")
+        return response_envelope({"deleted": True, "expense_id": expense_id}, screen="expenses")
 
     @app.get("/api/invoices/bootstrap")
     def invoices_bootstrap(request: Request, year: str | None = None) -> dict[str, object]:
@@ -458,6 +506,19 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
             raise HTTPException(status_code=404, detail="Invoice not found.")
 
         return response_envelope(result, screen="invoice_editor")
+
+    @app.delete("/api/invoices/{invoice_id}")
+    def invoices_delete(invoice_id: int, request: Request) -> dict[str, object]:
+        with connect(request.app.state.settings.database_path) as connection:
+            try:
+                deleted = delete_invoice(connection, invoice_id, request.app.state.settings.data_dir)
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+            except OSError as exc:
+                raise HTTPException(status_code=500, detail="Could not remove the invoice document. The invoice was retained.") from exc
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Invoice not found.")
+        return response_envelope({"deleted": True, "invoice_id": invoice_id}, screen="invoices")
 
     @app.get("/api/invoices/{invoice_id}/document", response_class=HTMLResponse)
     def invoices_document(invoice_id: int, request: Request) -> HTMLResponse:

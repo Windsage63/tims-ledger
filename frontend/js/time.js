@@ -83,9 +83,6 @@ function entryStatusMeta(entry) {
     if (entry.invoice_number) {
         return { label: "Invoiced", classes: "bg-calm/10 text-calm border border-calm/20" };
     }
-    if ((entry.rate_cents || 0) === 0) {
-        return { label: "Non-Billable", classes: "bg-stone-200/70 text-stone-700 border border-stone-300" };
-    }
     return { label: "Unbilled", classes: "bg-brand/10 text-brand border border-brand/20" };
 }
 
@@ -139,7 +136,7 @@ function selectedEntry() {
 function filteredEntries() {
     const query = timeState.searchQuery.trim().toLowerCase();
     return timeState.entries.filter((entry) => {
-        const status = entry.invoice_number ? "invoiced" : (entry.rate_cents === 0 ? "nonbillable" : "unbilled");
+        const status = entry.invoice_number ? "invoiced" : "unbilled";
         const matchesStatus = timeState.statusFilter === "all" || status === timeState.statusFilter;
         const matchesProject = timeState.projectFilter === "all" || String(entry.project_id) === timeState.projectFilter;
         const entryYear = String(entry.entry_date).slice(0, 4);
@@ -177,21 +174,20 @@ function renderMetrics(entries) {
     if (timeState.isLoading) {
 
         setText("metric-visible-hours", "-");
-        setText("metric-billable-amount", "-");
+        setText("metric-time-amount", "-");
         setText("metric-unbilled-hours", "-");
-        setText("metric-nonbillable-hours", "-");
+        setText("metric-entry-count", "-");
         return;
     }
 
     const totalMinutes = entries.reduce((sum, entry) => sum + entry.minutes, 0);
-    const billableAmount = entries.reduce((sum, entry) => sum + (entry.rate_cents > 0 ? entry.line_total_cents : 0), 0);
+    const totalAmount = entries.reduce((sum, entry) => sum + entry.line_total_cents, 0);
     const unbilledMinutes = entries.reduce((sum, entry) => sum + (!entry.invoice_number ? entry.minutes : 0), 0);
-    const nonbillableMinutes = entries.reduce((sum, entry) => sum + (entry.rate_cents === 0 ? entry.minutes : 0), 0);
 
     setText("metric-visible-hours", hoursFromMinutes(totalMinutes));
-    setText("metric-billable-amount", currency(billableAmount));
+    setText("metric-time-amount", currency(totalAmount));
     setText("metric-unbilled-hours", hoursFromMinutes(unbilledMinutes));
-    setText("metric-nonbillable-hours", hoursFromMinutes(nonbillableMinutes));
+    setText("metric-entry-count", String(entries.length));
 }
 
 function renderStatusFilters() {
@@ -278,11 +274,9 @@ function updateDerivedPreview(entry) {
         statusChip.textContent = entry.id ? status.label : "Draft";
     }
 
-    const derivedLabel = entry.rate_cents === 0
-        ? "Non-billable: selected rate resolves to $0.00, so this entry stays out of invoice selection."
-        : entry.invoice_number
+    const derivedLabel = entry.invoice_number
             ? `Invoiced on ${entry.invoice_number}. This entry keeps its source linkage.`
-            : `Billable: selected rate resolves to ${currency(entry.rate_cents)} and this entry is currently unbilled.`;
+            : `This entry is currently unbilled. Rate: ${currency(entry.rate_cents)}.`;
 
     setText("time-editor-title", entry.id ? `Entry ${entry.entry_date}` : "New Time Draft");
     setText("time-detail-customer", entry.customer_name || "None");
@@ -506,7 +500,30 @@ function clearEntryDraft(copyCurrent = false) {
     editorProtection.accept({ lock: true, duplicate: copyCurrent });
 }
 
+async function deleteTimeEntry() {
+    const record = selectedEntry();
+    if (!record?.id || timeState.isLoading || timeState.isSaving || !editorProtection.canWrite()) return;
+    if (!window.confirm(`Delete time entry ${record.entry_date}? This cannot be undone.`)) return;
+    try {
+        timeState.isSaving = true;
+        editorProtection.refresh();
+        await apiRequestJson(timeEntriesUrl(), `/${record.id}`, { method: "DELETE" }, "Unable to delete time entry.");
+        timeState.entries = timeState.entries.filter((row) => row.id !== record.id);
+        timeState.selectedId = timeState.entries[0]?.id || null;
+        timeState.draftEntry = null;
+        render();
+        editorProtection.saved();
+        showToast("Time Entry deleted.", "success");
+    } catch (error) {
+        showToast(error instanceof Error ? error.message : "Unable to delete time entry.");
+    } finally {
+        timeState.isSaving = false;
+        render();
+    }
+}
+
 function bindEvents() {
+    document.getElementById("delete-time-button")?.addEventListener("click", () => { void deleteTimeEntry(); });
     document.getElementById("time-search")?.addEventListener("input", (event) => {
         timeState.searchQuery = event.target.value;
         render();
@@ -566,6 +583,8 @@ function render() {
 window.addEventListener("DOMContentLoaded", () => {
     editorProtection.register({
         formId: "time-form",
+        mutationControls: "#delete-time-button",
+        applyProtection: () => { document.getElementById("delete-time-button").disabled = !timeState.selectedId || timeState.isLoading || timeState.isSaving || !editorProtection.canWrite(); },
         recordId: () => timeState.selectedId,
         busy: () => timeState.isLoading || timeState.isSaving,
         snapshot: () => editorFormSnapshot("time-form"),

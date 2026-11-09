@@ -153,6 +153,17 @@ def create_customer(connection: sqlite3.Connection, payload: CustomerWrite) -> d
     return fetch_customer(connection, cursor.lastrowid)
 
 
+def delete_customer(connection: sqlite3.Connection, customer_id: int) -> bool:
+    if fetch_customer(connection, customer_id) is None:
+        return False
+    for table in ("projects", "time_entries", "expenses", "invoices", "payments"):
+        if connection.execute(f"SELECT 1 FROM {table} WHERE customer_id = ? LIMIT 1", (customer_id,)).fetchone():
+            raise ValueError("Remove this customer's projects, time, expenses, invoices, and payments before deleting the customer.")
+    with connection:
+        connection.execute("DELETE FROM customers WHERE id = ?", (customer_id,))
+    return True
+
+
 def update_customer(
     connection: sqlite3.Connection,
     customer_id: int,

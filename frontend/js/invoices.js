@@ -95,18 +95,12 @@ function recalculateEditorSummary() {
     const timeTotal = (invoicesState.editor.selected_time_entries || []).reduce((sum, entry) => sum + (entry.line_total_cents || 0), 0);
     const expenseTotal = (invoicesState.editor.selected_expenses || []).reduce((sum, expense) => sum + (expense.line_total_cents || 0), 0);
     const invoiceTotal = timeTotal + expenseTotal;
-    const priorBalance = invoice.prior_balance_cents || 0;
-    const unappliedCredit = invoice.unapplied_credit_cents || 0;
     invoice.invoice_amount_cents = invoiceTotal;
     invoice.open_balance_cents = Math.max(0, invoiceTotal - (invoice.paid_amount_cents || 0));
     invoicesState.editor.summary = {
-        ...(invoicesState.editor.summary || {}),
         time_total_cents: timeTotal,
         expense_total_cents: expenseTotal,
-        invoice_total_cents: invoiceTotal,
-        prior_balance_cents: priorBalance,
-        unapplied_credit_cents: unappliedCredit,
-        open_balance_after_issue_cents: Math.max(0, priorBalance + invoiceTotal - unappliedCredit)
+        invoice_total_cents: invoiceTotal
     };
 }
 
@@ -332,13 +326,22 @@ function updateEditorSummary(invoice, summary) {
     setText("invoice-summary-time", currency(summary.time_total_cents));
     setText("invoice-summary-expense", currency(summary.expense_total_cents));
     setText("invoice-summary-total", currency(summary.invoice_total_cents));
-    setText("invoice-summary-prior-balance", currency(summary.prior_balance_cents));
-    setText("invoice-summary-credit", currency(summary.unapplied_credit_cents));
-    setText("invoice-summary-open-after-issue", currency(summary.open_balance_after_issue_cents));
 }
 
 function renderEditor(invoice) {
     if (!invoice) {
+        ["invoice-number", "invoice-project", "invoice-date", "invoice-notes"].forEach((id) => {
+            document.getElementById(id).value = "";
+        });
+        document.getElementById("invoice-terms").value = "30";
+        ["invoice-editor-status-chip", "invoice-detail-customer", "invoice-due-date"].forEach((id) => setText(id, "—"));
+        setText("invoice-editor-title", "No Invoice Selected");
+        ["invoice-detail-total", "invoice-detail-open-balance", "invoice-summary-time", "invoice-summary-expense", "invoice-summary-total", "invoice-summary-prior-balance", "invoice-summary-credit", "invoice-summary-open-after-issue"].forEach((id) => setText(id, currency(0)));
+        setText("eligible-time-count", "0 rows");
+        setText("eligible-expense-count", "0 rows");
+        renderSelectableSourceList("eligible-time-list", [], "time", new Set(), true);
+        renderSelectableSourceList("eligible-expenses-list", [], "expense", new Set(), true);
+        document.getElementById("delete-invoice-button").textContent = "Delete Invoice";
         return;
     }
     const projectSelect = document.getElementById("invoice-project");
@@ -416,10 +419,10 @@ function renderEditor(invoice) {
     }
     const deleteButton = document.getElementById("delete-invoice-button");
     if (deleteButton) {
-        const cannotDelete = Boolean(invoice.id) || invoicesState.isSaving;
+        const cannotDelete = invoicesState.isSaving || invoicesState.isEditorLoading || (Boolean(invoice.id) && !editorProtection.canWrite());
         deleteButton.disabled = cannotDelete;
         deleteButton.classList.toggle("opacity-60", cannotDelete);
-        deleteButton.textContent = invoice.id ? "Saved Invoice" : "Discard New";
+        deleteButton.textContent = invoice.id ? "Delete Invoice" : "Discard New";
     }
 }
 
@@ -599,13 +602,33 @@ async function reconcileInvoiceDraft() {
 }
 
 async function deleteDraftInvoice() {
-    if (!editorProtection.allowTransition()) return;
     const invoice = selectedInvoice();
-    if (!invoice || invoice.id || invoicesState.isSaving) {
+    if (!invoice || invoicesState.isLoading || invoicesState.isSaving || invoicesState.isEditorLoading) return;
+    if (!invoice.id) {
+        if (!editorProtection.allowTransition()) return;
+        if (await loadEditor(invoicesState.invoices[0]?.id || null)) editorProtection.saved();
         return;
     }
-
-    if (await loadEditor(invoicesState.invoices[0]?.id || null)) editorProtection.saved();
+    if (!editorProtection.canWrite()) return;
+    if (!window.confirm(`Delete invoice ${invoice.invoice_number}? Its time and expenses will be released for editing and invoicing. Payment applications to this invoice will be removed; payment records will be retained. Its saved document will be deleted.`)) return;
+    try {
+        invoicesState.isSaving = true;
+        editorProtection.refresh();
+        await requestJson(`/${invoice.id}`, { method: "DELETE" }, "Unable to delete invoice.");
+        invoicesState.invoices = invoicesState.invoices.filter((row) => row.id !== invoice.id);
+        invoicesState.selectedInvoiceId = null;
+        setEditorPayload({});
+        invoicesState.needsReconcile = false;
+        invoicesState.creationUncertain = false;
+        editorProtection.saved();
+        await loadEditor(invoicesState.invoices[0]?.id || null);
+        showToast("Invoice deleted. Its time and expenses are available for correction.", "success");
+    } catch (error) {
+        showToast(error instanceof Error ? error.message : "Unable to delete invoice.");
+    } finally {
+        invoicesState.isSaving = false;
+        render();
+    }
 }
 
 function bindEvents() {
@@ -694,6 +717,11 @@ window.addEventListener("DOMContentLoaded", () => {
         capture: () => invoicesState.editor,
         restore: (editor) => { invoicesState.editor = editor; },
         applyProtection: () => {
+            if (!selectedInvoice()) {
+                ["invoice-number", "invoice-project", "invoice-date", "invoice-terms", "invoice-notes"].forEach((id) => { document.getElementById(id).disabled = true; });
+            }
+            const remove = document.getElementById("delete-invoice-button");
+            remove.disabled = invoicesState.isLoading || invoicesState.isSaving || invoicesState.isEditorLoading || !selectedInvoice() || (Boolean(selectedInvoice()?.id) && !editorProtection.canWrite());
             const save = document.getElementById("save-invoice-button");
             save.disabled = invoicesState.isLoading || invoicesState.isSaving || invoicesState.isEditorLoading || !selectedInvoice() || invoicesState.creationUncertain;
             save.textContent = invoicesState.isSaving ? "Saving..." : editorProtection.locked() ? "Print Saved Invoice" : "Save/Print Invoice";

@@ -96,7 +96,7 @@
                             </div>
                             <div class="min-w-0">
                                 <label class="field-label" for="expense-unit-cost">Unit Cost</label>
-                                <input class="field" id="expense-unit-cost" min="0" name="unit_cost" required step="0.01" type="number">
+                                <input class="field" id="expense-unit-cost" min="0" name="unit_cost" required step="0.0001" type="number">
                             </div>
                             <div class="min-w-0">
                                 <label class="field-label">Billing</label>
@@ -116,6 +116,7 @@
                             <button class="btn-primary" type="submit">Save Expense</button>
                             <button class="btn-secondary" id="duplicate-expense-button" type="button">Duplicate</button>
                             <button class="btn-secondary" id="clear-expense-form-button" type="button">Clear Form</button>
+                            <button class="btn-danger" id="delete-expense-button" type="button">Delete Expense</button>
                         </div>
                     </form>
                 </article>

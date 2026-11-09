@@ -62,6 +62,8 @@ Here is a concise route map of the current API, grouped by function.
     - Creates a new customer.
   - PUT /api/customers/{customer_id}
     - Updates an existing customer.
+  - DELETE /api/customers/{customer_id}
+    - Deletes an unused customer. Returns 409 if projects, time, expenses, invoices, or payments reference the customer.
 
 ## Projects
 
@@ -71,6 +73,8 @@ Here is a concise route map of the current API, grouped by function.
     - Creates a new project.
   - PUT /api/projects/{project_id}
     - Updates an existing project.
+  - DELETE /api/projects/{project_id}
+    - Deletes a project and its rates. Returns 409 if time, expenses, or invoices reference the project.
 
 ## Time entries
 
@@ -80,6 +84,10 @@ Here is a concise route map of the current API, grouped by function.
     - Creates a new time entry.
   - PUT /api/time-entries/{entry_id}
     - Updates an existing time entry.
+  - DELETE /api/time-entries/{entry_id}
+    - Deletes an unlinked time entry. Returns 409 if it belongs to an invoice; remove it from or delete the invoice first.
+
+Time rates, including zero, are ordinary prices. Time has no billable flag. Unlinked time is eligible for invoice selection regardless of rate.
 
 ## Expenses
 
@@ -89,6 +97,12 @@ Here is a concise route map of the current API, grouped by function.
     - Creates a new expense.
   - PUT /api/expenses/{expense_id}
     - Updates an existing expense.
+  - DELETE /api/expenses/{expense_id}
+    - Deletes an unlinked expense. Returns 409 if it belongs to an invoice; remove it from or delete the invoice first.
+
+Expense write/read payloads use `unit_cost_ten_thousandths`, a nonnegative integer representing ten-thousandths of a dollar, instead of the former `unit_cost_cents`. For example, `$0.725` is `7250`; `$174.89` is `1748900`. Integer rates must not exceed JavaScript's safe integer limit, `9007199254740991`. Quantity must be finite and greater than zero. Calculate quantity times exact rate using decimal arithmetic, then round half up once to `line_total_cents`; `41` at `7250` returns `2973` cents. The additive precision migration multiplies existing stored cent rates by 100 without changing historical line totals or invoice links. Project/time rates and other monetary totals keep their existing cent units.
+
+The Expenses audit sheet exports `unit_cost_ten_thousandths` and a readable numeric `unit_cost_dollars` column; the scaled integer preserves the authoritative exact value.
 
 ## Invoices
 
@@ -100,8 +114,18 @@ Here is a concise route map of the current API, grouped by function.
     - Loads the editor payload for an existing invoice.
   - POST /api/invoices/save-print
     - Saves an invoice and generates/marks its print document.
+    - Requires at least one selected time or expense row. Zero-dollar totals are allowed.
+    - Generated HTML has one final summary row labeled Total Invoice, equal to its time and expense charges. It omits Prior Balance, Unapplied Credit, and Total Due; payment applications do not reduce the printed charge total.
+  - DELETE /api/invoices/{invoice_id}
+    - Deletes the invoice and its saved document, clears its time/expense links, and removes its payment applications. Payments and other invoice applications are retained.
+    - Document deletion failure retains the invoice and its links. Invalid document paths return 422.
   - GET /api/invoices/{invoice_id}/document
     - Returns the saved invoice HTML document for display/printing.
+    - Read-only, including with `autoprint=1`: no document regeneration, source-link updates, or invoice changes. Existing saved HTML retains its layout until deliberate Save/Print regeneration.
+
+New and saved invoice editor payloads, including the `editor` returned by Save/Print, have a `summary` containing exactly three integer-cent fields: `time_total_cents`, `expense_total_cents`, and `invoice_total_cents`. The summary no longer contains `prior_balance_cents`, `unapplied_credit_cents`, or `open_balance_after_issue_cents`. The invoice object's own `invoice_amount_cents`, `paid_amount_cents`, and `open_balance_cents` retain their existing meanings. Its top-level `prior_balance_cents` and `unapplied_credit_cents` remain available for compatibility with the XLSX OpenInvoices audit sheet; customer balances and statements are unchanged.
+
+All record DELETE endpoints return 404 for missing records and an envelope with `deleted: true` and the deleted record ID on success. Saved-record delete buttons and handlers require browser-local Edit Mode and confirmation.
 
 ## Payments
 

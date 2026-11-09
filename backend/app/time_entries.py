@@ -212,7 +212,7 @@ def update_time_entry(
     if existing_invoice is None:
         return None
     if existing_invoice["invoice_id"] is not None and existing_invoice["issued_at"] is not None:
-        raise ValueError("Time entries on printed invoices are read-only.")
+        raise ValueError("Remove this time entry from its invoice, or delete the invoice, before editing the entry.")
 
     project_row, rate = resolve_project_rate(connection, payload.project_id, payload.rate_code)
     if project_row is None or rate is None:
@@ -249,6 +249,17 @@ def update_time_entry(
     )
     connection.commit()
     return fetch_time_entry(connection, entry_id)
+
+
+def delete_time_entry(connection: sqlite3.Connection, entry_id: int) -> bool:
+    row = connection.execute("SELECT invoice_id FROM time_entries WHERE id = ?", (entry_id,)).fetchone()
+    if row is None:
+        return False
+    if row["invoice_id"] is not None:
+        raise ValueError("Remove this time entry from its invoice, or delete the invoice, before deleting the entry.")
+    with connection:
+        connection.execute("DELETE FROM time_entries WHERE id = ?", (entry_id,))
+    return True
 
 
 def time_bootstrap_payload(connection: sqlite3.Connection, year: str | None = None) -> dict[str, object]:

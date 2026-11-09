@@ -6,9 +6,11 @@
 
 from __future__ import annotations
 
+import math
 import sqlite3
+from decimal import Decimal, ROUND_HALF_UP
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .date_utils import utc_now, validate_iso_date
 from .projects import customer_lookup, project_lookup
@@ -37,7 +39,7 @@ class ExpenseWrite(BaseModel):
     vendor: str
     description: str
     quantity: float
-    unit_cost_cents: int
+    unit_cost_ten_thousandths: int = Field(strict=True, ge=0, le=9_007_199_254_740_991)
     category: str
     is_billable: bool
 
@@ -65,16 +67,14 @@ class ExpenseWrite(BaseModel):
     @field_validator("quantity")
     @classmethod
     def positive_quantity(cls, value: float) -> float:
-        if value <= 0:
+        if not math.isfinite(value) or value <= 0:
             raise ValueError("Quantity must be greater than zero.")
         return value
 
-    @field_validator("unit_cost_cents")
-    @classmethod
-    def non_negative_unit_cost(cls, value: int) -> int:
-        if value < 0:
-            raise ValueError("Unit cost must be zero or greater.")
-        return value
+
+def expense_line_total_cents(quantity: float, unit_cost_ten_thousandths: int) -> int:
+    amount = Decimal(str(quantity)) * Decimal(unit_cost_ten_thousandths) / 100
+    return int(amount.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
 
 def expense_select_sql() -> str:
@@ -89,7 +89,7 @@ def expense_select_sql() -> str:
         e.vendor,
         e.description,
         e.quantity,
-        e.unit_cost_cents,
+        e.unit_cost_ten_thousandths,
         e.line_total_cents,
         e.category,
         e.is_billable,
@@ -113,7 +113,7 @@ def row_to_expense(row: sqlite3.Row) -> dict[str, object]:
         "vendor": row["vendor"],
         "description": row["description"],
         "quantity": row["quantity"],
-        "unit_cost_cents": row["unit_cost_cents"],
+        "unit_cost_ten_thousandths": row["unit_cost_ten_thousandths"],
         "line_total_cents": row["line_total_cents"],
         "category": row["category"],
         "is_billable": bool(row["is_billable"]),
@@ -162,7 +162,7 @@ def create_expense(connection: sqlite3.Connection, payload: ExpenseWrite) -> dic
         raise ValueError("Project not found.")
 
     timestamp = utc_now()
-    line_total_cents = round(payload.quantity * payload.unit_cost_cents)
+    line_total_cents = expense_line_total_cents(payload.quantity, payload.unit_cost_ten_thousandths)
     cursor = connection.execute(
         """
         INSERT INTO expenses (
@@ -172,7 +172,7 @@ def create_expense(connection: sqlite3.Connection, payload: ExpenseWrite) -> dic
             vendor,
             description,
             quantity,
-            unit_cost_cents,
+            unit_cost_ten_thousandths,
             line_total_cents,
             category,
             is_billable,
@@ -188,7 +188,7 @@ def create_expense(connection: sqlite3.Connection, payload: ExpenseWrite) -> dic
             payload.vendor,
             payload.description,
             payload.quantity,
-            payload.unit_cost_cents,
+            payload.unit_cost_ten_thousandths,
             line_total_cents,
             payload.category,
             1 if payload.is_billable else 0,
@@ -199,6 +199,17 @@ def create_expense(connection: sqlite3.Connection, payload: ExpenseWrite) -> dic
     )
     connection.commit()
     return fetch_expense(connection, cursor.lastrowid)
+
+
+def delete_expense(connection: sqlite3.Connection, expense_id: int) -> bool:
+    row = connection.execute("SELECT invoice_id FROM expenses WHERE id = ?", (expense_id,)).fetchone()
+    if row is None:
+        return False
+    if row["invoice_id"] is not None:
+        raise ValueError("Remove this expense from its invoice, or delete the invoice, before deleting the expense.")
+    with connection:
+        connection.execute("DELETE FROM expenses WHERE id = ?", (expense_id,))
+    return True
 
 
 def update_expense(
@@ -218,13 +229,13 @@ def update_expense(
     if existing is None:
         return None
     if existing["invoice_id"] is not None and existing["issued_at"] is not None:
-        raise ValueError("Expenses on printed invoices are read-only.")
+        raise ValueError("Remove this expense from its invoice, or delete the invoice, before editing the expense.")
 
     project_row = resolve_project_customer(connection, payload.project_id)
     if project_row is None:
         raise ValueError("Project not found.")
 
-    line_total_cents = round(payload.quantity * payload.unit_cost_cents)
+    line_total_cents = expense_line_total_cents(payload.quantity, payload.unit_cost_ten_thousandths)
     connection.execute(
         """
         UPDATE expenses
@@ -235,7 +246,7 @@ def update_expense(
             vendor = ?,
             description = ?,
             quantity = ?,
-            unit_cost_cents = ?,
+            unit_cost_ten_thousandths = ?,
             line_total_cents = ?,
             category = ?,
             is_billable = ?,
@@ -249,7 +260,7 @@ def update_expense(
             payload.vendor,
             payload.description,
             payload.quantity,
-            payload.unit_cost_cents,
+            payload.unit_cost_ten_thousandths,
             line_total_cents,
             payload.category,
             1 if payload.is_billable else 0,

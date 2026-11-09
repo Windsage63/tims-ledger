@@ -40,6 +40,90 @@ function runtime() {
     return { context, controls, field, load, run, windowEvents, documentEvents };
 }
 
+test('expense unit rates retain four decimals and preview half cents exactly', () => {
+    const r = runtime();
+    r.load('utils.js');
+    r.load('editor-protection.js');
+    r.load('expenses.js');
+    for (const [input, scaled, displayed] of [['0.725',7250,'0.725'],['.725',7250,'0.725'],['174.89',1748900,'174.89'],['0.0001',1,'0.0001'],['0',0,'0.00']]) {
+        assert.equal(r.run(`expenseUnitCostFromInput('${input}')`), scaled);
+        assert.equal(r.run(`expenseUnitCostInput(${scaled})`), displayed);
+    }
+    for (const input of ['', '0.72501', '-1', 'Infinity', 'bad']) {
+        assert.equal(Number.isNaN(r.run(`expenseUnitCostFromInput('${input}')`)), true);
+    }
+    for (const [qty, rate, cents] of [[41,7250,2973],[165,7250,11963],[30,7250,2175],[1,50,1],[.25,16100,40]]) {
+        assert.equal(r.run(`expenseLineTotalCents(${qty},${rate})`), cents);
+    }
+    assert.equal(r.run('expenseUnitCostLabel(7250)'), '$0.725');
+    assert.equal(r.run('expenseUnitCostLabel(12345678)'), '$1,234.5678');
+    r.run(`renderEditor({...emptyExpenseDraft(), unit_cost_ten_thousandths:NaN, unit_cost_input:'0.72501'})`);
+    assert.equal(r.field('expense-unit-cost').value, '0.72501');
+});
+
+test('zero-priced time has ordinary unbilled status, filters, and totals', () => {
+    const r = runtime();
+    r.load('utils.js');
+    r.load('time.js');
+    r.run(`timeState.isLoading=false;timeState.entries=[{id:1,entry_date:'2026-11-08',minutes:60,rate_cents:0,line_total_cents:0,invoice_number:null}];timeState.statusFilter='unbilled'`);
+    assert.equal(r.run('entryStatusMeta(timeState.entries[0]).label'), 'Unbilled');
+    assert.equal(r.run('filteredEntries().length'), 1);
+    r.run('renderMetrics(timeState.entries)');
+    assert.equal(r.field('metric-unbilled-hours').textContent, '1');
+    assert.equal(r.field('metric-entry-count').textContent, '1');
+});
+
+test('record delete handlers enforce edit mode, confirmation, success reset, and failed-delete draft retention', async () => {
+    for (const [file, stateName, rows, draft, handler] of [
+        ['customers.js','state','customers','draftCustomer','deleteCustomer'],
+        ['projects.js','projectState','projects','draftProject','deleteProject'],
+        ['time.js','timeState','entries','draftEntry','deleteTimeEntry'],
+        ['expenses.js','expensesState','expenses','draftExpense','deleteExpense'],
+        ['invoices.js','invoicesState','invoices',null,'deleteDraftInvoice']
+    ]) {
+        const r = runtime();
+        let editable = false, saves = 0, requests = 0, fail = false;
+        r.context.editorProtection = { canWrite:()=>editable, refresh(){}, saved(){saves++;}, accept(){}, allowTransition:()=>true };
+        r.context.showToast = ()=>{};
+        r.context.cloneEditorData = (value)=>value && JSON.parse(JSON.stringify(value));
+        r.context.apiRequestJson = async (root, path, options)=>{ requests++; assert.equal(options.method,'DELETE'); if(fail) throw new Error('linked record'); return {deleted:true}; };
+        r.load(file);
+        r.run(`render=()=>{};${stateName}.isLoading=false;${stateName}.${rows}=[{id:1,project_number:'1',customer_name:'Customer',entry_date:'2026-11-08',description:'Entry'}];`);
+        if (draft) r.run(`${stateName}.selectedId=1;${stateName}.${draft}={id:1,description:'unsaved change'}`);
+        else r.run('invoicesState.editor.invoice={id:1,invoice_number:"I1"}');
+        await r.run(`${handler}()`);
+        assert.equal(requests,0,file+' protected');
+        editable = true;
+        await r.run(`${handler}()`);
+        assert.equal(requests,0,file+' canceled');
+        r.context.window.confirm=()=>true;
+        fail=true;
+        await r.run(`${handler}()`);
+        assert.equal(r.run(`${stateName}.${rows}.length`),1,file+' retained after failure');
+        if(draft) assert.equal(r.run(`${stateName}.${draft}.description`),'unsaved change');
+        assert.equal(saves,0);
+        fail=false;
+        await r.run(`${handler}()`);
+        assert.equal(r.run(`${stateName}.${rows}.length`),0,file+' removed');
+        assert.equal(saves,1,file+' reset');
+        assert.equal(r.run(`${stateName}.isSaving`),false);
+    }
+});
+
+test('clearing the last invoice removes its form values and source rows', () => {
+    const r = runtime();
+    r.load('utils.js');
+    r.load('invoices.js');
+    for (const id of ['invoice-number','invoice-project','invoice-date','invoice-notes']) r.field(id).value='deleted invoice';
+    r.field('eligible-time-list').innerHTML='old time';
+    r.field('eligible-expenses-list').innerHTML='old expense';
+    r.run('renderEditor(null)');
+    for (const id of ['invoice-number','invoice-project','invoice-date','invoice-notes']) assert.equal(r.field(id).value,'');
+    assert.equal(r.field('invoice-editor-title').textContent,'No Invoice Selected');
+    assert.equal(r.field('eligible-time-list').innerHTML.includes('old time'),false);
+    assert.equal(r.field('eligible-expenses-list').innerHTML.includes('old expense'),false);
+});
+
 test('invoice aging follows calendar days, terms, precedence and color boundaries', () => {
     const r = runtime();
     r.load('utils.js');
@@ -158,6 +242,32 @@ test('invoice and payment drafts do not mutate saved browse records', () => {
             assert.equal(r.run('selectedPayment().amount_cents'), 6000);
         }
     }
+});
+
+test('invoice source selection updates charges and its own balance independently of account figures', () => {
+    const r = runtime();
+    r.load('utils.js');
+    r.context.cloneEditorData = (value) => JSON.parse(JSON.stringify(value));
+    r.context.editorProtection = { canWrite: () => true };
+    r.load('invoices.js');
+    r.run(`render=()=>{};
+        invoicesState.invoices=[{id:1,invoice_amount_cents:75000,paid_amount_cents:30000,open_balance_cents:45000}];
+        setEditorPayload({invoice:{...invoicesState.invoices[0],prior_balance_cents:27193483,unapplied_credit_cents:10000000},
+            summary:{prior_balance_cents:27193483,unapplied_credit_cents:10000000,open_balance_after_issue_cents:17268483},
+            eligible_time_entries:[{id:1,line_total_cents:75000}],
+            eligible_expenses:[{id:2,line_total_cents:2973}]});
+        toggleSelection('time',1,true);`);
+    const summary = () => JSON.parse(r.run('JSON.stringify(invoicesState.editor.summary)'));
+    assert.deepEqual(summary(), { time_total_cents:75000, expense_total_cents:0, invoice_total_cents:75000 });
+    assert.equal(r.run('selectedInvoice().open_balance_cents'),45000);
+    r.run("toggleSelection('expense',2,true)");
+    assert.deepEqual(summary(), { time_total_cents:75000, expense_total_cents:2973, invoice_total_cents:77973 });
+    assert.equal(r.run('selectedInvoice().open_balance_cents'),47973);
+    r.run("toggleSelection('time',1,false)");
+    assert.deepEqual(summary(), { time_total_cents:0, expense_total_cents:2973, invoice_total_cents:2973 });
+    assert.equal(r.run('selectedInvoice().open_balance_cents'),0);
+    assert.equal(r.run('invoicesState.invoices[0].invoice_amount_cents'),75000);
+    assert.equal(r.run('invoicesState.invoices[0].open_balance_cents'),45000);
 });
 
 test('app navigation cancellation keeps a dirty draft and confirmed navigation avoids a second unload prompt', () => {

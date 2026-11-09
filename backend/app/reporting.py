@@ -296,7 +296,7 @@ def build_workbook_sheets(connection: sqlite3.Connection) -> list[tuple[str, lis
         ("Projects", build_query_sheet(connection, "SELECT * FROM projects ORDER BY id")),
         ("ProjectRates", build_query_sheet(connection, "SELECT * FROM project_rates ORDER BY project_id, sort_order, id")),
         ("TimeEntries", build_query_sheet(connection, "SELECT * FROM time_entries ORDER BY entry_date DESC, id DESC")),
-        ("Expenses", build_query_sheet(connection, "SELECT * FROM expenses ORDER BY entry_date DESC, id DESC")),
+        ("Expenses", build_query_sheet(connection, "SELECT *, unit_cost_ten_thousandths / 10000.0 AS unit_cost_dollars FROM expenses ORDER BY entry_date DESC, id DESC")),
         ("Invoices", build_query_sheet(connection, "SELECT * FROM invoices ORDER BY invoice_date DESC, id DESC")),
         ("Payments", build_query_sheet(connection, "SELECT * FROM payments ORDER BY payment_date DESC, id DESC")),
         (

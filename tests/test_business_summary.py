@@ -31,7 +31,7 @@ class BusinessSummaryTests(unittest.TestCase):
             self.insert("invoices", id=n, invoice_number=f"I{n}", project_id=1, customer_id=1, invoice_date="2026-01-01", terms_days=30, issued_at=issued, **stamp)
             self.insert("time_entries", entry_date="2026-01-01", project_id=1, customer_id=1, description="Work", minutes=60, rate_code="Regular", rate_cents=10000, line_total_cents={1:10000, 2:5000, 3:9000}[n], invoice_id=n, **stamp)
         for n, cents, billable, invoice in ((1, 2000, 1, 1), (2, 1000, 1, 3), (3, 500, 0, None), (4, 1500, 0, None)):
-            self.insert("expenses", id=n, entry_date="2025-01-01" if n == 4 else "2026-01-01", project_id=2 if n == 4 else 1, customer_id=2 if n == 4 else 1, vendor="Test", description="Cost", quantity=1, unit_cost_cents=cents, line_total_cents=cents, category="Misc.", is_billable=billable, invoice_id=invoice, **stamp)
+            self.insert("expenses", id=n, entry_date="2025-01-01" if n == 4 else "2026-01-01", project_id=2 if n == 4 else 1, customer_id=2 if n == 4 else 1, vendor="Test", description="Cost", quantity=1, unit_cost_ten_thousandths=cents * 100, line_total_cents=cents, category="Misc.", is_billable=billable, invoice_id=invoice, **stamp)
         for n, cents, year in ((1, 8000, 2025), (2, 5000, 2026), (3, 2500, 2026), (4, -500, 2026), (5, 0, 2026)):
             self.insert("payments", id=n, customer_id=2 if n == 3 else 1, payment_date=f"{year}-01-01", amount_cents=cents, **stamp)
         for n, cents in ((1, 3000), (2, 5000)):

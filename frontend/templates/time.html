@@ -15,16 +15,16 @@
 
             <section class="kpi-strip" aria-label="Time summary metrics">
                 <article class="card">
-                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Billable Amount</p>
-                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-billable-amount">-</p>
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Time Amount</p>
+                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-time-amount">-</p>
                 </article>
                 <article class="card">
                     <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Unbilled Hours</p>
                     <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-unbilled-hours">-</p>
                 </article>
                 <article class="card">
-                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Non-Billable Hours</p>
-                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-nonbillable-hours">-</p>
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Entries</p>
+                    <p class="mt-2 font-display text-lg font-semibold text-ink" id="metric-entry-count">-</p>
                 </article>
             </section>
 
@@ -86,7 +86,7 @@
                         </div>
 
                         <div class="rounded border border-line bg-white/70 px-4 py-3">
-                            <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Derived Billing</p>
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Invoice Status</p>
                             <p class="mt-2 text-sm leading-6 text-ink" id="time-derived-billing">Select a project and rate.</p>
                         </div>
 
@@ -94,6 +94,7 @@
                             <button class="btn-primary" type="submit">Save Time Entry</button>
                             <button class="btn-secondary" id="duplicate-time-button" type="button">Duplicate</button>
                             <button class="btn-secondary" id="clear-time-form-button" type="button">Clear Form</button>
+                            <button class="btn-danger" id="delete-time-button" type="button">Delete Time Entry</button>
                         </div>
                     </form>
                 </article>
@@ -120,7 +121,6 @@
                         <button class="tab" data-time-status-filter="all" type="button">All</button>
                         <button class="tab" data-time-status-filter="unbilled" type="button">Unbilled</button>
                         <button class="tab" data-time-status-filter="invoiced" type="button">Invoiced</button>
-                        <button class="tab" data-time-status-filter="nonbillable" type="button">Non-Billable</button>
                     </div>
                     </div>
 

@@ -25,6 +25,34 @@ function expensesUrl(path = "") {
     return `/api/expenses${path}`;
 }
 
+function expenseUnitCostFromInput(value) {
+    const match = /^(\d+)\.(\d{0,4})$|^(\d+)$/.exec(String(value).trim().replace(/^\./, "0."));
+    if (!match) return NaN;
+    const scaled = Number(match[1] || match[3]) * 10000 + Number((match[2] || "").padEnd(4, "0"));
+    return Number.isSafeInteger(scaled) ? scaled : NaN;
+}
+
+function expenseUnitCostInput(scaled) {
+    if (!Number.isSafeInteger(scaled) || scaled < 0) return "0.00";
+    const fraction = String(scaled % 10000).padStart(4, "0").replace(/0+$/, "").padEnd(2, "0");
+    return `${Math.floor(scaled / 10000)}.${fraction}`;
+}
+
+function expenseUnitCostLabel(scaled) {
+    const [whole, fraction] = expenseUnitCostInput(scaled).split(".");
+    return `$${whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}.${fraction}`;
+}
+
+function expenseLineTotalCents(quantity, scaled) {
+    const text = String(quantity);
+    if (!/^\d+(\.\d+)?$/.test(text) || !Number.isSafeInteger(scaled) || scaled < 0) return NaN;
+    const [whole, fraction = ""] = text.split(".");
+    const divisor = 100n * (10n ** BigInt(fraction.length));
+    const numerator = BigInt(whole + fraction) * BigInt(scaled);
+    const cents = Number((numerator + divisor / 2n) / divisor);
+    return Number.isSafeInteger(cents) ? cents : NaN;
+}
+
 function quantityLabel(quantity) {
     const numericQuantity = Number(quantity || 0);
     return numericQuantity.toFixed(numericQuantity % 1 === 0 ? 0 : 2);
@@ -65,7 +93,7 @@ function emptyExpenseDraft(overrides = {}) {
         vendor: "",
         description: "",
         quantity: 1,
-        unit_cost_cents: 0,
+        unit_cost_ten_thousandths: 0,
         line_total_cents: 0,
         category: firstCategory || "",
         is_billable: true,
@@ -257,7 +285,7 @@ function updateDerivedPreview(expense) {
     setText("expense-detail-customer", expense.customer_name || "None");
     setText("expense-detail-total", currency(expense.line_total_cents));
     setText("expense-detail-invoice", expense.invoice_number || "Not linked");
-    setText("expense-derived-billing", `${derivedLabel} Quantity ${quantityLabel(expense.quantity)} at ${currency(expense.unit_cost_cents)} each.`);
+    setText("expense-derived-billing", `${derivedLabel} Quantity ${quantityLabel(expense.quantity)} at ${expenseUnitCostLabel(expense.unit_cost_ten_thousandths)} each.`);
 }
 
 function renderEditor(expense) {
@@ -273,7 +301,9 @@ function renderEditor(expense) {
     document.getElementById("expense-category").value = current.category;
     document.getElementById("expense-description").value = current.description;
     document.getElementById("expense-quantity").value = current.quantity;
-    document.getElementById("expense-unit-cost").value = dollarsInput(current.unit_cost_cents);
+    const unitCostInput = document.getElementById("expense-unit-cost");
+    unitCostInput.value = current.unit_cost_input ?? expenseUnitCostInput(current.unit_cost_ten_thousandths);
+    unitCostInput.setCustomValidity?.(Number.isSafeInteger(expenseUnitCostFromInput(unitCostInput.value)) ? "" : "Enter a unit cost with up to four decimal places.");
     document.getElementById("expense-is-billable").checked = current.is_billable;
     updateDerivedPreview(current);
     editorProtection.refresh();
@@ -284,7 +314,9 @@ function syncDraftFromForm() {
     const projectId = Number(document.getElementById("expense-project")?.value || 0);
     const project = projectById(projectId);
     const quantity = Number(document.getElementById("expense-quantity")?.value || 0);
-    const unitCostCents = centsFromInput(document.getElementById("expense-unit-cost")?.value || 0);
+    const unitCostInput = document.getElementById("expense-unit-cost");
+    const unitCost = expenseUnitCostFromInput(unitCostInput?.value || "");
+    unitCostInput?.setCustomValidity?.(Number.isSafeInteger(unitCost) ? "" : "Enter a unit cost with up to four decimal places.");
     const source = expensesState.draftExpense || selectedExpense() || emptyExpenseDraft();
     expensesState.draftExpense = {
         ...source,
@@ -296,8 +328,9 @@ function syncDraftFromForm() {
         vendor: String(document.getElementById("expense-vendor")?.value ?? source.vendor),
         description: String(document.getElementById("expense-description")?.value ?? source.description),
         quantity: quantity || 0,
-        unit_cost_cents: unitCostCents,
-        line_total_cents: Math.round(quantity * unitCostCents),
+        unit_cost_ten_thousandths: unitCost,
+        unit_cost_input: unitCostInput?.value || "",
+        line_total_cents: expenseLineTotalCents(quantity, unitCost),
         category: String(document.getElementById("expense-category")?.value || source.category),
         is_billable: Boolean(document.getElementById("expense-is-billable")?.checked),
         invoice_number: source.invoice_number,
@@ -313,13 +346,17 @@ async function saveExpense(event) {
     }
     syncDraftFromForm();
     const draft = expensesState.draftExpense || emptyExpenseDraft();
+    if (!Number.isSafeInteger(draft.unit_cost_ten_thousandths) || !Number.isSafeInteger(draft.line_total_cents)) {
+        showToast("Enter a valid quantity and a unit cost with up to four decimal places.");
+        return;
+    }
     const payload = {
         entry_date: draft.entry_date,
         project_id: Number(draft.project_id),
         vendor: draft.vendor,
         description: draft.description,
         quantity: Number(draft.quantity),
-        unit_cost_cents: Number(draft.unit_cost_cents),
+        unit_cost_ten_thousandths: draft.unit_cost_ten_thousandths,
         category: draft.category,
         is_billable: Boolean(draft.is_billable)
     };
@@ -375,7 +412,7 @@ function clearExpenseDraft(copyCurrent = false) {
             vendor: original.vendor,
             description: original.description,
             quantity: original.quantity,
-            unit_cost_cents: original.unit_cost_cents,
+            unit_cost_ten_thousandths: original.unit_cost_ten_thousandths,
             line_total_cents: original.line_total_cents,
             category: original.category,
             is_billable: original.is_billable
@@ -390,7 +427,30 @@ function clearExpenseDraft(copyCurrent = false) {
     editorProtection.accept({ lock: true, duplicate: copyCurrent });
 }
 
+async function deleteExpense() {
+    const record = selectedExpense();
+    if (!record?.id || expensesState.isLoading || expensesState.isSaving || !editorProtection.canWrite()) return;
+    if (!window.confirm(`Delete expense ${record.description}? This cannot be undone.`)) return;
+    try {
+        expensesState.isSaving = true;
+        editorProtection.refresh();
+        await apiRequestJson(expensesUrl(), `/${record.id}`, { method: "DELETE" }, "Unable to delete expense.");
+        expensesState.expenses = expensesState.expenses.filter((row) => row.id !== record.id);
+        expensesState.selectedId = expensesState.expenses[0]?.id || null;
+        expensesState.draftExpense = null;
+        render();
+        editorProtection.saved();
+        showToast("Expense deleted.", "success");
+    } catch (error) {
+        showToast(error instanceof Error ? error.message : "Unable to delete expense.");
+    } finally {
+        expensesState.isSaving = false;
+        render();
+    }
+}
+
 function bindEvents() {
+    document.getElementById("delete-expense-button")?.addEventListener("click", () => { void deleteExpense(); });
     document.getElementById("expense-search")?.addEventListener("input", (event) => {
         expensesState.searchQuery = event.target.value;
         render();
@@ -454,6 +514,8 @@ function render() {
 window.addEventListener("DOMContentLoaded", () => {
     editorProtection.register({
         formId: "expense-form",
+        mutationControls: "#delete-expense-button",
+        applyProtection: () => { document.getElementById("delete-expense-button").disabled = !expensesState.selectedId || expensesState.isLoading || expensesState.isSaving || !editorProtection.canWrite(); },
         recordId: () => expensesState.selectedId,
         busy: () => expensesState.isLoading || expensesState.isSaving,
         snapshot: () => editorFormSnapshot("expense-form"),

@@ -488,6 +488,28 @@ function clearProjectDraft(copyCurrent = false) {
     editorProtection.accept({ lock: true, duplicate: copyCurrent });
 }
 
+async function deleteProject() {
+    const project = selectedProject();
+    if (!project?.id || projectState.isLoading || projectState.isSaving || !editorProtection.canWrite()) return;
+    if (!window.confirm(`Delete project ${project.project_number}? Projects with time, expenses, or invoices cannot be deleted.`)) return;
+    try {
+        projectState.isSaving = true;
+        editorProtection.refresh();
+        await apiRequestJson(projectsUrl(), `/${project.id}`, { method: "DELETE" }, "Unable to delete project.");
+        projectState.projects = projectState.projects.filter((row) => row.id !== project.id);
+        projectState.selectedId = projectState.projects[0]?.id || null;
+        projectState.draftProject = null;
+        render();
+        editorProtection.saved();
+        showToast("Project deleted.", "success");
+    } catch (error) {
+        showToast(error instanceof Error ? error.message : "Unable to delete project.");
+    } finally {
+        projectState.isSaving = false;
+        render();
+    }
+}
+
 function syncProjectFields() {
     if (!editorProtection.canWrite() || projectState.isSaving) return;
     const source = projectState.draftProject || selectedProject() || emptyProjectDraft();
@@ -497,6 +519,7 @@ function syncProjectFields() {
 }
 
 function bindEvents() {
+    document.getElementById("delete-project-button")?.addEventListener("click", () => { void deleteProject(); });
     document.getElementById("project-form")?.addEventListener("input", syncProjectFields);
     document.getElementById("project-search")?.addEventListener("input", (event) => {
         projectState.searchQuery = event.target.value;
@@ -558,7 +581,8 @@ window.addEventListener("DOMContentLoaded", () => {
         capture: () => projectState.draftProject || selectedProject() || emptyProjectDraft(),
         restore: (record) => { projectState.draftProject = record; },
         render,
-        mutationControls: "#add-custom-rate-button, [data-remove-custom-rate]",
+        mutationControls: "#add-custom-rate-button, [data-remove-custom-rate], #delete-project-button",
+        applyProtection: () => { document.getElementById("delete-project-button").disabled = !projectState.selectedId || projectState.isLoading || projectState.isSaving || !editorProtection.canWrite(); },
     });
     bindEvents();
     render();

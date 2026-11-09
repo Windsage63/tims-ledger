@@ -45,7 +45,7 @@ PAGE_REGISTRY: dict[str, Page] = {
         group='Sales',
         heading='Invoices',
         new_label='Invoice',
-        script_url='/frontend/js/invoices.js?v=20261004-phase2',
+        script_url='/frontend/js/invoices.js?v=20261108-delete',
         help_text='Invoices can be edited and re-saved. Changes will be reflected in the invoice ledger and associated projects. To edit a time or expense entry that is already on an invoice, first remove it from the invoice, then edit, then add it back.',
     ),
     "payments.html": Page(
@@ -67,7 +67,7 @@ PAGE_REGISTRY: dict[str, Page] = {
         group='Sales',
         heading='Customers',
         new_label='Customer',
-        script_url='/frontend/js/customers.js?v=20261004-phase2',
+        script_url='/frontend/js/customers.js?v=20261108-delete',
         help_text='Maintain customer contact details and review balances. Select a row to view contact details and its statement. Enable Edit Mode to change an existing customer, or use New Customer.',
     ),
     "projects.html": Page(
@@ -78,7 +78,7 @@ PAGE_REGISTRY: dict[str, Page] = {
         group='Work',
         heading='Projects',
         new_label='Project',
-        script_url='/frontend/js/projects.js?v=20261004-phase2',
+        script_url='/frontend/js/projects.js?v=20261108-delete',
         help_text='This module handles projects and rates. You can add parts pricing as custom rates and then bill by the unit on the timesheet screen.',
     ),
     "time.html": Page(
@@ -89,7 +89,7 @@ PAGE_REGISTRY: dict[str, Page] = {
         group='Work',
         heading='Time',
         new_label='Time Entry',
-        script_url='/frontend/js/time.js?v=20261004-phase2',
+        script_url='/frontend/js/time.js?v=20261108-delete',
         help_text='Insert parts units as hours and select their custom rate codes to add parts to a project.',
     ),
     "expenses.html": Page(
@@ -100,7 +100,7 @@ PAGE_REGISTRY: dict[str, Page] = {
         group='Work',
         heading='Expenses',
         new_label='Expense',
-        script_url='/frontend/js/expenses.js?v=20261004-phase2',
+        script_url='/frontend/js/expenses.js?v=20261108-delete',
         help_text='General office costs and other company expenses can be associated with an internal project and marked unbillable to track other costs. Use unbillable expenses for the costs of parts that have been sold under custom rate codes to track cost of sales for parts.',
     ),
     "company.html": Page(

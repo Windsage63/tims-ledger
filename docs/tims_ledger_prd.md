@@ -86,7 +86,7 @@ Each time entry stores:
 6. rate code
 7. invoice linkage, which is empty until Save/Print succeeds for an invoice that includes the entry
 
-There is no separate time-entry billable flag. Time with a selected rate of `0` is non-billable. Only unbilled time with a non-zero rate is eligible for invoice building. In the invoice editor, checking and unchecking time entries is browser-local until Save/Print. On Save/Print, checked time entries receive the invoice linkage and unchecked prior entries have the linkage cleared. Fixed-fee-supporting or non-billable time remains available for project tracking but must not be treated automatically as labor revenue.
+Time has no billable flag or rate-based billability classification. A rate of `0` is an ordinary price. All unbilled time is eligible for invoice building regardless of rate. In the invoice editor, checking and unchecking time entries is browser-local until Save/Print. On Save/Print, checked time entries receive the invoice linkage and unchecked prior entries have the linkage cleared. Source selection, rather than rate, determines invoice inclusion. Zero-dollar invoices with selected rows are allowed; empty invoices are rejected.
 
 ### 4.5 Expense Entries
 
@@ -98,13 +98,15 @@ Each expense entry stores:
 4. vendor
 5. description
 6. quantity
-7. unit cost
+7. exact unit cost with up to four decimal places in dollars, stored as integer ten-thousandths of a dollar
 8. expense category
 9. billable flag
 10. invoice linkage, which is empty until Save/Print succeeds for an invoice that includes the expense
 
 Only expenses flagged as billable are eligible for invoice building. In the invoice editor, checking and unchecking expenses is browser-local until Save/Print. On Save/Print, checked expenses receive the invoice linkage and unchecked prior expenses have the linkage cleared. Non-billable expenses remain available for internal cost tracking without being treated as invoiceable lines.
 Expense categories are: `Materials`, `Lodging`, `Airfare`, `Mileage`, `Perdiem`, `Rental Car`, `Gas`, `Parking`, `Tolls`, `Meals`, `Entertainment`, `Gifts`, `Freight`, and `Misc.`.
+
+Expense line amounts use decimal quantity-times-rate arithmetic and round half up once to integer cents after multiplication. A mileage rate of $0.725 must survive editor/API/audit-export round trips; 41 miles produces $29.73. Unit-rate display preserves up to four decimal places while totals display two. The audit export retains the exact scaled integer and includes a readable `unit_cost_dollars` column.
 
 ### 4.6 Invoices
 
@@ -164,6 +166,7 @@ Users may keep an unlimited number of normal backups and select one to restore. 
 2. Allow customers to be selected during project setup and invoice display.
 3. Show customer balance information, including open AR, and net present balance.
 4. Provide a browse-plus-editor surface for reviewing, creating, and updating customer records.
+5. Allow confirmed deletion in Edit Mode when no projects, time, expenses, invoices, or payments reference the customer.
 
 ### 5.2 Projects Module
 
@@ -172,15 +175,17 @@ Users may keep an unlimited number of normal backups and select one to restore. 
 3. Link each project to one customer.
 4. Support built-in rate codes ST, OT, TT, and custom rate entries.
 5. Support fixed-fee workflows through custom project rates and unit entries in the time column.
+6. Allow confirmed deletion in Edit Mode when no time, expenses, or invoices reference the project; delete its rates with it.
 
 ### 5.3 Time Tracking Module
 
 1. Allow time entry by date, project selection, work description, hours, and rate code. Project selectors should show project number and project description.
-2. Do not ask the user to mark time as billable or non-billable separately; time billability is derived from the selected rate, and a rate of `0` is non-billable.
+2. Do not classify time as billable or non-billable. Rates, including `0`, are prices and do not determine invoice eligibility.
 3. Derive the customer and available rates from the selected project.
 4. Store invoice linkage on the time entry when Save/Print is clicked for an invoice that includes that entry, and remove that linkage when Save/Print is clicked after the entry has been unchecked.
 5. Show unbilled status clearly so the user can identify invoice-eligible work.
-6. Metrics such as total hours or billable amount are secondary to the source-entry workflow.
+6. Metrics such as total hours or total amount are secondary to the source-entry workflow.
+7. Allow confirmed deletion in Edit Mode for time entries that are not linked to invoices.
 
 ### 5.4 Expense Management Module
 
@@ -190,6 +195,7 @@ Users may keep an unlimited number of normal backups and select one to restore. 
 4. Store invoice linkage on the expense record when Save/Print is clicked for an invoice that includes that expense, and remove that linkage when Save/Print is clicked after the expense has been unchecked.
 5. Use the canonical expense category list from section 4.5.
 6. Provide a browse-plus-editor surface for reviewing, creating, and updating expenses.
+7. Allow confirmed deletion in Edit Mode for expenses that are not linked to invoices.
 
 ### 5.5 Invoice Creation And Editing
 
@@ -198,14 +204,15 @@ Users may keep an unlimited number of normal backups and select one to restore. 
 3. The system must present eligible unbilled expenses for that project with checkbox selection.
 4. Selecting or unselecting a line must update browser-side invoice state and preview totals.
 5. Selecting or unselecting a line must not write source-record invoice linkage until Save/Print.
-6. Prior customer balance must display separately from the current invoice charges.
-7. Unapplied credits may be shown and optionally applied through payment application logic, not by rewriting invoice lines.
+6. Printed invoices must show a single final summary row labeled Total Invoice, containing only that invoice's time and expense charges. Do not print Prior Balance, Unapplied Credit, or Total Due rows. Applied payments and customer account balances do not change the invoice charge total.
+7. Customer balances and statements belong on Customers. Apply unapplied credits through payment application logic, not by rewriting invoice lines. The invoice editor summary shows Time Total, Expense Total, and Total Invoice; its separate Open Balance remains specific to the selected invoice.
 8. Save/Print must create or update the invoice, replace source-record invoice links, generate or overwrite the current invoice HTML, and open the saved HTML for browser printing.
 9. Save/Print must clear invoice linkage from unchecked prior rows so those rows return to the unbilled pool and can be assigned to another invoice.
 10. Editing an issued invoice must preserve the same source-linked checkbox workflow and may change accounting history.
 11. The printed invoice should present time-derived charges in the upper section and expense-derived charges in a separate lower section.
 12. The printed invoice project reference should be `{project number} - {project description}` in the invoice metadata and line-item project column.
 13. The printed invoice company header and check-payable footer should come from the Company profile.
+14. Allow confirmed invoice deletion in Edit Mode. Remove its saved document and payment applications, release its time and expenses for correction, and retain payment records and other invoices. A document-removal failure must retain the invoice and its links.
 
 The invoice editor should preserve the printable invoice experience while keeping source records authoritative:
 
@@ -220,7 +227,7 @@ The invoice editor should preserve the printable invoice experience while keepin
 1. Provide an invoice ledger listing saved invoices with search, filtering, and row actions.
 2. Support All, Draft, Open, Overdue, and Paid views. Draft means unprinted; Open includes printed unpaid invoices, including overdue invoices. Overdue means a printed invoice has a positive balance and its due date is before the local calendar date. Display the exact count as Overdue 1 day or Overdue N days, with color severity changing at 31, 61, and 91 days past terms. Share the calendar calculation with customer statements and payment invoice rows, while preserving backend status values. Show Due and Balance columns, plus Open Balance, Overdue, and Draft Total metrics for the filtered rows.
 3. Derive invoice status from issuance state and open balance.
-4. Support viewing saved invoice HTML documents by invoice number.
+4. Support viewing saved invoice HTML documents by invoice number. Template changes apply only when Save/Print generates a document. Existing HTML is retained until deliberately regenerated in Edit Mode; protected reprinting must not rewrite it.
 
 ### 5.7 Payments Ledger And Application Workflow
 
