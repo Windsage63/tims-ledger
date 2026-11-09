@@ -297,6 +297,8 @@ def update_project(
     existing = fetch_project(connection, project_id)
     if existing is None:
         return None
+    if payload.customer_id != existing["customer_id"]:
+        raise ValueError("A saved project's customer cannot be changed. Delete and recreate an unused project if its customer is incorrect.")
 
     customer = resolve_customer(connection, payload.customer_id)
     if customer is None:

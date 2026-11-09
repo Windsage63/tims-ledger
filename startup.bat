@@ -17,10 +17,19 @@ set "HEALTH_URL=http://%HOST%:%PORT%/api/health"
 set "PYTHON_EXE="
 if exist "%ROOT_DIR%.venv\Scripts\python.exe" set "PYTHON_EXE=%ROOT_DIR%.venv\Scripts\python.exe"
 if not defined PYTHON_EXE if exist "%BACKEND_DIR%\.venv\Scripts\python.exe" set "PYTHON_EXE=%BACKEND_DIR%\.venv\Scripts\python.exe"
-if not defined PYTHON_EXE set "PYTHON_EXE=python"
+if not defined PYTHON_EXE (
+    echo Project virtual environment not found. Run install.bat first.
+    exit /b 1
+)
 
 if not exist "%BACKEND_DIR%" (
     echo Backend directory not found: "%BACKEND_DIR%"
+    exit /b 1
+)
+
+powershell -NoProfile -ExecutionPolicy Bypass -File "%ROOT_DIR%scripts\stop-server.ps1" -Port "%PORT%"
+if errorlevel 1 (
+    echo Could not stop the existing backend or free port %PORT%. Startup canceled.
     exit /b 1
 )
 
@@ -29,14 +38,10 @@ pushd "%BACKEND_DIR%"
 echo Starting Tim's Ledger backend on %APP_URL%
 echo Using Python: %PYTHON_EXE%
 
-if /I "%TIMS_LEDGER_FOREGROUND%"=="1" (
-    "%PYTHON_EXE%" -m uvicorn app.main:app --reload --host %HOST% --port %PORT%
-    set "EXIT_CODE=%ERRORLEVEL%"
-    popd
-    exit /b %EXIT_CODE%
-)
+if /I "%TIMS_LEDGER_FOREGROUND%"=="1" goto foreground
 
-start "%WINDOW_TITLE%" cmd /k ""%PYTHON_EXE%" -m uvicorn app.main:app --reload --host %HOST% --port %PORT%"
+echo Close the backend window or run shutdown.bat to stop the application.
+start "%WINDOW_TITLE%" cmd /c ""%PYTHON_EXE%" -m uvicorn app.main:app --reload --host %HOST% --port %PORT%"
 
 if /I "%TIMS_LEDGER_SKIP_BROWSER%"=="1" (
     popd
@@ -54,3 +59,10 @@ start "" "%APP_URL%"
 
 popd
 exit /b 0
+
+:foreground
+echo Press Ctrl+C or run shutdown.bat to stop the application.
+"%PYTHON_EXE%" -m uvicorn app.main:app --reload --host %HOST% --port %PORT%
+set "EXIT_CODE=%ERRORLEVEL%"
+popd
+exit /b %EXIT_CODE%

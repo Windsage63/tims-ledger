@@ -244,6 +244,35 @@ test('invoice and payment drafts do not mutate saved browse records', () => {
     }
 });
 
+test('bulk invoice selection respects protection, hidden rows, zero prices, and local drafts', () => {
+    const r = runtime();
+    r.load('utils.js');
+    r.context.cloneEditorData = (value) => JSON.parse(JSON.stringify(value));
+    let writable = false;
+    r.context.editorProtection = { canWrite: () => writable };
+    r.load('invoices.js');
+    const input = (id, visible = true, disabled = false) => ({
+        dataset: { selectionId: String(id) }, disabled, getClientRects: () => visible ? [{}] : []
+    });
+    r.field('eligible-time-list').querySelectorAll = () => [input(1), input(2), input(3, false), input(4, true, true)];
+    r.field('eligible-expenses-list').querySelectorAll = () => [input(5)];
+    r.run(`render=()=>{};
+        invoicesState.invoices=[{id:1,invoice_amount_cents:0,paid_amount_cents:0,open_balance_cents:0}];
+        setEditorPayload({invoice:{...invoicesState.invoices[0]},selected_time_entries:[],selected_expenses:[],
+            eligible_time_entries:[{id:1,line_total_cents:100},{id:2,line_total_cents:0},{id:3,line_total_cents:300},{id:4,line_total_cents:400}],
+            eligible_expenses:[{id:5,line_total_cents:200}]});
+        selectAllVisibleSources('time');`);
+    assert.equal(r.run('currentSelectedTimeIds().size'), 0);
+    writable = true;
+    r.run("selectAllVisibleSources('time'); selectAllVisibleSources('expense');");
+    assert.equal(r.run('JSON.stringify([...currentSelectedTimeIds()])'), '[1,2]');
+    assert.equal(r.run('JSON.stringify([...currentSelectedExpenseIds()])'), '[5]');
+    assert.equal(r.run('selectedInvoice().invoice_amount_cents'), 300);
+    assert.equal(r.run('invoicesState.invoices[0].invoice_amount_cents'), 0);
+    r.run("invoicesState.isSaving=true; selectAllVisibleSources('time');");
+    assert.equal(r.run('currentSelectedTimeIds().size'), 2);
+});
+
 test('invoice source selection updates charges and its own balance independently of account figures', () => {
     const r = runtime();
     r.load('utils.js');

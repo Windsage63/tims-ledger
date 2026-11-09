@@ -45,7 +45,7 @@ PAGE_REGISTRY: dict[str, Page] = {
         group='Sales',
         heading='Invoices',
         new_label='Invoice',
-        script_url='/frontend/js/invoices.js?v=20261108-delete',
+        script_url='/frontend/js/invoices.js?v=20261109-selection-credit',
         help_text='Invoices can be edited and re-saved. Changes will be reflected in the invoice ledger and associated projects. To edit a time or expense entry that is already on an invoice, first remove it from the invoice, then edit, then add it back.',
     ),
     "payments.html": Page(
@@ -78,8 +78,8 @@ PAGE_REGISTRY: dict[str, Page] = {
         group='Work',
         heading='Projects',
         new_label='Project',
-        script_url='/frontend/js/projects.js?v=20261108-delete',
-        help_text='This module handles projects and rates. You can add parts pricing as custom rates and then bill by the unit on the timesheet screen.',
+        script_url='/frontend/js/projects.js?v=20261109-fixed-customer',
+        help_text="This module handles projects and rates. A saved project's customer cannot be changed. You can add parts pricing as custom rates and then bill by the unit on the timesheet screen.",
     ),
     "time.html": Page(
         filename='time.html',
@@ -90,7 +90,7 @@ PAGE_REGISTRY: dict[str, Page] = {
         heading='Time',
         new_label='Time Entry',
         script_url='/frontend/js/time.js?v=20261108-delete',
-        help_text='Insert parts units as hours and select their custom rate codes to add parts to a project.',
+        help_text='Enter labor hours or item units in Hrs/Units and select the project rate code. Use a new project when a continuing engagement needs new pricing.',
     ),
     "expenses.html": Page(
         filename='expenses.html',

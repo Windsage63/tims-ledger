@@ -29,6 +29,9 @@ EXPENSE_CATEGORIES = [
     "Entertainment",
     "Gifts",
     "Freight",
+    "Salaries",
+    "Insurance",
+    "Payroll Taxes",
     "Misc.",
 ]
 

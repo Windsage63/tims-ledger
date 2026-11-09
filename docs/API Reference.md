@@ -72,7 +72,7 @@ Here is a concise route map of the current API, grouped by function.
   - POST /api/projects
     - Creates a new project.
   - PUT /api/projects/{project_id}
-    - Updates an existing project.
+    - Updates an existing project. Its `customer_id` is fixed after creation; changing it returns 422. Customer contact/address updates use the customer endpoint and retain the same customer ID.
   - DELETE /api/projects/{project_id}
     - Deletes a project and its rates. Returns 409 if time, expenses, or invoices reference the project.
 
@@ -115,6 +115,7 @@ The Expenses audit sheet exports `unit_cost_ten_thousandths` and a readable nume
   - POST /api/invoices/save-print
     - Saves an invoice and generates/marks its print document.
     - Requires at least one selected time or expense row. Zero-dollar totals are allowed.
+    - Never changes payment allocations. If selected charges total less than applied payments, returns 422 with detail "a paid invoice cannot be lower than the payments allocated to it" and leaves all saved records and the document unchanged. The user must explicitly reduce/remove allocations through Receive Payments before retrying. Cross-customer project changes are rejected while the invoice has payment applications.
     - Generated HTML has one final summary row labeled Total Invoice, equal to its time and expense charges. It omits Prior Balance, Unapplied Credit, and Total Due; payment applications do not reduce the printed charge total.
   - DELETE /api/invoices/{invoice_id}
     - Deletes the invoice and its saved document, clears its time/expense links, and removes its payment applications. Payments and other invoice applications are retained.
@@ -135,7 +136,7 @@ All record DELETE endpoints return 404 for missing records and an envelope with 
   - GET /api/payments/{payment_id}/editor
     - Loads the payment editor payload for one payment.
   - POST /api/payments
-    - Creates a new payment. Payment amounts may be zero while a draft is being entered, or negative for credits/corrections. The reference number is optional.
+    - Creates a new payment. Payment amounts may be zero while a draft is being entered, or negative for cash corrections. The reference number is optional. Overpayments remain unapplied on the ordinary receipt and can produce a negative customer net balance; they do not change invoice charges.
     - Request body:
       - `customer_id`: Customer ID.
       - `payment_date`: Payment date as `YYYY-MM-DD`.
@@ -145,12 +146,14 @@ All record DELETE endpoints return 404 for missing records and an envelope with 
   - PUT /api/payments/{payment_id}
     - Updates an existing payment. The reference number is optional.
     - Uses the same request body as `POST /api/payments`.
+    - Supports editing the receipt to a net amount after a refund. The amount must still cover positive applications; release allocations first when needed. Negative corrections can be updated with no positive applications.
   - DELETE /api/payments/{payment_id}
     - Deletes a payment and its invoice application rows.
   - GET /api/payments/customers/{customer_id}/open-invoices
     - Loads open invoice rows for the selected customer while editing a payment.
   - POST /api/payments/{payment_id}/applications
     - Replaces invoice applications for a payment. The payment screen calls this as part of Save Payment.
+    - Zero or negative cash corrections accept an empty application list, but cannot have positive applications.
     - Request body:
       - `applications`: List of application rows.
       - Each row contains `invoice_id` and `applied_amount_cents`.

@@ -60,7 +60,15 @@ By default, the app runs at:
 http://127.0.0.1:8004/
 ```
 
-`startup.bat` starts `uvicorn`, waits for `/api/health`, and opens the browser unless `TIMS_LEDGER_SKIP_BROWSER=1` is set.
+`startup.bat` stops any existing Tim's Ledger backend from this checkout on the configured port, including its reloader and worker processes, then starts a fresh backend in a visible terminal. Running it again replaces the previous instance, including an instance started in a hidden terminal. It refuses to start if another program still occupies the port. Servers on other ports are left running.
+
+The launcher waits for `/api/health` and opens the browser unless `TIMS_LEDGER_SKIP_BROWSER=1` is set. Closing the browser leaves the backend running. Close the backend terminal, press Ctrl+C in it, or run the shutdown script to stop the application without rebooting:
+
+```powershell
+.\shutdown.bat
+```
+
+`shutdown.bat` uses the same `TIMS_LEDGER_PORT` setting as startup (default `8004`). Neither script deletes or replaces runtime data.
 
 Pages require the running application; opening template files directly in a browser is not supported. Existing page URLs such as `/frontend/html/customers.html` render through FastAPI. JavaScript remains available under `/frontend/js/`; template source is not publicly served.
 
@@ -110,14 +118,19 @@ Focused frontend regression checks are available with `node --test tests/fronten
 python -m py_compile (Get-ChildItem backend\app -Filter *.py | ForEach-Object { $_.FullName })
 ```
 
+On Windows, run `node --test tests/startup-lifecycle.test.cjs` to verify hidden-instance replacement, shutdown, and isolation from other ports and programs. The check uses disposable data and ports and stops its test servers before finishing.
+
 For frontend and workflow changes, start the app with `.\startup.bat` and verify the affected screen manually. Use an isolated data directory and separate port for mutation checks; confirm `/api/system/status` points to the intended test database before writing.
 
 ## Current Product Rules
 
-  - Time billability comes from the selected project rate. A rate of `0` is non-billable.
+  - Time has no billable classification. A rate of `0` is an ordinary price and remains invoice-eligible. Mixed labor and item quantities are labeled Hrs/Units.
   - Fixed-fee and materials-order billing are represented through custom project rates and unit entries in time.
-  - Expense categories are limited to `Materials`, `Lodging`, `Airfare`, `Mileage`, `Perdiem`, `Rental Car`, `Gas`, `Parking`, `Tolls`, `Meals`, `Entertainment`, `Gifts`, `Freight`, and `Misc.`.
+  - Expense categories are limited to `Materials`, `Lodging`, `Airfare`, `Mileage`, `Perdiem`, `Rental Car`, `Gas`, `Parking`, `Tolls`, `Meals`, `Entertainment`, `Gifts`, `Freight`, `Salaries`, `Insurance`, `Payroll Taxes`, and `Misc.`. Non-billable expenses also cover items sold and internal overhead.
   - Invoice source-row checkbox changes remain browser-local until Save/Print.
+  - Each invoice source panel offers Select All Visible. Saved invoices still require Edit Mode for source changes.
+  - Saved projects retain their original customer. Correct customer address/contact details on Customers; create a new project when continuing work needs new pricing.
+  - Short payments leave invoices open. Overpayments remain unapplied customer credit. The user must reduce/remove payment allocations in Receive Payments before lowering an invoice or payment below its allocated amount. Invoice Save/Print never changes payment allocations. After a refund, edit the original receipt to its net amount if desired.
   - Printed invoice project references read `{project number} - {project description}`.
   - PO number is not part of the active invoice UI.
   - Payment drafts stay browser-local until Save Payment. Payment references are optional, zero-dollar drafts are allowed, and negative payments support credits or corrections.

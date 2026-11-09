@@ -876,6 +876,11 @@ def update_invoice_without_commit(
     if project is None:
         raise ValueError("Project not found.")
 
+    if project["customer_id"] != existing["customer_id"] and connection.execute(
+        "SELECT 1 FROM payment_applications WHERE invoice_id = ? LIMIT 1", (invoice_id,)
+    ).fetchone():
+        raise ValueError("Remove this invoice's payment applications before moving it to another customer's project.")
+
     connection.execute(
         """
         UPDATE invoices
@@ -920,6 +925,17 @@ def replace_invoice_selection_without_commit(
         raise ValueError("Select at least one time or expense row before saving the invoice.")
 
     validate_selection_rows(connection, invoice, time_entry_ids, expense_ids)
+    selected_total_cents = 0
+    for table, selected_ids in (("time_entries", time_entry_ids), ("expenses", expense_ids)):
+        if selected_ids:
+            total = connection.execute(
+                f"SELECT COALESCE(SUM(line_total_cents), 0) FROM {table} WHERE id IN ({', '.join('?' for _ in selected_ids)})",
+                selected_ids,
+            ).fetchone()[0]
+            selected_total_cents += int(total)
+    if selected_total_cents < int(invoice["paid_amount_cents"]):
+        raise ValueError("a paid invoice cannot be lower than the payments allocated to it")
+
     clear_invoice_selection(connection, invoice_id)
 
     if time_entry_ids:

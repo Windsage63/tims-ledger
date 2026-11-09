@@ -388,7 +388,7 @@ function renderEditor(invoice) {
             <label class="flex items-start gap-3 rounded border border-line bg-panel/35 px-3 py-3 ${disabled ? "opacity-70" : "cursor-pointer hover:bg-white/80"}">
                 <input class="mt-1 rounded border-line text-brand focus:ring-brand/30" data-selection-id="${entry.id}" data-selection-type="${type}" ${selectedIds.has(Number(entry.id)) ? "checked" : ""} ${disabled ? "disabled" : ""} type="checkbox">
                 <div class="min-w-0 flex-1">
-                    <p class="font-mono text-xs text-ink">${escapeHtml(entry.entry_date)} · ${timeHours(entry.minutes)}h · ${escapeHtml(entry.rate_code)}</p>
+                    <p class="font-mono text-xs text-ink">${escapeHtml(entry.entry_date)} · ${timeHours(entry.minutes)} Hrs/Units · ${escapeHtml(entry.rate_code)}</p>
                     <p class="mt-1 text-sm text-ink">${escapeHtml(entry.description)}</p>
                     <p class="mt-1 font-mono text-xs text-muted">${currency(entry.line_total_cents)}</p>
                 </div>
@@ -476,6 +476,22 @@ function toggleSelection(type, itemId, checked) {
 
     invoicesState.editor.selected_time_entries = (invoicesState.editor.eligible_time_entries || []).filter((entry) => timeEntryIds.has(Number(entry.id)));
     invoicesState.editor.selected_expenses = (invoicesState.editor.eligible_expenses || []).filter((expense) => expenseIds.has(Number(expense.id)));
+    recalculateEditorSummary();
+    render();
+}
+
+function selectAllVisibleSources(type) {
+    if (!selectedInvoice() || invoicesState.isSaving || invoicesState.isEditorLoading || !editorProtection.canWrite()) return;
+    if (type !== "time" && type !== "expense") return;
+    const container = document.getElementById(type === "time" ? "eligible-time-list" : "eligible-expenses-list");
+    if (!container) return;
+    const selectedIds = type === "time" ? currentSelectedTimeIds() : currentSelectedExpenseIds();
+    container.querySelectorAll("[data-selection-type]").forEach((input) => {
+        if (!input.disabled && input.getClientRects().length > 0) selectedIds.add(Number(input.dataset.selectionId));
+    });
+    const key = type === "time" ? "selected_time_entries" : "selected_expenses";
+    const eligibleKey = type === "time" ? "eligible_time_entries" : "eligible_expenses";
+    invoicesState.editor[key] = invoicesState.editor[eligibleKey].filter((row) => selectedIds.has(Number(row.id)));
     recalculateEditorSummary();
     render();
 }
@@ -632,6 +648,9 @@ async function deleteDraftInvoice() {
 }
 
 function bindEvents() {
+    document.querySelectorAll("[data-select-all-source]").forEach((button) => {
+        button.addEventListener("click", () => selectAllVisibleSources(button.dataset.selectAllSource));
+    });
     document.getElementById("invoice-terms")?.addEventListener("change", () => {
         syncSelectedInvoiceFromForm();
         render();
@@ -709,7 +728,7 @@ function render() {
 window.addEventListener("DOMContentLoaded", () => {
     editorProtection.register({
         formId: "invoice-form",
-        mutationControls: "[data-selection-type]",
+        mutationControls: "[data-selection-type], [data-select-all-source]",
         recordId: () => selectedInvoice()?.id,
         busy: () => invoicesState.isLoading || invoicesState.isSaving || invoicesState.isEditorLoading,
         snapshot: () => ({ invoice: selectedInvoice() ? invoicePayloadFromForm(selectedInvoice()) : null,
@@ -717,6 +736,10 @@ window.addEventListener("DOMContentLoaded", () => {
         capture: () => invoicesState.editor,
         restore: (editor) => { invoicesState.editor = editor; },
         applyProtection: () => {
+            document.querySelectorAll("[data-select-all-source]").forEach((button) => {
+                const rows = button.dataset.selectAllSource === "time" ? invoicesState.editor.eligible_time_entries : invoicesState.editor.eligible_expenses;
+                button.disabled = !selectedInvoice() || invoicesState.isLoading || invoicesState.isSaving || invoicesState.isEditorLoading || !editorProtection.canWrite() || !rows?.length;
+            });
             if (!selectedInvoice()) {
                 ["invoice-number", "invoice-project", "invoice-date", "invoice-terms", "invoice-notes"].forEach((id) => { document.getElementById(id).disabled = true; });
             }

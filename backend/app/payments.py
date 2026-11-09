@@ -302,7 +302,7 @@ def update_payment(connection: sqlite3.Connection, payment_id: int, payload: Pay
     customer = resolve_customer(connection, payload.customer_id)
     if customer is None:
         raise ValueError("Customer not found.")
-    if int(existing["applied_amount_cents"]) > payload.amount_cents:
+    if int(existing["applied_amount_cents"]) > max(0, payload.amount_cents):
         raise ValueError("Amount cannot be less than currently applied total.")
     if payload.customer_id != existing["customer_id"]:
         connection.execute("DELETE FROM payment_applications WHERE payment_id = ?", (payment_id,))
@@ -356,7 +356,7 @@ def replace_payment_applications(
         raise ValueError("Applications must target each invoice at most once.")
 
     total_requested = sum(application.applied_amount_cents for application in requested)
-    if total_requested > int(payment["amount_cents"]):
+    if total_requested > max(0, int(payment["amount_cents"])):
         raise ValueError("Applications cannot exceed the payment amount.")
 
     current_map = {

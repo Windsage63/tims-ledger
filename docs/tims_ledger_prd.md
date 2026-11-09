@@ -74,6 +74,8 @@ Built-in rate behavior:
 3. TT = 0.5 x project_default_rate
 Projects may also store custom rate entries as rate-code and rate values. Fixed-fee billing is represented by a custom project rate used on a one-hour time entry rather than by manual invoice lines. Materials orders can also be entered through custom rates by adding item prices as custom project rates.
 
+A saved project's customer cannot be reassigned. Delete and recreate an unused incorrectly assigned project. Editing the existing customer's address or contact information preserves financial relationships. Pricing is maintained per project; a rate change for continuing work uses a new project, while special prices use custom project rates.
+
 ### 4.4 Time Entries
 
 Each time entry stores:
@@ -104,7 +106,7 @@ Each expense entry stores:
 10. invoice linkage, which is empty until Save/Print succeeds for an invoice that includes the expense
 
 Only expenses flagged as billable are eligible for invoice building. In the invoice editor, checking and unchecking expenses is browser-local until Save/Print. On Save/Print, checked expenses receive the invoice linkage and unchecked prior expenses have the linkage cleared. Non-billable expenses remain available for internal cost tracking without being treated as invoiceable lines.
-Expense categories are: `Materials`, `Lodging`, `Airfare`, `Mileage`, `Perdiem`, `Rental Car`, `Gas`, `Parking`, `Tolls`, `Meals`, `Entertainment`, `Gifts`, `Freight`, and `Misc.`.
+Expense categories are: `Materials`, `Lodging`, `Airfare`, `Mileage`, `Perdiem`, `Rental Car`, `Gas`, `Parking`, `Tolls`, `Meals`, `Entertainment`, `Gifts`, `Freight`, `Salaries`, `Insurance`, `Payroll Taxes`, and `Misc.`. Non-billable expenses also track costs of items sold and general overhead, using an internal project where appropriate.
 
 Expense line amounts use decimal quantity-times-rate arithmetic and round half up once to integer cents after multiplication. A mileage rate of $0.725 must survive editor/API/audit-export round trips; 41 miles produces $29.73. Unit-rate display preserves up to four decimal places while totals display two. The audit export retains the exact scaled integer and includes a readable `unit_cost_dollars` column.
 
@@ -130,7 +132,7 @@ Payments must support:
 
 1. ordinary payment records with unapplied balance at creation
 2. browser-local zero-dollar payment drafts while receipt details are being entered
-3. negative payment records for issued credits or corrections
+3. optional negative payment records for cash corrections, with no positive invoice applications; overpayment credits are unapplied portions of ordinary receipts
 4. partial or full application of positive payment amounts across one or more open invoices
 5. over-application prevention
 6. remaining unapplied balance tracking
@@ -179,7 +181,7 @@ Users may keep an unlimited number of normal backups and select one to restore. 
 
 ### 5.3 Time Tracking Module
 
-1. Allow time entry by date, project selection, work description, hours, and rate code. Project selectors should show project number and project description.
+1. Allow time entry by date, project selection, work description, Hrs/Units, and rate code. Hrs/Units includes labor hours, item quantities, and fixed-fee units; mixed totals must not be labeled as labor hours. Project selectors should show project number and project description.
 2. Do not classify time as billable or non-billable. Rates, including `0`, are prices and do not determine invoice eligibility.
 3. Derive the customer and available rates from the selected project.
 4. Store invoice linkage on the time entry when Save/Print is clicked for an invoice that includes that entry, and remove that linkage when Save/Print is clicked after the entry has been unchecked.
@@ -202,10 +204,12 @@ Users may keep an unlimited number of normal backups and select one to restore. 
 1. Invoice creation must start with invoice date, unique invoice number, and project selection. Project dropdown labels should include project description so the user can identify the work.
 2. The system must present eligible unbilled time for that project with checkbox selection.
 3. The system must present eligible unbilled expenses for that project with checkbox selection.
+   Both source panels provide Select All Visible. Bulk selection stays browser-local until Save/Print and observes the same Edit Mode and zero-price eligibility rules as individual selections.
 4. Selecting or unselecting a line must update browser-side invoice state and preview totals.
 5. Selecting or unselecting a line must not write source-record invoice linkage until Save/Print.
 6. Printed invoices must show a single final summary row labeled Total Invoice, containing only that invoice's time and expense charges. Do not print Prior Balance, Unapplied Credit, or Total Due rows. Applied payments and customer account balances do not change the invoice charge total.
 7. Customer balances and statements belong on Customers. Apply unapplied credits through payment application logic, not by rewriting invoice lines. The invoice editor summary shows Time Total, Expense Total, and Total Invoice; its separate Open Balance remains specific to the selected invoice.
+   Agreed reductions in charges are made by changing billed source time/units or expenses. Invoice Save/Print must never automatically change payment allocations. Reject a proposed total below applied payments with "a paid invoice cannot be lower than the payments allocated to it", preserving the saved invoice, document, source links, payments, and allocations. The user must first explicitly reduce/remove allocations in Receive Payments and save the payment before saving the invoice reduction. Any resulting unapplied credit remains on the original payment and can produce a negative customer Net Balance. Do not move an invoice carrying applications to a different customer's project.
 8. Save/Print must create or update the invoice, replace source-record invoice links, generate or overwrite the current invoice HTML, and open the saved HTML for browser printing.
 9. Save/Print must clear invoice linkage from unchecked prior rows so those rows return to the unbilled pool and can be assigned to another invoice.
 10. Editing an issued invoice must preserve the same source-linked checkbox workflow and may change accounting history.
@@ -239,6 +243,7 @@ The invoice editor should preserve the printable invoice experience while keepin
 6. Delete Payment must ask for confirmation before removing a saved payment and its payment applications.
 7. The user must be able to open a payment and apply or remove allocations across open invoices.
 8. The user must be prevented from applying more than the remaining unapplied amount.
+   Short payments leave the remaining invoice balance open without changing charges. Overpayments stay unapplied for later invoices. After a refund, the user may edit the original payment to the net amount; its positive allocations must fit within that amount. A separate refund ledger or credit-memo module is not required. Negative cash corrections remain supported with no positive allocations.
 9. Payment applications must update invoice open balances and customer balances immediately.
 10. Business totals on Receive Payments cover all saved records in the current database. Total Income includes unapplied payments and negative corrections. Open A/R excludes draft invoices. Total Expenses includes all recorded expense costs, and Non-Billable Expenses is its non-billable subset. Refresh totals after saves/deletes without replacing the editor draft. No annual reset is automatic.
 

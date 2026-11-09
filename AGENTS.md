@@ -26,6 +26,10 @@ Run the app through the repo startup script, not an ad hoc uvicorn command:
 .\startup.bat
 ```
 
+Each startup stops an existing Tim's Ledger backend from this checkout on the configured port before launching a fresh server. `shutdown.bat` stops it without restarting. Both include the uvicorn reloader's child processes and leave other programs and servers on other ports alone.
+
+Do not leave agent-started servers running when verification is finished. Prefer an existing user-started instance for read-only checks. Use an isolated data directory and separate port for verification that needs its own server, retain its process/session ID, and stop it in a `finally` cleanup. Confirm the verification port is free before finishing. Only leave an agent-started server running when the user explicitly asks; use a visible terminal in that case.
+
 Use the lightweight backend syntax check when changing Python:
 
 ```powershell
@@ -89,7 +93,10 @@ Normal backups live in `app-data/backups/` as `Tims-Ledger-Backup-{date-timestam
 
   - Time has no billable flag or rate-based billability classification. Rate `0` is an ordinary price and remains eligible for invoicing, just like other prices.
   - Fixed-fee and materials-order style billing is represented through custom project rates and unit entries in time, not manual invoice lines.
-  - Expense categories are exactly: `Materials`, `Lodging`, `Airfare`, `Mileage`, `Perdiem`, `Rental Car`, `Gas`, `Parking`, `Tolls`, `Meals`, `Entertainment`, `Gifts`, `Freight`, `Misc.`.
+  - Expense categories are exactly: `Materials`, `Lodging`, `Airfare`, `Mileage`, `Perdiem`, `Rental Car`, `Gas`, `Parking`, `Tolls`, `Meals`, `Entertainment`, `Gifts`, `Freight`, `Salaries`, `Insurance`, `Payroll Taxes`, `Misc.`. Non-billable expenses can track costs of items sold and general overhead using an internal project.
+  - A saved project's customer cannot be reassigned; delete and recreate an unused incorrect project. Customer address/contact edits retain the customer ID and financial links. Pricing belongs to each project; new pricing for continuing work uses a new project.
+  - Short payments leave invoice balances open. Excess receipts remain unapplied customer credit for future invoices. Invoice Save/Print must never automatically change payment allocations. Reject invoice totals below allocated payments with "a paid invoice cannot be lower than the payments allocated to it". The user must explicitly reduce/remove allocations in Receive Payments before reducing an invoice or a payment below its allocated amount. After a refund the user may edit the original payment to its net amount; no separate credit-memo/refund ledger is required.
+  - Label mixed labor/item quantities Hrs/Units. Invoice source panels provide Select All Visible, subject to Edit Mode, and selections remain local until Save/Print.
   - Invoice source-row checkbox changes stay browser-local until Save/Print. Save/Print creates or updates the invoice, replaces time/expense invoice links, writes the saved invoice HTML, and opens it for printing.
   - Printed invoice project references should read `{project number} - {project description}`.
   - PO number is not part of the active invoice UI.

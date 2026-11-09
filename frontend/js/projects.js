@@ -408,7 +408,7 @@ async function saveProject(event) {
 
     const payload = {
         project_number: String(formData.get("project_number") || "").trim(),
-        customer_id: Number(formData.get("customer_id") || 0),
+        customer_id: existing?.customer_id ?? Number(formData.get("customer_id") || 0),
         description: String(formData.get("description") || "").trim(),
         default_rate_cents: defaultRateCents,
         rates: [
@@ -547,6 +547,7 @@ function bindEvents() {
 
     document.getElementById("project-customer")?.addEventListener("change", () => {
         if (!editorProtection.canWrite() || projectState.isSaving) return;
+        if (projectState.selectedId) { render(); return; }
         syncProjectFields();
         const source = projectState.draftProject || selectedProject() || emptyProjectDraft();
         const customer = projectState.customers.find((item) => item.id === Number(document.getElementById("project-customer")?.value || source.customer_id));
@@ -582,7 +583,10 @@ window.addEventListener("DOMContentLoaded", () => {
         restore: (record) => { projectState.draftProject = record; },
         render,
         mutationControls: "#add-custom-rate-button, [data-remove-custom-rate], #delete-project-button",
-        applyProtection: () => { document.getElementById("delete-project-button").disabled = !projectState.selectedId || projectState.isLoading || projectState.isSaving || !editorProtection.canWrite(); },
+        applyProtection: () => {
+            document.getElementById("delete-project-button").disabled = !projectState.selectedId || projectState.isLoading || projectState.isSaving || !editorProtection.canWrite();
+            document.getElementById("project-customer").disabled = Boolean(projectState.selectedId) || projectState.isLoading || projectState.isSaving || !editorProtection.canWrite();
+        },
     });
     bindEvents();
     render();

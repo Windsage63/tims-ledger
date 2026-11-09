@@ -2,6 +2,13 @@
 
 This document is a companion reference to the primary PRD in `docs/tims_ledger_prd.md`. When wording differs, the PRD and later explicit product decisions take precedence.
 
+## Starting And Stopping The Application
+
+1. User runs `startup.bat`. The launcher stops an existing Tim's Ledger backend from this checkout on the configured port, including the reloader's child processes, before starting a fresh backend in a visible terminal. Rerunning startup also replaces an old hidden instance.
+2. The default address is `http://127.0.0.1:8004/`. `TIMS_LEDGER_PORT` selects a different port; servers on other ports stay running. If a different program occupies the selected port, startup reports the conflict and cancels.
+3. Closing the browser leaves the backend running. User closes the backend terminal, presses Ctrl+C there, or runs `shutdown.bat` to stop it. Shutdown uses the same configured port as startup.
+4. Restarting and stopping do not delete or replace the database or saved invoice documents.
+
 ## 1. User Maintains Company Profile
 
 1. User opens Settings from the bottom of the sidebar menu and edits the Company profile.
@@ -14,7 +21,7 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 
 1. User creates a customer master record before entering project work, or enables Edit Mode to update an existing customer.
 2. User enters customer name, street address, city, state, ZIP code, contact name, email, and phone.
-3. System validates that the customer record is complete enough for project setup, invoice printing, and payment receipt.
+3. System validates that the customer record is complete enough for project setup, invoice printing, and payment receipt. Address, name, and contact edits retain the customer's ID and financial links; saved invoice documents use the updated details when deliberately regenerated.
 4. System stores the customer record in the `customers` table.
 5. Customer record becomes available for project creation, invoice generation, payment receipt, and derived balance reporting.
 
@@ -28,12 +35,13 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 6. System validates that `project_number` is unique and that the project is linked to exactly one customer.
 7. System stores the project record and its rate records.
 8. Project becomes available for time entry, expense entry, invoice building, and payment reporting.
+9. A saved project's customer is fixed, including in Edit Mode and the update API. If an unused project was entered under the wrong customer, delete and recreate it. Customer contact/address edits remain available. Rates belong to the project; create a new project for new pricing, including a continuation of earlier work.
 
 ## 4. User Enters Time
 
 1. User enters the work date in the entry form above the time ledger. The form stays before the list at every screen width, so adding rows does not push it below the ledger.
 2. User selects the project from a dropdown showing project number and project description. The system derives the customer and available rates from the project.
-3. User enters work description, duration, and rate code. Time has no billable flag. A rate of `0` is an ordinary price, with no special status or exclusion.
+3. User enters work description, Hrs/Units, and rate code. Hrs/Units covers labor hours, fixed-fee units, and items sold using custom rates; it does not imply that mixed quantities are all labor hours. Time has no billable flag. A rate of `0` is an ordinary price, with no special status or exclusion.
 4. System stores the time entry as a source record, snapshots the selected rate, and calculates the line total.
 5. Invoice linkage is empty until Save/Print succeeds for an invoice that includes the time entry.
 6. All unbilled time is eligible for invoice building regardless of its rate. In the invoice editor, checking or unchecking time is browser-local until Save/Print. When Save/Print succeeds, checked time entries are stamped to the invoice and unchecked prior entries have their invoice linkage cleared. A zero-dollar invoice can be saved when it contains selected source rows; an empty invoice cannot.
@@ -48,7 +56,7 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 5. Invoice linkage is empty until Save/Print succeeds for an invoice that includes the expense.
 6. Unbilled billable expenses are eligible for invoice building. In the invoice editor, checking or unchecking expenses is browser-local until Save/Print. When Save/Print succeeds, checked expenses are stamped to the invoice and unchecked prior expenses have their invoice linkage cleared.
 7. Non-billable expenses remain available for internal cost tracking and must not appear as invoice charges.
-8. Expense categories are limited to `Materials`, `Lodging`, `Airfare`, `Mileage`, `Perdiem`, `Rental Car`, `Gas`, `Parking`, `Tolls`, `Meals`, `Entertainment`, `Gifts`, `Freight`, and `Misc.`.
+8. Expense categories include `Materials`, `Lodging`, `Airfare`, `Mileage`, `Perdiem`, `Rental Car`, `Gas`, `Parking`, `Tolls`, `Meals`, `Entertainment`, `Gifts`, `Freight`, `Salaries`, `Insurance`, `Payroll Taxes`, and `Misc.`. Costs of items sold can be non-billable Materials expenses; general overhead can use an internal project and non-billable categories.
 
 ## 6. User Creates Or Edits An Invoice
 
@@ -58,12 +66,12 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 4. System lists all eligible unbilled time for the project, showing date, description, duration, rate, total, and an `invoice?` checkbox.
 5. System lists all eligible unbilled expenses for the project, showing date, description, category, unit cost, total, and an `invoice?` checkbox.
 6. If the project bills a fixed fee, that amount appears through the one-hour custom-rate time entry that represents the fee. There are no separate HD, non-hourly, or manual billing lines.
-7. User checks and unchecks time and expense source records in the browser editor.
+7. User checks and unchecks time and expense source records in the browser editor. Each source panel has Select All Visible, which selects its visible eligible rows, including zero-priced time/units, and leaves the other panel unchanged. It requires Edit Mode for a saved invoice.
 8. Checkbox changes update browser-side preview totals only. They do not write to the database until Save/Print.
 9. The editor summary shows Time Total, Expense Total, and Total Invoice. Its separate Open Balance reflects only the selected invoice's charges less applied payments. Customer account balances and statements remain on Customers; unapplied credits are allocated through Receive Payments, not invoice lines.
 10. When the user clicks Save/Print, the system creates or updates the invoice, replaces all selected time and expense links, generates or overwrites the current invoice HTML, and opens the saved HTML for browser printing.
 11. Checked time entries are saved with the invoice ID. Unchecked prior time entries have their invoice linkage cleared and return to the unbilled pool.
-12. Checked expenses are saved with the invoice ID. Unchecked prior expenses have their invoice linkage cleared and return to the unbilled pool.
+12. Checked expenses are saved with the invoice ID. Unchecked prior expenses have their invoice linkage cleared and return to the unbilled pool. Save/Print never changes payment allocations. If revised charges are below allocated payments, it rejects the save with "a paid invoice cannot be lower than the payments allocated to it". The saved invoice, source links, document, payments, and allocations remain unchanged. The user must first reduce/remove the appropriate allocations in Receive Payments and save that payment, then save the reduced invoice. An invoice carrying payment applications cannot move to another customer's project until those applications are removed.
 13. Existing issued invoices may be viewed and reprinted by invoice number. While protected, Print Saved Invoice opens the saved HTML without updating any invoice data, links, or documents. If the document is missing, enable Edit Mode and Save/Print to generate it. Editing and regenerating existing invoices requires Edit Mode. Template changes do not rewrite existing HTML. To update an existing document's layout, take an application backup, review the saved fields and source selection, then enable Edit Mode and Save/Print without changing them. Regeneration uses current invoice data and the current Company profile.
 14. The printed invoice shows project references as `{project number} - {project description}`.
 15. The printed invoice company header and check-payable footer come from the current Company profile at Save/Print time.
@@ -74,20 +82,20 @@ This document is a companion reference to the primary PRD in `docs/tims_ledger_p
 
 Select a saved record, enable Edit Mode, and click its Delete button. Confirm the deletion. Canceling confirmation leaves the record and draft unchanged. Successful deletion resets Edit Mode.
 
-- Customers can be deleted after their projects, time, expenses, invoices, and payments have been removed.
-- Projects can be deleted when they have no time, expenses, or invoices. Their project rates are removed with them.
-- Time and expenses can be deleted when they are not linked to an invoice. To correct or delete an invoiced source row, first remove it from the invoice and Save/Print, or delete that invoice.
-- Deleting an invoice removes the invoice and saved HTML document, releases all linked time and expenses, and removes its payment applications. Payment records remain, with those amounts available to apply again. Other invoices and their applications are retained.
+  - Customers can be deleted after their projects, time, expenses, invoices, and payments have been removed.
+  - Projects can be deleted when they have no time, expenses, or invoices. Their project rates are removed with them.
+  - Time and expenses can be deleted when they are not linked to an invoice. To correct or delete an invoiced source row, first remove it from the invoice and Save/Print, or delete that invoice.
+  - Deleting an invoice removes the invoice and saved HTML document, releases all linked time and expenses, and removes its payment applications. Payment records remain, with those amounts available to apply again. Other invoices and their applications are retained.
 
 ## 7. User Records and Applies a Payment
 
 1. User starts a new payment draft for a customer.
-2. The draft stays browser-local until the user clicks Save Payment. Drafts may begin at zero while receipt details are being entered, credits may be entered as negative payments, and the reference number may be left blank.
+2. The draft stays browser-local until the user clicks Save Payment. Drafts may begin at zero while receipt details are being entered, and the reference number may be left blank. Negative cash corrections remain supported without positive allocations; customer credit from an overpayment is the unapplied portion of an ordinary receipt.
 3. System creates or updates the persisted payment record on Save Payment with the full amount initially unapplied.
 4. User applies some or all of a positive payment amount to one or more open invoices in the same editor.
 5. Save Payment persists both the payment record and current invoice applications.
 6. Editing payment fields, changing applications, or deleting a saved payment requires Edit Mode. Delete Payment also asks for confirmation. Discarding a modified unsaved draft asks for the shared unsaved-change confirmation.
-7. System prevents over-application and updates both invoice open balances and the payment's remaining unapplied amount.
+7. System prevents over-application and updates both invoice open balances and the payment's remaining unapplied amount. A short payment leaves the invoice open for the remaining balance; it never automatically reduces the charges. An excess receipt remains unapplied and can make the customer's Net Balance negative, available for a future invoice. Agreed charge reductions are made through source time/units or expenses. Before reducing an invoice below its allocations, the user must explicitly reduce/remove those allocations and save the payment. After a refund, the user can edit the original payment to the net amount; the user must also reduce allocations first if the new payment amount would be below them. The application never chooses which allocations to reduce. This application does not require a separate refund or credit-memo subsystem.
 8. Customer balance shows open AR and net balance, each derived from invoices, payments, and payment applications.
 9. Receive Payments shows Business totals for all records in the current database: Total Income sums saved payments, including unapplied amounts and negative corrections; Open A/R sums issued invoice balances and excludes drafts; Total Expenses sums all recorded expense line totals; Non-Billable Expenses is the portion marked non-billable and is included in Total Expenses. Search, customer, year, and status filters affect only the payment list. Totals refresh when the screen loads and after payment saves/deletes, including saves that partially succeed. They represent a year's activity only when the current dataset is limited to that year; there is no automatic annual reset.
 10. Payment and application saves use multiple existing requests. If a later step fails, retain the intended draft and any created payment ID, reconcile the persisted state, and allow an intentional retry without creating another payment. If a creation response is lost before an ID is known, require inspection of the saved ledger before another create attempt.
