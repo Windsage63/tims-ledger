@@ -33,13 +33,13 @@ The original review did not change application source or production data. The la
 
 ### Scope and verification
 
-- Read the product requirements, current workflows, schema, route layer, domain logic, screen controllers, and templates.
-- Walked through Home, Invoices, Receive Payments, Customers and Statement, Projects, Time, Expenses, and Settings using fictional records in an isolated database on port 8005. Checked the invoice layout at 1366 × 768 as well as the narrow companion browser.
-- Ran the existing suites: **15 frontend tests and 15 backend tests passed**.
-- Reproduced six additional failure scenarios with disposable in-memory databases; also reproduced the negative payment failure through the UI. Verified the time rounding difference independently in Python and JavaScript.
-- Simulated an invoice document write failure to verify recovery behavior. This was fault injection, not an observed production incident.
-- Stopped the review server and confirmed port 8005 was free. The pre-existing uncommitted changes were left alone.
-- Compared selected features with current official Intuit documentation. QuickBooks product and plan availability varies; the recommendations below concern useful behavior rather than plan equivalence.
+  - Read the product requirements, current workflows, schema, route layer, domain logic, screen controllers, and templates.
+  - Walked through Home, Invoices, Receive Payments, Customers and Statement, Projects, Time, Expenses, and Settings using fictional records in an isolated database on port 8005. Checked the invoice layout at 1366 × 768 as well as the narrow companion browser.
+  - Ran the existing suites: **15 frontend tests and 15 backend tests passed**.
+  - Reproduced six additional failure scenarios with disposable in-memory databases; also reproduced the negative payment failure through the UI. Verified the time rounding difference independently in Python and JavaScript.
+  - Simulated an invoice document write failure to verify recovery behavior. This was fault injection, not an observed production incident.
+  - Stopped the review server and confirmed port 8005 was free. The pre-existing uncommitted changes were left alone.
+  - Compared selected features with current official Intuit documentation. QuickBooks product and plan availability varies; the recommendations below concern useful behavior rather than plan equivalence.
 
 ## Critical issues — security, correctness, and reliability
 
@@ -229,14 +229,14 @@ No additional style-only findings. The worthwhile implementation improvements ar
 
 ## Positive observations
 
-- Source-linked billing avoids retyping charges and gives time and expenses a clear lifecycle.
-- Applied payments are separate from receipts, allowing split allocations and unapplied retainers.
-- Invoice charge totals are intentionally independent of other account balances.
-- Saved-document printing correctly avoids regenerating protected invoices.
-- Fractional-cent expense rates use explicit decimal arithmetic and retain their original precision.
-- Shared draft protection and stale-response handling are substantial improvements over spreadsheet editing.
-- Parameterized domain queries, escaped invoice text, page allowlisting, and loopback hosting are appropriate foundations for a local single-operator tool. This review is not a complete penetration test.
-- ZIP backups contain both records and documents, and restore creates a safety backup.
+  - Source-linked billing avoids retyping charges and gives time and expenses a clear lifecycle.
+  - Applied payments are separate from receipts, allowing split allocations and unapplied retainers.
+  - Invoice charge totals are intentionally independent of other account balances.
+  - Saved-document printing correctly avoids regenerating protected invoices.
+  - Fractional-cent expense rates use explicit decimal arithmetic and retain their original precision.
+  - Shared draft protection and stale-response handling are substantial improvements over spreadsheet editing.
+  - Parameterized domain queries, escaped invoice text, page allowlisting, and loopback hosting are appropriate foundations for a local single-operator tool. This review is not a complete penetration test.
+  - ZIP backups contain both records and documents, and restore creates a safety backup.
 
 The code does not need another framework. It needs fewer ways for a perfectly ordinary correction to become a financial mystery.
 

@@ -1,0 +1,194 @@
+<!--
+@fileoverview Preview the proposed P&L Statement with illustrative data only.
+@license Apache-2.0
+@copyright 2026 Timothy Mallory
+-->
+<div id="ledger-pl-preview" aria-label="Proposed Tim's Ledger P&L Statement">
+  <style>
+    #ledger-pl-preview { color-scheme: light dark; --pl-bg: light-dark(#f3f4f5,#182024); --pl-paper: light-dark(#ffffff,#222c31); --pl-text: light-dark(#20272b,#edf1f3); --pl-muted: light-dark(#626e75,#bac5cc); --pl-line: light-dark(#dce1e4,#455159); --pl-panel: light-dark(#f3f5f6,#2b373e); --pl-green: light-dark(#167347,#9bd4b3); --pl-green-fill: light-dark(#e8f3ec,#253d30); --pl-forest: #202b30; font: 14px/1.45 "Segoe UI",Arial,sans-serif; color: var(--pl-text); }
+    #ledger-pl-preview * { box-sizing: border-box; }
+    #ledger-pl-preview .pl-shell { display: grid; grid-template-columns: 202px minmax(0,1fr); background: var(--pl-bg); min-height: 1080px; }
+    #ledger-pl-preview .pl-sidebar { background: var(--pl-forest); color: #f4f6f7; padding: 22px 12px 16px; display: flex; flex-direction: column; }
+    #ledger-pl-preview .pl-brand { padding: 0 9px; font-size: 21px; font-weight: 600; }
+    #ledger-pl-preview .pl-tagline { color: #c3cbd0; font-size: 12px; padding: 3px 9px 23px; }
+    #ledger-pl-preview .pl-nav-item { display: block; padding: 9px 12px; border-radius: 4px; color: #e0e6e9; }
+    #ledger-pl-preview .pl-nav-heading { font-size: 11px; font-weight: 600; letter-spacing: 1.1px; color: #9eaeb6; padding: 23px 12px 5px; }
+    #ledger-pl-preview .pl-nav-item[aria-current] { background: #167347; color: #fff; }
+    #ledger-pl-preview .pl-settings { margin-top: auto; padding-top: 16px; border-top: 1px solid #4c585e; }
+    #ledger-pl-preview .pl-main { min-width: 0; }
+    #ledger-pl-preview .pl-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: var(--pl-paper); border-bottom: 1px solid var(--pl-line); padding: 15px 22px; }
+    #ledger-pl-preview .pl-heading { font-size: 21px; font-weight: 600; margin: 0; }
+    #ledger-pl-preview .pl-header-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+    #ledger-pl-preview .pl-button { font: inherit; font-size: 13px; font-weight: 600; padding: 8px 13px; border: 1px solid var(--pl-line); border-radius: 4px; color: var(--pl-text); background: var(--pl-paper); }
+    #ledger-pl-preview .pl-button:focus-visible { outline: 2px solid var(--pl-green); outline-offset: 3px; }
+    #ledger-pl-preview .pl-button:disabled { opacity: .65; }
+    #ledger-pl-preview .pl-primary { background: light-dark(#167347,#38764f); color: #fff; border-color: light-dark(#167347,#38764f); }
+    #ledger-pl-preview .pl-small { font-size: 12px; color: var(--pl-muted); }
+    #ledger-pl-preview .pl-content { padding: 22px; }
+    #ledger-pl-preview .pl-demo { margin-bottom: 14px; font-size: 12px; color: var(--pl-muted); }
+    #ledger-pl-preview .pl-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin-bottom: 16px; }
+    #ledger-pl-preview .pl-field-label { font-size: 12px; color: var(--pl-muted); font-weight: 600; display: grid; gap: 5px; }
+    #ledger-pl-preview .pl-field { width: 160px; padding: 8px 10px; border: 1px solid var(--pl-line); border-radius: 4px; background: var(--pl-paper); color: var(--pl-text); font: inherit; }
+    #ledger-pl-preview .pl-check { display: flex; align-items: center; gap: 7px; padding-bottom: 9px; font-size: 12px; }
+    #ledger-pl-preview .pl-check input { accent-color: #167347; }
+    #ledger-pl-preview .pl-report { background: var(--pl-paper); border: 1px solid var(--pl-line); border-radius: 4px; padding: 28px 38px 22px; max-width: 1040px; margin-inline: auto; }
+    #ledger-pl-preview .pl-report-title { text-align: center; padding-bottom: 20px; }
+    #ledger-pl-preview .pl-company { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
+    #ledger-pl-preview .pl-title { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -.4px; }
+    #ledger-pl-preview .pl-period { margin: 5px 0 0; }
+    #ledger-pl-preview .pl-basis { font-size: 12px; color: var(--pl-muted); margin: 5px 0 0; }
+    #ledger-pl-preview .pl-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    #ledger-pl-preview .pl-table th, #ledger-pl-preview .pl-table td { padding: 5px 10px; border-bottom: 1px solid var(--pl-line); }
+    #ledger-pl-preview .pl-table thead th { background: var(--pl-panel); color: var(--pl-muted); text-align: left; font-size: 12px; font-weight: 600; }
+    #ledger-pl-preview .pl-table .pl-amount { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; width: 30%; }
+    #ledger-pl-preview .pl-section th { padding-top: 15px; padding-bottom: 7px; text-align: left; font-weight: 600; border-bottom: 1px solid var(--pl-text); }
+    #ledger-pl-preview .pl-detail td:first-child { padding-left: 25px; }
+    #ledger-pl-preview .pl-total td { font-weight: 600; border-top: 1px solid var(--pl-text); }
+    #ledger-pl-preview .pl-net td { padding-block: 12px; font-size: 16px; font-weight: 600; background: var(--pl-green-fill); border-top: 2px solid var(--pl-green); border-bottom: 2px solid var(--pl-green); }
+    #ledger-pl-preview .pl-footer { margin-top: 18px; color: var(--pl-muted); font-size: 11px; display: grid; gap: 5px; }
+    #ledger-pl-preview .pl-report-end { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--pl-line); }
+    #ledger-pl-preview .pl-preview-exit { display: none; margin: 0 0 14px; }
+    #ledger-pl-preview.pl-print .pl-shell { display: block; min-height: 0; background: transparent; }
+    #ledger-pl-preview.pl-print .pl-sidebar, #ledger-pl-preview.pl-print .pl-header, #ledger-pl-preview.pl-print .pl-toolbar, #ledger-pl-preview.pl-print .pl-demo { display: none; }
+    #ledger-pl-preview.pl-print .pl-content { padding: 0; }
+    #ledger-pl-preview.pl-print .pl-report { max-width: 900px; padding: 40px 46px 30px; }
+    #ledger-pl-preview.pl-print .pl-preview-exit { display: block; }
+    #ledger-pl-preview .pl-zero[hidden] { display: none; }
+    @media (max-width: 780px) {
+      #ledger-pl-preview .pl-shell { grid-template-columns: 158px minmax(0,1fr); }
+      #ledger-pl-preview .pl-brand { font-size: 17px; }
+      #ledger-pl-preview .pl-content { padding: 12px; }
+      #ledger-pl-preview .pl-report { padding: 22px 14px; }
+      #ledger-pl-preview .pl-header { padding: 14px 12px; }
+      #ledger-pl-preview .pl-header-actions .pl-small { display: none; }
+      #ledger-pl-preview .pl-field { width: 145px; }
+    }
+    @media (max-width: 520px) {
+      #ledger-pl-preview .pl-shell { display: block; }
+      #ledger-pl-preview .pl-sidebar { display: none; }
+      #ledger-pl-preview.pl-print .pl-report { padding: 22px 14px; }
+      #ledger-pl-preview .pl-title { font-size: 22px; }
+      #ledger-pl-preview .pl-table th, #ledger-pl-preview .pl-table td { padding-inline: 5px; }
+      #ledger-pl-preview .pl-detail td:first-child { padding-left: 13px; }
+    }
+  </style>
+  <button class="pl-button pl-preview-exit" type="button" id="pl-back">Back to screen layout</button>
+  <div class="pl-shell">
+    <aside class="pl-sidebar" aria-label="Proposed application navigation">
+      <div class="pl-brand">Tim's Ledger</div>
+      <div class="pl-tagline">Non-GAAP bookkeeping</div>
+      <nav aria-label="Primary">
+        <span class="pl-nav-item">Home</span>
+        <div class="pl-nav-heading">SALES</div>
+        <span class="pl-nav-item">Invoices</span>
+        <span class="pl-nav-item">Receive Payments</span>
+        <span class="pl-nav-item">Customers</span>
+        <div class="pl-nav-heading">WORK</div>
+        <span class="pl-nav-item">Projects</span>
+        <span class="pl-nav-item">Time</span>
+        <span class="pl-nav-item">Expenses</span>
+        <div class="pl-nav-heading">REPORTS</div>
+        <span class="pl-nav-item" aria-current="page">P&amp;L Statement</span>
+      </nav>
+      <div class="pl-settings"><span class="pl-nav-item">Settings</span></div>
+    </aside>
+    <div class="pl-main">
+      <header class="pl-header">
+        <h1 class="pl-heading">P&amp;L Statement</h1>
+        <div class="pl-header-actions">
+          <button class="pl-button" id="pl-print" type="button">Print preview</button>
+          <button class="pl-button pl-primary" type="button" disabled>+ New</button>
+          <button class="pl-button" type="button" disabled>Back up</button>
+          <span class="pl-small">Last backup: sample</span>
+        </div>
+      </header>
+      <main class="pl-content">
+        <div class="pl-demo">Proposed layout &middot; Illustrative company and amounts</div>
+        <div class="pl-toolbar" aria-label="Proposed report filters">
+          <label class="pl-field-label">Date range<select class="pl-field" disabled><option>Custom</option></select></label>
+          <label class="pl-field-label">From<input class="pl-field" value="2026-01-01" readonly aria-label="From date"></label>
+          <label class="pl-field-label">To<input class="pl-field" value="2026-10-31" readonly aria-label="To date"></label>
+          <button class="pl-button pl-primary" type="button" disabled>Run report</button>
+          <label class="pl-check"><input type="checkbox" id="pl-show-zero" checked>Show zero categories</label>
+        </div>
+        <article class="pl-report" aria-label="Illustrative profit and loss report">
+          <div class="pl-report-title">
+            <p class="pl-company">Example Company</p>
+            <h2 class="pl-title">Profit &amp; Loss Statement</h2>
+            <p class="pl-period">January 1 &ndash; October 31, 2026</p>
+            <p class="pl-basis">Payments received / expenses by entry date &middot; USD</p>
+          </div>
+          <table class="pl-table">
+            <thead><tr><th scope="col">Account</th><th scope="col" class="pl-amount">Period total</th></tr></thead>
+            <tbody>
+              <tr class="pl-section"><th scope="row" colspan="2">Income</th></tr>
+              <tr class="pl-detail"><td>Customer receipts</td><td class="pl-amount">$83,750.00</td></tr>
+              <tr class="pl-total"><td>Total Income</td><td class="pl-amount">$83,750.00</td></tr>
+              <tr class="pl-section"><th scope="row" colspan="2">Expenses</th></tr>
+              <tr class="pl-detail"><td>Materials</td><td class="pl-amount">$12,500.00</td></tr>
+              <tr class="pl-detail"><td>Lodging</td><td class="pl-amount">$3,200.00</td></tr>
+              <tr class="pl-detail"><td>Airfare</td><td class="pl-amount">$2,800.00</td></tr>
+              <tr class="pl-detail"><td>Mileage</td><td class="pl-amount">$1,450.00</td></tr>
+              <tr class="pl-detail"><td>Perdiem</td><td class="pl-amount">$900.00</td></tr>
+              <tr class="pl-detail"><td>Rental Car</td><td class="pl-amount">$1,150.00</td></tr>
+              <tr class="pl-detail"><td>Gas</td><td class="pl-amount">$450.00</td></tr>
+              <tr class="pl-detail"><td>Parking</td><td class="pl-amount">$180.00</td></tr>
+              <tr class="pl-detail"><td>Tolls</td><td class="pl-amount">$95.00</td></tr>
+              <tr class="pl-detail"><td>Meals</td><td class="pl-amount">$780.00</td></tr>
+              <tr class="pl-detail pl-zero"><td>Entertainment</td><td class="pl-amount">$0.00</td></tr>
+              <tr class="pl-detail"><td>Gifts</td><td class="pl-amount">$125.00</td></tr>
+              <tr class="pl-detail"><td>Freight</td><td class="pl-amount">$560.00</td></tr>
+              <tr class="pl-detail"><td>Salaries</td><td class="pl-amount">$18,400.00</td></tr>
+              <tr class="pl-detail"><td>Insurance</td><td class="pl-amount">$2,100.00</td></tr>
+              <tr class="pl-detail"><td>Payroll Taxes</td><td class="pl-amount">$1,425.00</td></tr>
+              <tr class="pl-detail"><td>Misc.</td><td class="pl-amount">$885.00</td></tr>
+              <tr class="pl-total"><td>Total Expenses</td><td class="pl-amount">$47,000.00</td></tr>
+              <tr class="pl-net"><td>Net Profit / (Loss)</td><td class="pl-amount">$36,750.00</td></tr>
+            </tbody>
+          </table>
+          <footer class="pl-footer">
+            <div>Income is recognized when cash is received, including unapplied receipts. Expenses are incurred on their recorded entry dates.</div>
+            <div>All recorded expenses are included once. Management report based on recorded ledger activity.</div>
+            <div class="pl-report-end"><span>Generated November 15, 2026 &middot; 10:30 AM CT &middot; Sample data</span><span>Tim's Ledger</span></div>
+          </footer>
+        </article>
+        <div id="pl-preview-status" class="pl-small" role="status" aria-live="polite"></div>
+      </main>
+    </div>
+  </div>
+  <script>
+    (() => {
+      const root = document.getElementById('ledger-pl-preview');
+      const checkbox = document.getElementById('pl-show-zero');
+      const status = document.getElementById('pl-preview-status');
+      let state = { printLayout: false, showZero: true };
+      const restore = (saved) => {
+        if (!saved || typeof saved !== 'object') return;
+        if (typeof saved.printLayout === 'boolean') state.printLayout = saved.printLayout;
+        if (typeof saved.showZero === 'boolean') state.showZero = saved.showZero;
+      };
+      const render = () => {
+        root.classList.toggle('pl-print', state.printLayout);
+        checkbox.checked = state.showZero;
+        root.querySelectorAll('.pl-zero').forEach(row => { row.hidden = !state.showZero; });
+      };
+      const persist = () => {
+        if (window.openai && window.openai.setWidgetState) {
+          window.openai.setWidgetState({ modelContent: { report: 'P&L Statement', incomeBasis: 'payments_received' }, privateContent: state }).catch(() => {});
+        }
+      };
+      restore(window.openai && window.openai.widgetState && window.openai.widgetState.privateContent);
+      render();
+      document.getElementById('pl-print').addEventListener('click', () => { state.printLayout = true; render(); persist(); });
+      document.getElementById('pl-back').addEventListener('click', () => { state.printLayout = false; render(); persist(); });
+      checkbox.addEventListener('change', () => {
+        state.showZero = checkbox.checked; render(); persist();
+        status.textContent = state.showZero ? 'Showing every category. Totals unchanged.' : 'Zero categories hidden. Totals unchanged.';
+      });
+      window.addEventListener('openai:set_globals', event => {
+        const saved = event.detail && event.detail.globals && event.detail.globals.widgetState;
+        if (saved) { restore(saved.privateContent); render(); }
+      });
+    })();
+  </script>
+</div>
