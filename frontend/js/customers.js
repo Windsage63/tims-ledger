@@ -25,6 +25,13 @@ function renderCustomerTabs() {
     });
     document.getElementById("customer-contact-panel").hidden = customerStatement.tab !== "contact";
     document.getElementById("customer-statement-panel").hidden = customerStatement.tab !== "statement";
+    if (!state.isLoading) {
+        const statementCustomerId = customerStatement.tab === "statement" ? state.selectedId : null;
+        const previous = window.history.state;
+        if (statementCustomerId !== (previous?.statementCustomerId ?? null)) {
+            window.history.replaceState({ ...previous, statementCustomerId }, "");
+        }
+    }
 }
 
 async function loadCustomerStatement(force = false) {
@@ -71,13 +78,13 @@ function renderCustomerStatement() {
     setHtml("statement-invoices-list", (statement.invoices || []).map((invoice) => {
         const status = invoiceDisplayStatus(invoice);
         return `<article class="rounded border border-line bg-panel/35 p-3">
-            <div class="flex flex-wrap justify-between gap-2"><strong>${escapeHtml(invoice.invoice_number)}</strong><span class="badge ${status.classes}">${status.label}</span></div>
+            <div class="flex flex-wrap justify-between gap-2"><a class="font-semibold text-brand underline" href="/frontend/html/invoices.html?id=${encodeURIComponent(invoice.id)}">${escapeHtml(invoice.invoice_number)}</a><span class="badge ${status.classes}">${status.label}</span></div>
             <p class="mt-1 text-xs text-muted">${escapeHtml(invoice.project_number)} · ${escapeHtml(invoice.invoice_date)} · Due ${escapeHtml(invoiceDueDate(invoice))}</p>
             <div class="mt-2 flex flex-wrap gap-3 text-xs"><span>Amount ${currency(invoice.invoice_amount_cents)}</span><span>Paid ${currency(invoice.paid_amount_cents)}</span><span>Open ${currency(invoice.open_balance_cents)}</span></div>
         </article>`;
     }).join("") || '<p class="text-sm text-muted">No issued invoices for this customer.</p>');
     setHtml("statement-payments-list", (statement.unapplied_payments || []).map((payment) =>
-        `<article class="rounded border border-line bg-panel/35 p-3"><div class="flex justify-between gap-2"><strong>${escapeHtml(payment.reference_number || `Payment ${payment.id}`)}</strong><span class="font-mono">${currency(payment.unapplied_amount_cents)}</span></div><p class="mt-1 text-xs text-muted">${escapeHtml(payment.payment_date)} · Unapplied credit</p></article>`
+        `<article class="rounded border border-line bg-panel/35 p-3"><div class="flex justify-between gap-2"><a class="font-semibold text-brand underline" href="/frontend/html/payments.html?id=${encodeURIComponent(payment.id)}">${escapeHtml(payment.reference_number || `Payment ${payment.id}`)}</a><span class="font-mono">${currency(payment.unapplied_amount_cents)}</span></div><p class="mt-1 text-xs text-muted">${escapeHtml(payment.payment_date)} · Unapplied credit</p></article>`
     ).join("") || '<p class="text-sm text-muted">No unapplied payments for this customer.</p>');
 }
 
@@ -109,10 +116,8 @@ function setEmptyState(title, message) {
         return;
     }
 
-    emptyState.innerHTML = `
-        <p class="font-display text-lg font-semibold text-ink">${escapeHtml(title)}</p>
-        <p class="mt-2 text-sm leading-6 text-muted">${escapeHtml(message)}</p>
-    `;
+    emptyState.querySelector("p.font-display").textContent = title;
+    emptyState.querySelector("p.mt-2").textContent = message;
 }
 
 function upsertCustomer(customer) {
@@ -139,6 +144,12 @@ async function loadCustomers() {
         }
 
         state.customers = Array.isArray(payload?.data?.customers) ? payload.data.customers : [];
+
+        const statementCustomerId = window.history.state?.statementCustomerId;
+        if (state.customers.some((customer) => customer.id === statementCustomerId)) {
+            state.selectedId = statementCustomerId;
+            customerStatement.tab = "statement";
+        }
 
         if (state.selectedId && !state.customers.some((customer) => customer.id === state.selectedId)) {
             state.selectedId = null;
@@ -264,9 +275,9 @@ function renderCustomerRows(customers) {
         const status = getStatusMeta(customer);
         return `<tr class="${customer.id === state.selectedId ? "bg-brand/5" : ""}">
             <td><button class="text-left font-semibold text-brand hover:underline" data-customer-select="${customer.id}" type="button">${escapeHtml(customer.customer_name)}</button><div class="text-xs text-muted">${escapeHtml(customer.contact_name)}</div></td>
-            <td>${escapeHtml(customer.phone)}</td><td>${escapeHtml(customer.email)}</td>
-            <td>${escapeHtml(customer.city)}, ${escapeHtml(customer.state)}</td>
             <td class="text-right font-mono">${currency(customer.open_ar_cents)}</td>
+            <td class="whitespace-nowrap">${escapeHtml(customer.phone)}</td><td>${escapeHtml(customer.email)}</td>
+            <td class="whitespace-nowrap">${escapeHtml(customer.city)}, ${escapeHtml(customer.state)}</td>
             <td><span class="badge ${status.classes}">${escapeHtml(status.label)}</span></td></tr>`;
     }).join("");
 
@@ -391,8 +402,10 @@ function clearFormToDraft(copyCurrent = false) {
 
     state.selectedId = null;
     state.draftCustomer = blankCustomerDraft();
+    customerStatement.tab = "contact";
     render();
     editorProtection.accept({ lock: true, duplicate: copyCurrent });
+    document.getElementById("customer-name").focus();
 }
 
 function syncCustomerDraft() {
@@ -466,7 +479,7 @@ function bindEvents() {
     document.getElementById("new-customer-button")?.addEventListener("click", () => clearFormToDraft(false));
     document.getElementById("clear-form-button")?.addEventListener("click", () => clearFormToDraft(false));
     document.getElementById("duplicate-customer-button")?.addEventListener("click", () => clearFormToDraft(true));
-    document.getElementById("reset-filters-button")?.addEventListener("click", () => {
+    bindFilterReset("reset-filters-button", () => {
         state.searchQuery = "";
         state.statusFilter = "all";
         const search = document.getElementById("customer-search");
@@ -478,6 +491,8 @@ function bindEvents() {
 }
 
 function render() {
+    syncFilterReset("reset-filters-button", state.searchQuery,
+        state.statusFilter);
     renderStatusFilters();
 
     const customers = filteredCustomers();
@@ -490,6 +505,10 @@ function render() {
     renderCustomerTabs();
     void loadCustomerStatement();
 }
+
+window.addEventListener("pageshow", (event) => {
+    if (event.persisted && customerStatement.tab === "statement") void loadCustomerStatement(true);
+});
 
 window.addEventListener("DOMContentLoaded", () => {
     onInvoiceCalendarChange(renderCustomerStatement);

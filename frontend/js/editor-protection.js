@@ -74,6 +74,12 @@ const editorProtection = (() => {
                 : "Existing record protected. Enable Edit Mode to make changes.";
         }
         const blocked = locked() || busy();
+        const label = document.getElementById("editor-mode-label");
+        if (label) {
+            label.hidden = !id;
+            const text = mode ? "Editing" : "Protected";
+            if (id && label.textContent !== text) label.textContent = text;
+        }
         document.querySelectorAll(`#${adapter.formId} input:not([type=hidden]), #${adapter.formId} select, #${adapter.formId} textarea, #${adapter.formId} button[type=submit], ${adapter.mutationControls || ".unused-mutation-control"}`)
             .forEach((control) => { control.disabled = blocked; });
         adapter.applyProtection?.(blocked);

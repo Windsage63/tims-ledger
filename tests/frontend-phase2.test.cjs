@@ -40,6 +40,45 @@ function runtime() {
     return { context, controls, field, load, run, windowEvents, documentEvents };
 }
 
+test('a statement link opens the requested ledger record and a missing link never selects a different record', async () => {
+    const r = runtime();
+    r.load('utils.js');
+    const loaded = [], messages = [];
+    let focused = 0;
+    r.context.openEditor = async (id) => { loaded.push(id); return true; };
+    r.context.showToast = (message) => messages.push(message);
+    r.field('heading').focus = () => { focused++; };
+    for (const search of ['?id=5', '?id=99', '']) {
+        r.context.window.location.search = search;
+        await r.run("loadInitialLedgerRecord([{id:2}, {id:5}], openEditor, 'heading')");
+    }
+    assert.deepEqual(loaded, [5, 2]);
+    assert.equal(focused, 1);
+    assert.equal(messages.length, 1);
+});
+
+test('the customer history entry restores its statement on a fresh page load', async () => {
+    const history = { state: { unrelated: true }, replaceState(value) { this.state = value; } };
+    const page = () => {
+        const r = runtime();
+        r.context.window.history = history;
+        r.context.fetch = async () => ({ ok: true, json: async () => ({ data: { customers: [{id:1}, {id:2}] } }) });
+        r.load('customers.js');
+        r.run('render = renderCustomerTabs');
+        return r;
+    };
+    const initial = page();
+    await initial.run('loadCustomers()');
+    initial.run("state.selectedId = 2; customerStatement.tab = 'statement'; renderCustomerTabs()");
+    const back = page();
+    await back.run('loadCustomers()');
+    assert.equal(back.run('state.selectedId'), 2);
+    assert.equal(back.field('customer-statement-panel').hidden, false);
+    back.run("customerStatement.tab = 'contact'; renderCustomerTabs()");
+    assert.equal(history.state.statementCustomerId, null);
+    assert.equal(history.state.unrelated, true);
+});
+
 test('expense unit rates retain four decimals and preview half cents exactly', () => {
     const r = runtime();
     r.load('utils.js');
@@ -60,6 +99,49 @@ test('expense unit rates retain four decimals and preview half cents exactly', (
     r.run(`renderEditor({...emptyExpenseDraft(), unit_cost_ten_thousandths:NaN, unit_cost_input:'0.72501'})`);
     assert.equal(r.field('expense-unit-cost').value, '0.72501');
 });
+
+for (const scenario of [
+    { screen: 'time', state: 'timeState', draft: 'draftEntry', save: 'saveEntry', key: 'entry',
+      focus: 'time-description', fields: {description: 'Work', hours: '3', 'rate-code': 'ST'} },
+    { screen: 'expenses', state: 'expensesState', draft: 'draftExpense', save: 'saveExpense', key: 'expense',
+      focus: 'expense-vendor', fields: {vendor: 'Shop', description: 'Parts', category: 'Materials', quantity: '4', 'unit-cost': '0.725'} }
+]) {
+    test(`${scenario.screen} starts another draft only after a successful save`, async () => {
+        const r = runtime();
+        const {screen, state, draft, save, key, focus, fields} = scenario;
+        const prefix = screen === 'expenses' ? 'expense' : 'time';
+        r.load('utils.js');
+        r.load(screen + '.js');
+        r.context.editorProtection = { canWrite: () => true, refresh() {}, saved() {} };
+        r.context.showToast = () => {};
+        r.run(`${state}.isLoading = false;
+            ${state}.projects = [{id:1,rates:[]}, {id:2,customer_name:'Second customer',rates:[{rate_code:'ST',rate_cents:1200}]}];
+            render = () => renderEditor(${state}.${draft});`);
+        r.field(prefix + '-project').value = '2';
+        r.field(prefix + '-entry-date').value = '2026-08-15';
+        for (const [name, value] of Object.entries(fields)) r.field(prefix + '-' + name).value = value;
+        let focused = false;
+        r.field(focus).focus = () => { focused = true; };
+        const submit = () => r.run(`${save}({ preventDefault() {}, submitter: {value:'add-another'} })`);
+        r.context.fetch = async () => ({ ok: false, json: async () => ({detail: 'Rejected'}) });
+        await submit();
+        assert.equal(focused, false);
+        for (const [name, value] of Object.entries(fields)) assert.equal(String(r.field(prefix + '-' + name).value), value);
+
+        r.context.fetch = async (url, options) => {
+            assert.equal(options.method, 'POST');
+            return { ok: true, json: async () => ({data: {[key]: {...JSON.parse(options.body), id: 3}}}) };
+        };
+        await submit();
+        assert.equal(r.run(`${state}.selectedId`), null);
+        assert.equal(r.run(`${state}.${draft}.customer_name`), 'Second customer');
+        assert.equal(r.field(prefix + '-entry-id').value, '');
+        assert.equal(r.field(prefix + '-project').value, '2');
+        assert.equal(r.field(prefix + '-entry-date').value, '2026-08-15');
+        for (const name of Object.keys(fields)) assert.equal(r.field(prefix + '-' + name).value, '');
+        assert.equal(focused, true);
+    });
+}
 
 test('zero-priced time has ordinary unbilled status, filters, and totals', () => {
     const r = runtime();
@@ -154,8 +236,12 @@ test('protection preserves canceled drafts, restores on relock, and resets after
             snapshot:()=>model.value, capture:()=>model, restore:(saved)=>{model=saved;}, render:()=>editorProtection.refresh() });`);
     r.windowEvents.DOMContentLoaded.forEach((callback) => callback());
     const toggle = r.field('edit-mode-button').listeners.click;
+    const label = r.field('editor-mode-label');
+    assert.equal(label.hidden, false);
+    assert.equal(label.textContent, 'Protected');
     assert.equal(r.run('editorProtection.canWrite()'), false);
     toggle();
+    assert.equal(label.textContent, 'Editing');
     r.run("model.value='changed'");
     assert.equal(r.run('editorProtection.dirty()'), true);
     assert.equal(r.run('editorProtection.allowTransition()'), false);
@@ -168,12 +254,15 @@ test('protection preserves canceled drafts, restores on relock, and resets after
     assert.equal(r.run('editorProtection.canWrite()'), false);
     toggle();
     r.run("model.value='saved again'; editorProtection.saved()");
+    assert.equal(label.textContent, 'Protected');
     assert.equal(r.run('editorProtection.dirty()'), false);
     assert.equal(r.run('editorProtection.canWrite()'), false);
     toggle();
     r.windowEvents.pageshow.forEach((callback) => callback());
+    assert.equal(label.textContent, 'Protected');
     assert.equal(r.run('editorProtection.canWrite()'), false);
     r.run("model={id:null,value:'new'};editorProtection.accept()");
+    assert.equal(label.hidden, true);
     assert.equal(r.run('editorProtection.canWrite()'), true);
     assert.equal(r.run('editorProtection.dirty()'), false);
     r.run('editorProtection.accept({duplicate:true})');
@@ -244,33 +333,59 @@ test('invoice and payment drafts do not mutate saved browse records', () => {
     }
 });
 
-test('bulk invoice selection respects protection, hidden rows, zero prices, and local drafts', () => {
+test('Select All reflects visible selections and only toggles eligible rows in its panel', () => {
     const r = runtime();
     r.load('utils.js');
-    r.context.cloneEditorData = (value) => JSON.parse(JSON.stringify(value));
+    r.context.cloneEditorData = structuredClone;
     let writable = false;
     r.context.editorProtection = { canWrite: () => writable };
     r.load('invoices.js');
     const input = (id, visible = true, disabled = false) => ({
-        dataset: { selectionId: String(id) }, disabled, getClientRects: () => visible ? [{}] : []
+        dataset: { selectionId: String(id) }, checked: false, disabled, getClientRects: () => visible ? [{}] : []
     });
-    r.field('eligible-time-list').querySelectorAll = () => [input(1), input(2), input(3, false), input(4, true, true)];
-    r.field('eligible-expenses-list').querySelectorAll = () => [input(5)];
-    r.run(`render=()=>{};
-        invoicesState.invoices=[{id:1,invoice_amount_cents:0,paid_amount_cents:0,open_balance_cents:0}];
-        setEditorPayload({invoice:{...invoicesState.invoices[0]},selected_time_entries:[],selected_expenses:[],
+    const time = [input(1), input(2), input(3, false), input(4, true, true)];
+    const expenses = [input(5)];
+    time[2].checked = true;
+    r.field('eligible-time-list').querySelectorAll = () => time;
+    r.field('eligible-expenses-list').querySelectorAll = () => expenses;
+    r.run(`invoicesState.isLoading=false;
+        invoicesState.invoices=[{id:1,invoice_amount_cents:0}];
+        setEditorPayload({invoice:invoicesState.invoices[0], selected_time_entries:[{id:3,line_total_cents:300}],
             eligible_time_entries:[{id:1,line_total_cents:100},{id:2,line_total_cents:0},{id:3,line_total_cents:300},{id:4,line_total_cents:400}],
-            eligible_expenses:[{id:5,line_total_cents:200}]});
-        selectAllVisibleSources('time');`);
-    assert.equal(r.run('currentSelectedTimeIds().size'), 0);
+            eligible_expenses:[{id:5,line_total_cents:200}]});`);
+    const change = (type, checked) => r.run(`changeSourceSelection('${type}', visibleSourceInputs('${type}'), ${checked})`);
+    const master = r.field('select-all-time');
+    change('time', true);
+    assert.equal(r.run('currentSelectedTimeIds().size'), 1);
     writable = true;
-    r.run("selectAllVisibleSources('time'); selectAllVisibleSources('expense');");
-    assert.equal(r.run('JSON.stringify([...currentSelectedTimeIds()])'), '[1,2]');
+    r.run("refreshSourcePanel('time', false)");
+    assert.equal(master.checked, false);
+    assert.equal(master.indeterminate, false);
+    change('expense', true);
+    r.run("changeSourceSelection('time', [visibleSourceInputs('time')[0]], true)");
+    assert.equal(master.indeterminate, true);
+    assert.equal(r.field('eligible-time-count').textContent, '1 of 2 selected');
+    change('time', true);
+    assert.equal(master.checked, true);
+    assert.equal(master.indeterminate, false);
+    assert.equal(time[1].checked, true);
+    assert.equal(time[3].checked, false);
+    assert.equal(r.run('selectedInvoice().invoice_amount_cents'), 600);
+    r.run('invoicesState.isSaving=true');
+    change('time', false);
+    assert.equal(master.checked, true);
+    r.run('invoicesState.isSaving=false');
+    change('time', false);
+    assert.equal(master.checked, false);
+    assert.equal(master.indeterminate, false);
+    assert.equal(r.run('JSON.stringify([...currentSelectedTimeIds()])'), '[3]');
     assert.equal(r.run('JSON.stringify([...currentSelectedExpenseIds()])'), '[5]');
-    assert.equal(r.run('selectedInvoice().invoice_amount_cents'), 300);
+    assert.equal(r.run('selectedInvoice().invoice_amount_cents'), 500);
     assert.equal(r.run('invoicesState.invoices[0].invoice_amount_cents'), 0);
-    r.run("invoicesState.isSaving=true; selectAllVisibleSources('time');");
-    assert.equal(r.run('currentSelectedTimeIds().size'), 2);
+    expenses.length = 0;
+    r.run("refreshSourcePanel('expense', false)");
+    assert.equal(r.field('select-all-expense').disabled, true);
+    assert.equal(r.field('select-all-expense').checked, false);
 });
 
 test('invoice source selection updates charges and its own balance independently of account figures', () => {
@@ -279,20 +394,21 @@ test('invoice source selection updates charges and its own balance independently
     r.context.cloneEditorData = (value) => JSON.parse(JSON.stringify(value));
     r.context.editorProtection = { canWrite: () => true };
     r.load('invoices.js');
-    r.run(`render=()=>{};
+    for (const id of ['eligible-time-list', 'eligible-expenses-list']) r.field(id).querySelectorAll = () => [];
+    r.run(`invoicesState.isLoading=false;
         invoicesState.invoices=[{id:1,invoice_amount_cents:75000,paid_amount_cents:30000,open_balance_cents:45000}];
         setEditorPayload({invoice:{...invoicesState.invoices[0],prior_balance_cents:27193483,unapplied_credit_cents:10000000},
             summary:{prior_balance_cents:27193483,unapplied_credit_cents:10000000,open_balance_after_issue_cents:17268483},
             eligible_time_entries:[{id:1,line_total_cents:75000}],
             eligible_expenses:[{id:2,line_total_cents:2973}]});
-        toggleSelection('time',1,true);`);
+        changeSourceSelection('time',[{dataset:{selectionId:'1'}}],true);`);
     const summary = () => JSON.parse(r.run('JSON.stringify(invoicesState.editor.summary)'));
     assert.deepEqual(summary(), { time_total_cents:75000, expense_total_cents:0, invoice_total_cents:75000 });
     assert.equal(r.run('selectedInvoice().open_balance_cents'),45000);
-    r.run("toggleSelection('expense',2,true)");
+    r.run("changeSourceSelection('expense',[{dataset:{selectionId:'2'}}],true)");
     assert.deepEqual(summary(), { time_total_cents:75000, expense_total_cents:2973, invoice_total_cents:77973 });
     assert.equal(r.run('selectedInvoice().open_balance_cents'),47973);
-    r.run("toggleSelection('time',1,false)");
+    r.run("changeSourceSelection('time',[{dataset:{selectionId:'1'}}],false)");
     assert.deepEqual(summary(), { time_total_cents:0, expense_total_cents:2973, invoice_total_cents:2973 });
     assert.equal(r.run('selectedInvoice().open_balance_cents'),0);
     assert.equal(r.run('invoicesState.invoices[0].invoice_amount_cents'),75000);
@@ -334,6 +450,59 @@ test('saved-record save handlers and payment application helper refuse writes wh
     await r.run('savePrintInvoice()'); // Missing saved document explains what to do; no POST.
     r.load('payments.js');
     await assert.rejects(r.run('saveApplicationsForPayment(1)'), /Use Save Payment/);
+});
+
+test('Apply remaining tops up one draft row in cents and never reduces or persists an allocation', () => {
+    const r = runtime();
+    r.load('utils.js');
+    r.context.cloneEditorData = structuredClone;
+    let writable = false;
+    r.context.editorProtection = {
+        canWrite: () => writable,
+        refresh: () => r.run('updatePaymentSummary(selectedPayment(), !editorProtection.canWrite())')
+    };
+    r.load('payments.js');
+    r.run(`paymentsState.isLoading = false;
+        setEditorPayload({
+            payment: {id: 1, customer_id: 1, amount_cents: 10000},
+            open_invoices: [
+                {id: 7, current_applied_cents: 2000, available_to_apply_cents: 6501},
+                {id: 8, current_applied_cents: 500, available_to_apply_cents: 8000}
+            ]
+        })`);
+    r.field('payment-customer').value = '1';
+    r.field('payment-amount').value = '100.00';
+    for (const id of [7, 8]) r.field('application-' + id).focus = () => {};
+    const apply = (id) => r.run(`updateApplicationDraft(${id}, document.getElementById('application-${id}'), {applyRemaining:true})`);
+    const allocation = (id) => r.run(`paymentsState.applicationDrafts[${id}]`);
+    apply(7);
+    assert.equal(allocation(7), 2000);
+    writable = true;
+    apply(7);
+    assert.equal(r.field('application-7').value, '65.01');
+    assert.equal(allocation(8), 500);
+    assert.equal(r.field('payment-detail-unapplied').textContent, '$29.99');
+    assert.equal(r.field('apply-remaining-7').disabled, true);
+    assert.equal(r.field('apply-remaining-8').disabled, false);
+    apply(8);
+    assert.equal(allocation(8), 3499);
+    assert.equal(r.field('payment-detail-unapplied').textContent, '$0.00');
+    assert.equal(r.field('apply-remaining-8').disabled, true);
+    for (const amount of ['100.00', '15.00', '0.00', '-5.00']) {
+        r.field('payment-amount').value = amount;
+        apply(8);
+        assert.equal(allocation(8), 3499);
+    }
+    r.field('payment-amount').value = '100.00';
+    r.field('application-7').value = '40.00';
+    r.run("updateApplicationDraft(7, document.getElementById('application-7'))");
+    assert.equal(r.field('apply-remaining-8').disabled, false);
+    apply(8);
+    assert.equal(allocation(7), 4000);
+    assert.equal(allocation(8), 6000);
+    assert.equal(r.run('paymentsState.editor.open_invoices[0].current_applied_cents'), 2000);
+    assert.equal(r.run('paymentsState.editor.open_invoices[1].current_applied_cents'), 500);
+    // The runtime rejects unexpected network calls throughout this test.
 });
 
 test('partial new-payment allocation failure keeps the created ID and retries with PUT', async () => {

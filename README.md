@@ -128,7 +128,7 @@ For frontend and workflow changes, start the app with `.\startup.bat` and verify
   - Fixed-fee and materials-order billing are represented through custom project rates and unit entries in time.
   - Expense categories are limited to `Materials`, `Lodging`, `Airfare`, `Mileage`, `Perdiem`, `Rental Car`, `Gas`, `Parking`, `Tolls`, `Meals`, `Entertainment`, `Gifts`, `Freight`, `Salaries`, `Insurance`, `Payroll Taxes`, and `Misc.`. Non-billable expenses also cover items sold and internal overhead.
   - Invoice source-row checkbox changes remain browser-local until Save/Print.
-  - Each invoice source panel offers Select All Visible. Saved invoices still require Edit Mode for source changes.
+  - Each invoice source panel shows a three-state Select All checkbox and a selected count. It selects or clears the visible eligible rows in that panel. Saved invoices still require Edit Mode for source changes.
   - Saved projects retain their original customer. Correct customer address/contact details on Customers; create a new project when continuing work needs new pricing.
   - Short payments leave invoices open. Overpayments remain unapplied customer credit. The user must reduce/remove payment allocations in Receive Payments before lowering an invoice or payment below its allocated amount. Invoice Save/Print never changes payment allocations. After a refund, edit the original receipt to its net amount if desired.
   - Printed invoice project references read `{project number} - {project description}`.

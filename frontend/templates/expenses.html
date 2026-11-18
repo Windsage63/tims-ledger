@@ -6,11 +6,6 @@
 
 {% extends "base.html" %}
 
-{% block page_actions %}
-                        <button class="btn-primary" id="new-expense-button" type="button">Log New Expense</button>
-                        <button class="btn-secondary" id="reset-expense-filters-button" type="button">Reset Filters</button>
-{% endblock %}
-
 {% block content %}
 
             <section class="kpi-strip" aria-label="Expense summary metrics">
@@ -37,7 +32,10 @@
                     <div class="mb-5 flex items-start justify-between gap-3">
                         <div>
                             <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Expense Entry</p>
-                            <h2 class="mt-2 font-display text-lg font-bold text-ink" id="expense-editor-title">Select an expense</h2>
+                            <div class="mt-2 flex min-w-0 flex-wrap items-center gap-2">
+                                <h2 class="min-w-0 break-words font-display text-lg font-bold text-ink" id="expense-editor-title" tabindex="-1">Select an expense</h2>
+                                <span class="text-xs font-semibold text-muted" id="editor-mode-label" role="status" hidden></span>
+                            </div>
                         </div>
                         <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide" id="expense-editor-status-chip">Draft</span>
                     </div>
@@ -114,6 +112,7 @@
 
                         <div class="grid gap-3 pt-2 sm:grid-cols-2 xl:grid-cols-3">
                             <button class="btn-primary" type="submit">Save Expense</button>
+                            <button class="btn-secondary" type="submit" value="add-another">Save &amp; add another</button>
                             <button class="btn-secondary" id="duplicate-expense-button" type="button">Duplicate</button>
                             <button class="btn-secondary" id="clear-expense-form-button" type="button">Clear Form</button>
                             <button class="btn-danger" id="delete-expense-button" type="button">Delete Expense</button>
@@ -124,31 +123,33 @@
                 <article class="card" aria-label="Expense entries">
                     <div class="toolbar">
                         <div class="filter-fields">
-                        <div class="grid min-w-0 w-full gap-3 md:grid-cols-4 2xl:max-w-4xl 2xl:grid-cols-[minmax(0,1fr)_12rem_10rem_10rem]">
-                            <div class="min-w-0">
-                                <label class="field-label" for="expense-search">Search</label>
-                                <input class="field" id="expense-search" placeholder="Search" type="search">
-                            </div>
-                            <div class="min-w-0">
-                                <label class="field-label" for="expense-project-filter">Project</label>
-                                <select class="field" id="expense-project-filter"></select>
-                            </div>
-                            <div class="min-w-0">
-                                <label class="field-label" for="expense-year-filter">Year</label>
-                                <select class="field" id="expense-year-filter"></select>
-                            </div>
-                            <div class="min-w-0">
-                                <label class="field-label" for="expense-category-filter">Category</label>
-                                <select class="field" id="expense-category-filter"></select>
+                            <div class="grid min-w-0 w-full gap-3 md:grid-cols-4 2xl:max-w-4xl 2xl:grid-cols-[minmax(0,1fr)_12rem_10rem_10rem]">
+                                <div class="min-w-0">
+                                    <label class="field-label" for="expense-search">Search</label>
+                                    <input class="field" id="expense-search" placeholder="Search" type="search">
+                                </div>
+                                <div class="min-w-0">
+                                    <label class="field-label" for="expense-project-filter">Project</label>
+                                    <select class="field" id="expense-project-filter"></select>
+                                </div>
+                                <div class="min-w-0">
+                                    <label class="field-label" for="expense-year-filter">Year</label>
+                                    <select class="field" id="expense-year-filter"></select>
+                                </div>
+                                <div class="min-w-0">
+                                    <label class="field-label" for="expense-category-filter">Category</label>
+                                    <select class="field" id="expense-category-filter"></select>
+                                </div>
                             </div>
                         </div>
-                    </div>
                         <div class="filter-tabs" id="expense-status-filter-group">
-                        <button class="tab" data-expense-status-filter="all" type="button">All</button>
-                        <button class="tab" data-expense-status-filter="unbilled" type="button">Unbilled</button>
-                        <button class="tab" data-expense-status-filter="invoiced" type="button">Invoiced</button>
-                        <button class="tab" data-expense-status-filter="nonbillable" type="button">Non-Billable</button>
-                    </div>
+                            <button class="tab" data-expense-status-filter="all" type="button">All</button>
+                            <button class="tab" data-expense-status-filter="unbilled" type="button">Unbilled</button>
+                            <button class="tab" data-expense-status-filter="invoiced" type="button">Invoiced</button>
+                            <button class="tab" data-expense-status-filter="nonbillable" type="button">Non-Billable</button>
+                        </div>
+                        <button class="tab" disabled id="reset-expense-filters-button" type="button">Reset Filters</button>
+                        <button class="btn-primary ml-auto" id="new-expense-button" type="button">Log New Expense</button>
                     </div>
 
                     <div class="mt-3 overflow-x-auto rounded border border-line bg-white/70">
@@ -170,7 +171,7 @@
 
                     <div class="mt-3 hidden rounded border border-dashed border-line bg-panel/40 p-8 text-center" id="expense-empty-state">
                         <p class="font-display text-lg font-semibold text-ink">No expenses match the current filter.</p>
-                        <p class="mt-2 text-sm leading-6 text-muted">Adjust the project, year, category, or status filter, or create a new expense draft.</p>
+                        <button class="tab mt-3" id="clear-empty-filters" type="button" hidden>Clear filters</button>
                     </div>
                 </article>
             </section>

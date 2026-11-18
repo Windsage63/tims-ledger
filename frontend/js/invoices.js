@@ -189,8 +189,7 @@ async function loadInvoices() {
         const data = await requestJson("/bootstrap", {}, "Unable to load invoices.");
         invoicesState.projects = Array.isArray(data.projects) ? data.projects : [];
         invoicesState.invoices = Array.isArray(data.invoices) ? data.invoices : [];
-        invoicesState.selectedInvoiceId = invoicesState.invoices[0]?.id || null;
-        await loadEditor(invoicesState.selectedInvoiceId);
+        await loadInitialLedgerRecord(invoicesState.invoices, loadEditor, "invoice-editor-title");
     } catch (error) {
         invoicesState.loadError = extractErrorMessage(error, "Unable to load invoices.");
         invoicesState.projects = [];
@@ -277,12 +276,12 @@ function renderInvoiceRows(invoices) {
             <tr class="cursor-pointer border-t border-line/70 ${isSelected ? "bg-brand/5" : "bg-white/30 hover:bg-white/60"}" data-invoice-select="${invoice.id}">
                 <td class="px-4 py-2 align-top font-mono text-sm text-ink">${escapeHtml(invoice.invoice_number)}</td>
                 <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(invoice.customer_name)}</td>
+                <td class="text-right font-mono">${currency(invoice.open_balance_cents || 0)}</td>
+                <td class="px-4 py-2 align-top"><span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${status.classes}">${escapeHtml(status.label)}</span></td>
                 <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(invoice.project_number)}</td>
                 <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(invoice.invoice_date)}</td>
                 <td>${escapeHtml(invoiceDueDate(invoice))}</td>
                 <td class="px-4 py-2 align-top text-right font-mono text-sm text-ink">${currency(invoice.invoice_amount_cents || 0)}</td>
-                <td class="text-right font-mono">${currency(invoice.open_balance_cents || 0)}</td>
-                <td class="px-4 py-2 align-top"><span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${status.classes}">${escapeHtml(status.label)}</span></td>
             </tr>
         `;
     }).join("");
@@ -307,7 +306,7 @@ function renderSelectableSourceList(containerId, items, type, invoiceId, isDisab
     container.innerHTML = items.map((item) => formatter(item, type, invoiceId, isDisabled)).join("");
     container.querySelectorAll("[data-selection-type]").forEach((input) => {
         input.addEventListener("change", () => {
-            toggleSelection(input.dataset.selectionType, Number(input.dataset.selectionId), input.checked);
+            changeSourceSelection(type, [input], input.checked);
         });
     });
 }
@@ -337,8 +336,6 @@ function renderEditor(invoice) {
         ["invoice-editor-status-chip", "invoice-detail-customer", "invoice-due-date"].forEach((id) => setText(id, "—"));
         setText("invoice-editor-title", "No Invoice Selected");
         ["invoice-detail-total", "invoice-detail-open-balance", "invoice-summary-time", "invoice-summary-expense", "invoice-summary-total", "invoice-summary-prior-balance", "invoice-summary-credit", "invoice-summary-open-after-issue"].forEach((id) => setText(id, currency(0)));
-        setText("eligible-time-count", "0 rows");
-        setText("eligible-expense-count", "0 rows");
         renderSelectableSourceList("eligible-time-list", [], "time", new Set(), true);
         renderSelectableSourceList("eligible-expenses-list", [], "expense", new Set(), true);
         document.getElementById("delete-invoice-button").textContent = "Delete Invoice";
@@ -374,9 +371,6 @@ function renderEditor(invoice) {
     const selectedExpenseIds = currentSelectedExpenseIds();
     const eligibleTime = invoicesState.editor.eligible_time_entries || [];
     const eligibleExpenseRows = invoicesState.editor.eligible_expenses || [];
-
-    setText("eligible-time-count", `${eligibleTime.length} rows`);
-    setText("eligible-expense-count", `${eligibleExpenseRows.length} rows`);
 
     renderSelectableSourceList(
         "eligible-time-list",
@@ -455,45 +449,40 @@ function syncSelectedInvoiceFromForm() {
     invoice.notes = payload.notes;
 }
 
-function toggleSelection(type, itemId, checked) {
-    const invoice = selectedInvoice();
-    if (!invoice || invoicesState.isSaving || invoicesState.isEditorLoading || !editorProtection.canWrite()) {
-        return;
-    }
-    const timeEntryIds = currentSelectedTimeIds();
-    const expenseIds = currentSelectedExpenseIds();
-    if (type === "time") {
-        if (checked) {
-            timeEntryIds.add(itemId);
-        } else {
-            timeEntryIds.delete(itemId);
-        }
-    } else if (checked) {
-        expenseIds.add(itemId);
-    } else {
-        expenseIds.delete(itemId);
-    }
-
-    invoicesState.editor.selected_time_entries = (invoicesState.editor.eligible_time_entries || []).filter((entry) => timeEntryIds.has(Number(entry.id)));
-    invoicesState.editor.selected_expenses = (invoicesState.editor.eligible_expenses || []).filter((expense) => expenseIds.has(Number(expense.id)));
-    recalculateEditorSummary();
-    render();
+function visibleSourceInputs(type) {
+    const listId = type === "time" ? "eligible-time-list" : "eligible-expenses-list";
+    return [...document.getElementById(listId).querySelectorAll("[data-selection-type]")]
+        .filter((input) => input.getClientRects().length > 0);
 }
 
-function selectAllVisibleSources(type) {
-    if (!selectedInvoice() || invoicesState.isSaving || invoicesState.isEditorLoading || !editorProtection.canWrite()) return;
-    if (type !== "time" && type !== "expense") return;
-    const container = document.getElementById(type === "time" ? "eligible-time-list" : "eligible-expenses-list");
-    if (!container) return;
-    const selectedIds = type === "time" ? currentSelectedTimeIds() : currentSelectedExpenseIds();
-    container.querySelectorAll("[data-selection-type]").forEach((input) => {
-        if (!input.disabled && input.getClientRects().length > 0) selectedIds.add(Number(input.dataset.selectionId));
-    });
-    const key = type === "time" ? "selected_time_entries" : "selected_expenses";
-    const eligibleKey = type === "time" ? "eligible_time_entries" : "eligible_expenses";
-    invoicesState.editor[key] = invoicesState.editor[eligibleKey].filter((row) => selectedIds.has(Number(row.id)));
+function refreshSourcePanel(type, blocked) {
+    const master = document.getElementById(`select-all-${type}`);
+    const inputs = visibleSourceInputs(type).filter((input) => blocked || !input.disabled);
+    const selectedCount = inputs.filter((input) => input.checked).length;
+    master.checked = inputs.length > 0 && selectedCount === inputs.length;
+    master.indeterminate = selectedCount > 0 && selectedCount < inputs.length;
+    master.disabled = blocked || inputs.length === 0;
+    setText(`eligible-${type}-count`, `${selectedCount} of ${inputs.length} selected`);
+}
+
+function changeSourceSelection(type, inputs, checked) {
+    const invoice = selectedInvoice();
+    if (!invoice || invoicesState.isLoading || invoicesState.isSaving || invoicesState.isEditorLoading || !editorProtection.canWrite()) return;
+    const isTime = type === "time";
+    const selectedIds = isTime ? currentSelectedTimeIds() : currentSelectedExpenseIds();
+    for (const input of inputs) {
+        if (input.disabled) continue;
+        const id = Number(input.dataset.selectionId);
+        if (checked) selectedIds.add(id);
+        else selectedIds.delete(id);
+        input.checked = checked;
+    }
+    const eligible = isTime ? invoicesState.editor.eligible_time_entries : invoicesState.editor.eligible_expenses;
+    const key = isTime ? "selected_time_entries" : "selected_expenses";
+    invoicesState.editor[key] = eligible.filter((row) => selectedIds.has(Number(row.id)));
     recalculateEditorSummary();
-    render();
+    updateEditorSummary(invoice, invoicesState.editor.summary);
+    refreshSourcePanel(type, false);
 }
 
 async function createDraftInvoice(sourceInvoice = null) {
@@ -507,6 +496,7 @@ async function createDraftInvoice(sourceInvoice = null) {
     editorProtection.accept({ lock: true });
     invoicesState.loadError = "";
     render();
+    document.getElementById("invoice-project").focus();
 }
 
 async function printSavedInvoice(invoice) {
@@ -648,8 +638,9 @@ async function deleteDraftInvoice() {
 }
 
 function bindEvents() {
-    document.querySelectorAll("[data-select-all-source]").forEach((button) => {
-        button.addEventListener("click", () => selectAllVisibleSources(button.dataset.selectAllSource));
+    document.querySelectorAll("[data-select-all-source]").forEach((master) => {
+        const type = master.dataset.selectAllSource;
+        master.addEventListener("change", () => changeSourceSelection(type, visibleSourceInputs(type), master.checked));
     });
     document.getElementById("invoice-terms")?.addEventListener("change", () => {
         syncSelectedInvoiceFromForm();
@@ -672,13 +663,14 @@ function bindEvents() {
     document.getElementById("new-invoice-button")?.addEventListener("click", () => {
         void createDraftInvoice(null);
     });
-    document.getElementById("delete-invoice-button")?.addEventListener("click", () => {
+    document.getElementById("delete-invoice-button")?.addEventListener("click", (event) => {
+        event.currentTarget.closest("details").open = false;
         void deleteDraftInvoice();
     });
     document.getElementById("save-invoice-button")?.addEventListener("click", () => {
         void savePrintInvoice();
     });
-    document.getElementById("reset-invoice-filters-button")?.addEventListener("click", () => {
+    bindFilterReset("reset-invoice-filters-button", () => {
         invoicesState.searchQuery = "";
         invoicesState.yearFilter = "all";
         invoicesState.statusFilter = "all";
@@ -715,10 +707,14 @@ function bindEvents() {
 }
 
 function render() {
+    syncFilterReset("reset-invoice-filters-button", invoicesState.searchQuery,
+        invoicesState.yearFilter, invoicesState.statusFilter);
     renderProjectOptions();
     renderYearOptions();
     renderStatusFilters();
     const invoices = filteredInvoices();
+    const selectedId = selectedInvoice()?.id;
+    document.getElementById("invoice-outside-filters").hidden = !selectedId || invoices.some((row) => row.id === selectedId);
     renderMetrics(invoices);
     renderInvoiceRows(invoices);
     renderEditor(invoicesState.editor.invoice || selectedInvoice());
@@ -735,11 +731,9 @@ window.addEventListener("DOMContentLoaded", () => {
             time: [...currentSelectedTimeIds()].sort((a, b) => a - b), expenses: [...currentSelectedExpenseIds()].sort((a, b) => a - b) }),
         capture: () => invoicesState.editor,
         restore: (editor) => { invoicesState.editor = editor; },
-        applyProtection: () => {
-            document.querySelectorAll("[data-select-all-source]").forEach((button) => {
-                const rows = button.dataset.selectAllSource === "time" ? invoicesState.editor.eligible_time_entries : invoicesState.editor.eligible_expenses;
-                button.disabled = !selectedInvoice() || invoicesState.isLoading || invoicesState.isSaving || invoicesState.isEditorLoading || !editorProtection.canWrite() || !rows?.length;
-            });
+        applyProtection: (blocked) => {
+            refreshSourcePanel("time", blocked || !selectedInvoice());
+            refreshSourcePanel("expense", blocked || !selectedInvoice());
             if (!selectedInvoice()) {
                 ["invoice-number", "invoice-project", "invoice-date", "invoice-terms", "invoice-notes"].forEach((id) => { document.getElementById(id).disabled = true; });
             }

@@ -87,12 +87,14 @@ function paymentStatus(appliedAmountCents, amountCents) {
     return "partially_applied";
 }
 
+function draftAllocation(invoice) {
+    const draft = paymentsState.applicationDrafts[invoice.id];
+    return Number.isFinite(draft) ? draft : (invoice.current_applied_cents || 0);
+}
+
 function paymentPreview(payment) {
     const openInvoices = paymentsState.editor.open_invoices || [];
-    const draftAppliedAmount = openInvoices.reduce((sum, invoice) => {
-        const value = paymentsState.applicationDrafts[invoice.id];
-        return sum + (Number.isFinite(value) ? value : (invoice.current_applied_cents || 0));
-    }, 0);
+    const draftAppliedAmount = openInvoices.reduce((sum, invoice) => sum + draftAllocation(invoice), 0);
     const appliedAmount = payment && paymentsState.editor.payment && payment.id === paymentsState.editor.payment.id
         ? draftAppliedAmount
         : (payment?.applied_amount_cents || 0);
@@ -118,7 +120,7 @@ function paymentStatusMeta(payment) {
     return paymentStatusMetaFromStatus(payment.application_status);
 }
 
-function updatePaymentSummary(payment) {
+function updatePaymentSummary(payment, blocked) {
     const preview = paymentPreview(payment);
     const status = paymentStatusMetaFromStatus(preview.application_status);
     const chip = document.getElementById("payment-editor-status-chip");
@@ -131,6 +133,11 @@ function updatePaymentSummary(payment) {
     setText("payment-summary-applied", currency(preview.applied_amount_cents));
     setText("payment-summary-unapplied", currency(preview.unapplied_amount_cents));
     setText("payment-summary-status", status.label);
+    for (const invoice of paymentsState.editor.open_invoices) {
+        const button = document.getElementById(`apply-remaining-${invoice.id}`);
+        if (button) button.disabled = blocked || preview.unapplied_amount_cents <= 0 ||
+            draftAllocation(invoice) >= invoice.available_to_apply_cents;
+    }
 }
 
 function updatePaymentHeader(payment) {
@@ -140,7 +147,7 @@ function updatePaymentHeader(payment) {
     setText("payment-editor-title", `${payment.reference_number} - ${payment.payment_date}`);
     setText("payment-detail-customer", payment.customer_name);
     setText("payment-detail-amount", currency(payment.amount_cents));
-    updatePaymentSummary(payment);
+    editorProtection.refresh();
 }
 
 function invoiceStatusMeta(invoice) { return invoiceDisplayStatus(invoice); }
@@ -228,8 +235,7 @@ async function loadPayments() {
         paymentsState.customers = Array.isArray(data.customers) ? data.customers : [];
         paymentsState.payments = Array.isArray(data.payments) ? data.payments : [];
         paymentsState.businessSummary = data.business_summary || null;
-        paymentsState.selectedPaymentId = paymentsState.payments[0]?.id || null;
-        await loadEditor(paymentsState.selectedPaymentId);
+        await loadInitialLedgerRecord(paymentsState.payments, loadEditor, "payment-editor-title");
     } catch (error) {
         paymentsState.loadError = extractErrorMessage(error, "Unable to load payments.");
         paymentsState.customers = [];
@@ -356,7 +362,7 @@ function renderPaymentRows(payments) {
     });
 }
 
-function renderApplications(payment) {
+function renderApplications() {
     const currentList = document.getElementById("current-applications-list");
     const openList = document.getElementById("open-invoices-list");
     if (!currentList || !openList) {
@@ -394,7 +400,6 @@ function renderApplications(payment) {
 
     openList.innerHTML = openInvoices.map((invoice) => {
         const status = invoiceStatusMeta(invoice);
-        const appliedDraft = paymentsState.applicationDrafts[invoice.id];
         return `
             <div class="rounded border border-line bg-panel/35 px-3 py-3">
                 <div class="flex items-start justify-between gap-3">
@@ -404,36 +409,24 @@ function renderApplications(payment) {
                     </div>
                     <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${status.classes}">${status.label}</span>
                 </div>
-                <div class="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem] sm:items-end">
-                    <div>
-                        <p class="text-[11px] uppercase tracking-[0.16em] text-muted">Available to Apply</p>
+                <div class="mt-3 flex flex-wrap items-end gap-2">
+                    <div class="mr-auto">
+                        <p class="text-[11px] uppercase tracking-[0.16em] text-muted">Invoice limit</p>
                         <p class="mt-1 font-mono text-sm text-ink">${currency(invoice.available_to_apply_cents)}</p>
                     </div>
-                    <div>
+                    <div class="w-24">
                         <label class="field-label" for="application-${invoice.id}">Apply</label>
-                        <input class="field" data-application-input="${invoice.id}" id="application-${invoice.id}" min="0" step="0.01" type="number" value="${dollarsInput(Number.isFinite(appliedDraft) ? appliedDraft : (invoice.current_applied_cents || 0))}">
+                        <input class="field" data-application-input="${invoice.id}" id="application-${invoice.id}" min="0" step="0.01" type="number" value="${dollarsInput(draftAllocation(invoice))}">
                     </div>
+                    <button class="btn-secondary" id="apply-remaining-${invoice.id}" data-apply-remaining="${invoice.id}" type="button"
+                        aria-label="Apply remaining to invoice ${escapeHtml(invoice.invoice_number)}" disabled>Apply remaining</button>
                 </div>
             </div>
         `;
     }).join("");
-
-    openList.querySelectorAll("[data-application-input]").forEach((input) => {
-        input.addEventListener("input", () => {
-            updateApplicationDraft(Number(input.dataset.applicationInput), centsFromInput(input.value), input);
-        });
-    });
 }
 
 function updateEditor(payment) {
-    const preview = paymentPreview(payment);
-    const status = paymentStatusMetaFromStatus(preview.application_status);
-    const chip = document.getElementById("payment-editor-status-chip");
-    if (chip) {
-        chip.className = `rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${status.classes}`;
-        chip.textContent = status.label;
-    }
-
     document.getElementById("payment-customer").value = String(payment.customer_id);
     document.getElementById("payment-date").value = payment.payment_date;
     document.getElementById("payment-reference").value = payment.reference_number;
@@ -450,12 +443,6 @@ function updateEditor(payment) {
     setText("payment-editor-title", payment.id ? `${payment.reference_number || "Payment " + payment.id} · ${payment.payment_date}` : "New Payment");
     setText("payment-detail-customer", payment.customer_name);
     setText("payment-detail-amount", currency(payment.amount_cents));
-    setText("payment-detail-unapplied", currency(preview.unapplied_amount_cents));
-    setText("payment-summary-applied", currency(preview.applied_amount_cents));
-    setText("payment-summary-unapplied", currency(preview.unapplied_amount_cents));
-    setText("payment-summary-status", status.label);
-
-    renderApplications(payment);
 }
 
 function paymentPayloadFromForm(currentPayment) {
@@ -521,10 +508,12 @@ async function createDraftPayment(sourcePayment = null) {
     paymentsState.creationUncertain = false;
     await loadCustomerOpenInvoices(customer.id);
     editorProtection.accept({ lock: true, duplicate: Boolean(sourcePayment) });
+    document.getElementById("payment-customer").focus();
 }
 
-function updateApplicationDraft(invoiceId, requestedCents, input = null) {
-    if (!editorProtection.canWrite() || paymentsState.isSaving || paymentsState.isEditorLoading) return;
+function updateApplicationDraft(invoiceId, input, { applyRemaining = false } = {}) {
+    if (!editorProtection.canWrite() || paymentsState.isLoading || paymentsState.isSaving || paymentsState.isEditorLoading ||
+        paymentsState.allocationLoadFailed || paymentsState.creationUncertain) return;
     const payment = selectedPayment();
     if (!payment) {
         return;
@@ -537,20 +526,18 @@ function updateApplicationDraft(invoiceId, requestedCents, input = null) {
         return;
     }
 
-    const otherApplied = openInvoices.reduce((sum, row) => {
-        if (row.id === invoiceId) {
-            return sum;
-        }
-        const draft = paymentsState.applicationDrafts[row.id];
-        return sum + (Number.isFinite(draft) ? draft : (row.current_applied_cents || 0));
-    }, 0);
-    const maxForPayment = Math.max(0, payment.amount_cents - otherApplied);
-    const nextAmount = Math.max(0, Math.min(requestedCents, invoice.available_to_apply_cents, maxForPayment));
+    const current = draftAllocation(invoice);
+    const otherApplied = paymentPreview(payment).applied_amount_cents - current;
+    const limit = Math.max(0, Math.min(invoice.available_to_apply_cents, payment.amount_cents - otherApplied));
+    if (applyRemaining && limit <= current) return;
+    const requestedCents = applyRemaining ? limit : centsFromInput(input.value);
+    const nextAmount = Math.max(0, Math.min(requestedCents, limit));
     paymentsState.applicationDrafts[invoiceId] = nextAmount;
-    if (input && nextAmount !== requestedCents) {
+    if (applyRemaining || nextAmount !== requestedCents) {
         input.value = dollarsInput(nextAmount);
     }
-    updatePaymentSummary(payment);
+    if (applyRemaining) input.focus({ preventScroll: true });
+    editorProtection.refresh();
 }
 
 async function reconcilePaymentDraft() {
@@ -643,9 +630,7 @@ function applicationPayloadFromDrafts() {
     return (paymentsState.editor.open_invoices || [])
         .map((invoice) => ({
             invoice_id: invoice.id,
-            applied_amount_cents: Number.isFinite(paymentsState.applicationDrafts[invoice.id])
-                ? paymentsState.applicationDrafts[invoice.id]
-                : (invoice.current_applied_cents || 0)
+            applied_amount_cents: draftAllocation(invoice)
         }))
         .filter((application) => application.applied_amount_cents > 0);
 }
@@ -705,6 +690,17 @@ async function deleteSelectedPayment() {
 }
 
 function bindEvents() {
+    const openList = document.getElementById("open-invoices-list");
+    openList.addEventListener("input", (event) => {
+        const input = event.target.closest("[data-application-input]");
+        if (input) updateApplicationDraft(Number(input.dataset.applicationInput), input);
+    });
+    openList.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-apply-remaining]");
+        if (!button) return;
+        const id = Number(button.dataset.applyRemaining);
+        updateApplicationDraft(id, document.getElementById(`application-${id}`), { applyRemaining: true });
+    });
     document.getElementById("payment-search")?.addEventListener("input", (event) => {
         paymentsState.searchQuery = event.target.value;
         render();
@@ -734,7 +730,7 @@ function bindEvents() {
     document.getElementById("delete-payment-button")?.addEventListener("click", () => {
         void deleteSelectedPayment();
     });
-    document.getElementById("reset-payment-filters-button")?.addEventListener("click", () => {
+    bindFilterReset("reset-payment-filters-button", () => {
         paymentsState.searchQuery = "";
         paymentsState.customerFilter = "all";
         paymentsState.yearFilter = "all";
@@ -770,6 +766,8 @@ function bindEvents() {
 }
 
 function render() {
+    syncFilterReset("reset-payment-filters-button", paymentsState.searchQuery,
+        paymentsState.customerFilter, paymentsState.yearFilter, paymentsState.statusFilter);
     renderCustomerOptions();
     renderYearOptions();
     renderStatusFilters();
@@ -781,7 +779,10 @@ function render() {
     const payment = paymentsState.editor.payment || selectedPayment();
     if (payment) {
         updateEditor(payment);
+    } else {
+        setText("payment-editor-title", "Select a payment");
     }
+    renderApplications();
     editorProtection.refresh();
 }
 
@@ -793,10 +794,12 @@ window.addEventListener("DOMContentLoaded", () => {
         snapshot: () => ({ payment: paymentPayloadFromForm(selectedPayment()), applications: applicationPayloadFromDrafts().sort((a, b) => a.invoice_id - b.invoice_id) }),
         capture: () => ({ editor: paymentsState.editor, applicationDrafts: paymentsState.applicationDrafts }),
         restore: (saved) => { paymentsState.editor = saved.editor; paymentsState.applicationDrafts = saved.applicationDrafts; },
-        mutationControls: "#save-payment-button, #delete-payment-button, [data-application-input]",
+        mutationControls: "#save-payment-button, #delete-payment-button, [data-application-input], [data-apply-remaining]",
         applyProtection: (blocked) => {
             if (!selectedPayment()) document.querySelectorAll("#payment-form input, #payment-form select, #payment-form textarea, #save-payment-button, #delete-payment-button").forEach((control) => { control.disabled = true; });
-            document.getElementById("save-payment-button").disabled = blocked || !selectedPayment() || paymentsState.allocationLoadFailed || paymentsState.creationUncertain;
+            const allocationsBlocked = blocked || !selectedPayment() || paymentsState.allocationLoadFailed || paymentsState.creationUncertain;
+            document.getElementById("save-payment-button").disabled = allocationsBlocked;
+            updatePaymentSummary(selectedPayment(), allocationsBlocked);
             if (!selectedPayment()?.id) document.getElementById("delete-payment-button").disabled = paymentsState.isLoading || paymentsState.isSaving || paymentsState.isEditorLoading || !selectedPayment();
         },
         render

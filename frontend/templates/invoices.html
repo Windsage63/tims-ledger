@@ -6,11 +6,6 @@
 
 {% extends "base.html" %}
 
-{% block page_actions %}
-                        <button class="btn-primary" id="new-invoice-button" type="button">New Invoice</button>
-                        <button class="btn-secondary" id="reset-invoice-filters-button" type="button">Reset Filters</button>
-{% endblock %}
-
 {% block content %}
 
             <section class="kpi-strip" aria-label="Invoice summary metrics">
@@ -32,25 +27,26 @@
                 <article class="card">
                     <div class="toolbar">
                         <div class="filter-fields">
-
-                        <div class="grid w-full gap-3 lg:grid-cols-[minmax(0,1fr)_10rem]">
-                            <div>
-                                <label class="field-label" for="invoice-search">Search</label>
-                                <input class="field" id="invoice-search" placeholder="Search invoice number, customer, project, or notes" type="search">
-                            </div>
-                            <div>
-                                <label class="field-label" for="invoice-year-filter">Year</label>
-                                <select class="field" id="invoice-year-filter"></select>
+                            <div class="grid w-full gap-3 lg:grid-cols-[minmax(0,1fr)_10rem]">
+                                <div>
+                                    <label class="field-label" for="invoice-search">Search</label>
+                                    <input class="field" id="invoice-search" placeholder="Search invoice number, customer, project, or notes" type="search">
+                                </div>
+                                <div>
+                                    <label class="field-label" for="invoice-year-filter">Year</label>
+                                    <select class="field" id="invoice-year-filter"></select>
+                                </div>
                             </div>
                         </div>
-                    </div>
                         <div class="filter-tabs" id="invoice-status-filter-group">
-                        <button class="tab" data-invoice-status-filter="all" type="button">All</button>
-                        <button class="tab" data-invoice-status-filter="draft" type="button">Draft</button>
-                        <button class="tab" data-invoice-status-filter="printed" type="button">Open</button>
-                        <button class="tab" data-invoice-status-filter="overdue" type="button">Overdue</button>
-                        <button class="tab" data-invoice-status-filter="paid" type="button">Paid</button>
-                    </div>
+                            <button class="tab" data-invoice-status-filter="all" type="button">All</button>
+                            <button class="tab" data-invoice-status-filter="draft" type="button">Draft</button>
+                            <button class="tab" data-invoice-status-filter="printed" type="button">Open</button>
+                            <button class="tab" data-invoice-status-filter="overdue" type="button">Overdue</button>
+                            <button class="tab" data-invoice-status-filter="paid" type="button">Paid</button>
+                        </div>
+                        <button class="tab" disabled id="reset-invoice-filters-button" type="button">Reset Filters</button>
+                        <button class="btn-primary ml-auto" id="new-invoice-button" type="button">New Invoice</button>
                     </div>
 
                     <div class="mt-3 overflow-x-auto rounded border border-line bg-white/70">
@@ -59,12 +55,12 @@
                                 <tr>
                                     <th class="px-4 py-2 font-semibold uppercase tracking-wide">Invoice</th>
                                     <th class="px-4 py-2 font-semibold uppercase tracking-wide">Customer</th>
+                                    <th class="text-right">Balance</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Status</th>
                                     <th class="px-4 py-2 font-semibold uppercase tracking-wide">Project</th>
                                     <th class="px-4 py-2 font-semibold uppercase tracking-wide">Date</th>
                                     <th>Due</th>
                                     <th class="px-4 py-2 font-semibold uppercase tracking-wide text-right">Amount</th>
-                                    <th class="text-right">Balance</th>
-                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="invoice-table-body"></tbody>
@@ -74,27 +70,37 @@
                     <div class="mt-3 hidden rounded border border-dashed border-line bg-panel/40 p-8 text-center" id="invoice-empty-state">
                         <p class="font-display text-lg font-semibold text-ink">No invoices match the current filter.</p>
                         <p class="mt-2 text-sm leading-6 text-muted">Adjust the year or status filter, or create a new invoice.</p>
+                        <button class="tab mt-3" id="clear-empty-filters" type="button" hidden>Clear filters</button>
                     </div>
                 </article>
 
                 <article class="card">
-                    <div class="mb-5 flex items-start justify-between gap-3">
-                        <div>
-                            <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Invoice Editor</p>
-                            <h2 class="mt-2 font-display text-lg font-bold text-ink" id="invoice-editor-title">Select an invoice</h2>
+                    <header class="sticky top-0 z-10 -mx-4 -mt-4 mb-4 rounded-t border-b border-line bg-white px-4 py-3" aria-label="Invoice actions">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex min-w-0 flex-wrap items-center gap-2">
+                                <h2 class="min-w-0 break-words font-display text-lg font-bold text-ink" id="invoice-editor-title" tabindex="-1">Select an invoice</h2>
+                                <span class="text-xs font-semibold text-muted" id="editor-mode-label" role="status" hidden></span>
+                            </div>
+                            <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide" id="invoice-editor-status-chip">Draft</span>
                         </div>
-                        <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide" id="invoice-editor-status-chip">Draft</span>
-                    </div>
+                        <p class="text-xs text-muted" id="invoice-outside-filters" hidden>Outside current filters</p>
+                        <div class="mt-2 flex flex-wrap items-center gap-2">
+                            <p class="mr-auto text-sm">Total <strong class="font-mono" id="invoice-detail-total">$0.00</strong></p>
+                            <button class="btn-primary" id="save-invoice-button" type="button" disabled>Save/Print Invoice</button>
+                            <details class="shell-menu">
+                                <summary class="btn-secondary">More actions</summary>
+                                <div class="menu-panel card">
+                                    <button class="btn-danger w-full" id="delete-invoice-button" type="button" disabled>Delete Invoice</button>
+                                </div>
+                            </details>
+                        </div>
+                    </header>
 
                     <div class="mb-5 rounded border border-line bg-panel/45 p-4">
-                        <div class="grid gap-3 sm:grid-cols-3">
+                        <div class="grid gap-3 sm:grid-cols-2">
                             <div>
                                 <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Customer</p>
                                 <p class="mt-2 text-sm text-ink" id="invoice-detail-customer">None</p>
-                            </div>
-                            <div>
-                                <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Total Invoice</p>
-                                <p class="mt-2 font-mono text-sm text-ink" id="invoice-detail-total">$0.00</p>
                             </div>
                             <div>
                                 <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Open Balance</p>
@@ -154,31 +160,32 @@
                         </div>
                     </section>
 
-                    <section class="mt-4 grid gap-3 lg:grid-cols-2">
+                    <p class="mt-4 text-xs text-muted">Selections are saved when you click Save/Print.</p>
+                    <section class="mt-2 grid gap-3 lg:grid-cols-2">
                         <div class="rounded border border-line bg-white/70 p-4">
                             <div class="flex items-center justify-between gap-3">
                                 <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Time Entries</p>
-                                <span class="text-[11px] text-muted" id="eligible-time-count">0 rows</span>
+                                <span class="text-[11px] text-muted" id="eligible-time-count">0 of 0 selected</span>
                             </div>
-                            <p class="mt-2 text-xs leading-5 text-muted">Checkbox changes are saved when you click Save/Print.</p>
-                            <button class="btn-secondary mt-2" id="select-all-time-button" data-select-all-source="time" aria-label="Select all visible time and unit entries" type="button">Select All Visible</button>
+                            <label class="mt-2 inline-flex items-center gap-2 text-sm">
+                                <input class="rounded border-line text-brand" id="select-all-time" data-select-all-source="time" aria-label="Select all visible time and unit entries" type="checkbox" disabled>
+                                Select All
+                            </label>
                             <div class="mt-3 grid gap-2" id="eligible-time-list"></div>
                         </div>
                         <div class="rounded border border-line bg-white/70 p-4">
                             <div class="flex items-center justify-between gap-3">
                                 <p class="text-[11px] font-semibold uppercase tracking-wide text-muted">Expenses</p>
-                                <span class="text-[11px] text-muted" id="eligible-expense-count">0 rows</span>
+                                <span class="text-[11px] text-muted" id="eligible-expense-count">0 of 0 selected</span>
                             </div>
-                            <p class="mt-2 text-xs leading-5 text-muted">Checkbox changes are saved when you click Save/Print.</p>
-                            <button class="btn-secondary mt-2" id="select-all-expenses-button" data-select-all-source="expense" aria-label="Select all visible expenses" type="button">Select All Visible</button>
+                            <label class="mt-2 inline-flex items-center gap-2 text-sm">
+                                <input class="rounded border-line text-brand" id="select-all-expense" data-select-all-source="expense" aria-label="Select all visible expenses" type="checkbox" disabled>
+                                Select All
+                            </label>
                             <div class="mt-3 grid gap-2" id="eligible-expenses-list"></div>
                         </div>
                     </section>
 
-                    <div class="mt-3 flex flex-wrap gap-3">
-                        <button class="btn-primary" id="save-invoice-button" type="button">Save/Print Invoice</button>
-                        <button class="btn-danger" id="delete-invoice-button" type="button">Discard New</button>
-                    </div>
                 </article>
             </section>
 {% endblock %}

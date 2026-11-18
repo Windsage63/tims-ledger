@@ -26,10 +26,8 @@ function setEmptyState(title, message) {
         return;
     }
 
-    emptyState.innerHTML = `
-        <p class="font-display text-lg font-semibold text-ink">${escapeHtml(title)}</p>
-        <p class="mt-2 text-sm leading-6 text-muted">${escapeHtml(message)}</p>
-    `;
+    emptyState.querySelector("p.font-display").textContent = title;
+    emptyState.querySelector("p.mt-2").textContent = message;
 }
 
 function upsertProject(project) {
@@ -209,9 +207,9 @@ function renderProjectRows(projects) {
         const isSelected = project.id === projectState.selectedId;
 
         return `
-            <tr class="cursor-pointer border-t border-line/70 ${isSelected ? "bg-brand/5" : "bg-white/30 hover:bg-white/60"}" data-project-select="${project.id}">
+            <tr class="cursor-pointer border-t border-line/70 ${isSelected ? "bg-brand/5" : "bg-white/30 hover:bg-white/60"}" data-record-id="${project.id}">
                 <td class="px-4 py-2 align-top">
-                    <div class="font-mono text-sm font-semibold text-ink">${escapeHtml(project.project_number)}</div>
+                    <button type="button" class="text-left font-mono text-sm font-semibold text-brand hover:underline" aria-current="${isSelected}">${escapeHtml(project.project_number)}</button>
                     <div class="mt-1 text-xs text-muted">${escapeHtml(project.description)}</div>
                 </td>
                 <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(project.customer_name)}</td>
@@ -220,17 +218,6 @@ function renderProjectRows(projects) {
             </tr>
         `;
     }).join("");
-
-    tbody.querySelectorAll("[data-project-select]").forEach((row) => {
-        row.addEventListener("click", () => {
-            const nextId = Number(row.dataset.projectSelect);
-            if (nextId === projectState.selectedId || !editorProtection.allowTransition()) return;
-            projectState.selectedId = nextId;
-            projectState.draftProject = null;
-            render();
-            editorProtection.accept();
-        });
-    });
 }
 
 function renderBuiltinRatePreview(defaultRateCents) {
@@ -382,6 +369,8 @@ function renderEditor(project) {
 }
 
 function render() {
+    syncFilterReset("reset-project-filters-button", projectState.searchQuery,
+        projectState.customerFilter);
     renderCustomerFilterOptions();
 
     const projects = filteredProjects();
@@ -486,6 +475,7 @@ function clearProjectDraft(copyCurrent = false) {
     projectState.draftProject = emptyProjectDraft();
     render();
     editorProtection.accept({ lock: true, duplicate: copyCurrent });
+    document.getElementById("project-number").focus();
 }
 
 async function deleteProject() {
@@ -519,6 +509,11 @@ function syncProjectFields() {
 }
 
 function bindEvents() {
+    bindLedgerRowSelection("projects-table-body", "project-editor-title", projectState, (id) => {
+        projectState.selectedId = id;
+        projectState.draftProject = null;
+        render();
+    });
     document.getElementById("delete-project-button")?.addEventListener("click", () => { void deleteProject(); });
     document.getElementById("project-form")?.addEventListener("input", syncProjectFields);
     document.getElementById("project-search")?.addEventListener("input", (event) => {
@@ -535,7 +530,7 @@ function bindEvents() {
     document.getElementById("new-project-button")?.addEventListener("click", () => clearProjectDraft(false));
     document.getElementById("clear-project-form-button")?.addEventListener("click", () => clearProjectDraft(false));
     document.getElementById("duplicate-project-button")?.addEventListener("click", () => clearProjectDraft(true));
-    document.getElementById("reset-project-filters-button")?.addEventListener("click", () => {
+    bindFilterReset("reset-project-filters-button", () => {
         projectState.searchQuery = "";
         projectState.customerFilter = "all";
         const search = document.getElementById("project-search");

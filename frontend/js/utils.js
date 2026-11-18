@@ -149,12 +149,65 @@ function showToast(message, kind = "error") {
     window.setTimeout(() => toast.remove(), kind === "error" ? 15000 : 6000);
 }
 
+function bindLedgerRowSelection(bodyId, titleId, state, selectRecord) {
+    const body = document.getElementById(bodyId);
+    const title = document.getElementById(titleId);
+    body.addEventListener("click", (event) => {
+        const row = event.target.closest("tr[data-record-id]");
+        if (!row || state.isLoading || state.isSaving) return;
+        const id = Number(row.dataset.recordId);
+        if (id !== state.selectedId) {
+            if (!editorProtection.allowTransition()) return;
+            selectRecord(id);
+            editorProtection.accept();
+        }
+
+        const editor = title.closest("article");
+        const editorRect = editor.getBoundingClientRect();
+        const listRect = body.closest("article").getBoundingClientRect();
+        if (editorRect.bottom <= listRect.top || listRect.bottom <= editorRect.top) {
+            title.focus({ preventScroll: true });
+            if (editorRect.top < 0 || editorRect.bottom > window.innerHeight) {
+                editor.scrollIntoView({ block: "start", inline: "nearest" });
+            }
+        } else {
+            // Rendering replaces the row button. Keep keyboard navigation in the list.
+            body.querySelector(`tr[data-record-id="${id}"] button`).focus({ preventScroll: true });
+        }
+    });
+}
+
+function bindFilterReset(buttonId, reset) {
+    document.getElementById(buttonId).addEventListener("click", reset);
+    document.getElementById("clear-empty-filters").addEventListener("click", reset);
+}
+
+function syncFilterReset(buttonId, search, ...filters) {
+    const active = Boolean(search) || filters.some((value) => value !== "all");
+    document.getElementById(buttonId).disabled = !active;
+    document.getElementById("clear-empty-filters").hidden = !active;
+}
+
 function syncFilterButtons(selector, attribute, value) {
     document.querySelectorAll(selector).forEach((button) => {
         const active = button.getAttribute(attribute) === value;
         button.className = "tab";
         button.setAttribute("aria-pressed", String(active));
     });
+}
+
+async function loadInitialLedgerRecord(records, loadEditor, headingId) {
+    const id = new URLSearchParams(window.location.search).get("id");
+    if (id === null) {
+        await loadEditor(records[0]?.id || null);
+        return;
+    }
+    const record = records.find((entry) => String(entry.id) === id);
+    if (!record) {
+        showToast("The linked record could not be found.");
+        return;
+    }
+    if (await loadEditor(record.id)) document.getElementById(headingId).focus();
 }
 
 const newRecordListeners = new Set();

@@ -204,7 +204,7 @@ Users may keep an unlimited number of normal backups and select one to restore. 
 1. Invoice creation must start with invoice date, unique invoice number, and project selection. Project dropdown labels should include project description so the user can identify the work.
 2. The system must present eligible unbilled time for that project with checkbox selection.
 3. The system must present eligible unbilled expenses for that project with checkbox selection.
-   Both source panels provide Select All Visible. Bulk selection stays browser-local until Save/Print and observes the same Edit Mode and zero-price eligibility rules as individual selections.
+   Each source panel provides a three-state Select All checkbox and a selected count. It selects or clears the visible eligible rows in that panel. Bulk selection stays browser-local until Save/Print and observes the same Edit Mode and zero-price eligibility rules as individual selections.
 4. Selecting or unselecting a line must update browser-side invoice state and preview totals.
 5. Selecting or unselecting a line must not write source-record invoice linkage until Save/Print.
 6. Printed invoices must show a single final summary row labeled Total Invoice, containing only that invoice's time and expense charges. Do not print Prior Balance, Unapplied Credit, or Total Due rows. Applied payments and customer account balances do not change the invoice charge total.
@@ -238,13 +238,14 @@ The invoice editor should preserve the printable invoice experience while keepin
 1. Provide a dedicated payments ledger screen.
 2. The payments ledger must list payment records, customer, optional reference, original amount, unapplied amount, and application status.
 3. Starting a new payment must create a browser-local draft, not a persisted payment row.
-4. The payment editor must expose only Save Payment and Delete Payment actions.
+4. Save Payment and Delete Payment are the payment record actions. Keep Save Payment and the draft unapplied amount visible while reviewing invoice allocations.
 5. Save Payment must persist both payment fields and invoice applications.
 6. Delete Payment must ask for confirmation before removing a saved payment and its payment applications.
 7. The user must be able to open a payment and apply or remove allocations across open invoices.
+   Each invoice offers manual entry and Apply remaining. The shortcut increases only the chosen invoice’s draft allocation, up to the lesser of the remaining receipt and that invoice’s remaining capacity.
 8. The user must be prevented from applying more than the remaining unapplied amount.
    Short payments leave the remaining invoice balance open without changing charges. Overpayments stay unapplied for later invoices. After a refund, the user may edit the original payment to the net amount; its positive allocations must fit within that amount. A separate refund ledger or credit-memo module is not required. Negative cash corrections remain supported with no positive allocations.
-9. Payment applications must update invoice open balances and customer balances immediately.
+9. Allocation changes update the browser preview immediately. Save Payment commits the applications and updates invoice and customer balances.
 10. Business totals on Receive Payments cover all saved records in the current database. Total Income includes unapplied payments and negative corrections. Open A/R excludes draft invoices. Total Expenses includes all recorded expense costs, and Non-Billable Expenses is its non-billable subset. Refresh totals after saves/deletes without replacing the editor draft. No annual reset is automatic.
 
 ### 5.8 Customer Balance And Accounts Receivable Reporting
@@ -286,10 +287,10 @@ The invoice editor should preserve the printable invoice experience while keepin
 4. Use consistent ledger language across screens: unbilled, invoiced, open balance, unapplied, printed, and paid.
 5. Preserve printable invoice polish without allowing the printed layout to bypass accounting rules.
 6. Make backup and restore actions explicit, visible, and hard to confuse with XLSX audit export.
-7. Show EDIT MODE in the shared header on the six protected record screens. Red background with black letters indicates editing is enabled. Reset mode on screen changes, cached-page return, successful saves/deletes, and new/duplicate records. New records are editable with mode off.
+7. Show EDIT MODE in the shared header on the six protected record screens. Place each screen's New action beside the ledger filters and keep the global + New menu in the header. Show Protected or Editing beside each saved record's editor title. Red background with black letters on EDIT MODE indicates editing is enabled. Reset mode on screen changes, cached-page return, successful saves/deletes, and new/duplicate records. New records are editable with mode off.
 8. Keep editable drafts detached from saved browse records. Confirm before discarding modified drafts through navigation, record selection, New, Duplicate, or Clear/Discard; cancellation retains the complete draft. Failed saves retain intent. Turning mode off while dirty restores the saved baseline only after confirmation.
-9. Protected existing invoices offer Print Saved Invoice through the saved-document GET without regenerating the HTML. Existing-record Save/Print requires Edit Mode; new invoices keep the current Save/Print flow.
-10. Customer Contact and Statement tabs share one browse selection. Statement refresh and tab changes retain contact drafts, and stale responses cannot appear under another customer. Settings is outside record Edit Mode protection.
+9. The sticky invoice action bar shows the current invoice and total, with Delete Invoice under More actions. Protected existing invoices offer Print Saved Invoice through the saved-document GET without regenerating the HTML. Existing-record Save/Print requires Edit Mode; new invoices keep the current Save/Print flow.
+10. Customer Contact and Statement tabs share one browse selection. Statement refresh and tab changes retain contact drafts, and stale responses cannot appear under another customer. Invoice numbers and unapplied payment references open their protected records. Browser Back restores the same customer and Statement tab. Settings is outside record Edit Mode protection.
 
 ## 8. Out Of Scope For Initial Delivery
 

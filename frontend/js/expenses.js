@@ -63,7 +63,7 @@ function setEmptyState(message) {
     if (!element) {
         return;
     }
-    element.textContent = message;
+    element.querySelector("p.font-display").textContent = message;
 }
 
 function projectById(projectId) {
@@ -81,15 +81,15 @@ function expenseStatusMeta(expense) {
 }
 
 function emptyExpenseDraft(overrides = {}) {
-    const firstProject = expensesState.projects[0];
+    const project = projectById(overrides.project_id) || expensesState.projects[0];
     const firstCategory = expensesState.categories[0];
     return {
         id: "",
         entry_date: todayDateInputValue(),
-        project_id: firstProject?.id || "",
-        project_number: firstProject?.project_number || "",
-        customer_id: firstProject?.customer_id || "",
-        customer_name: firstProject?.customer_name || "",
+        project_id: project?.id || "",
+        project_number: project?.project_number || "",
+        customer_id: project?.customer_id || "",
+        customer_name: project?.customer_name || "",
         vendor: "",
         description: "",
         quantity: 1,
@@ -193,9 +193,10 @@ function renderCategoryOptions() {
     if (!filter || !editor) {
         return;
     }
-    filter.innerHTML = ['<option value="all">All Categories</option>', ...expensesState.categories.map((category) => `<option value="${category}">${category}</option>`)].join("");
+    const options = expensesState.categories.map((category) => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`).join("");
+    filter.innerHTML = '<option value="all">All Categories</option>' + options;
     filter.value = expensesState.categoryFilter;
-    editor.innerHTML = expensesState.categories.map((category) => `<option value="${category}">${category}</option>`).join("");
+    editor.innerHTML = '<option value="" disabled>Select category</option>' + options;
 }
 
 function renderMetrics(expenses) {
@@ -243,8 +244,11 @@ function renderExpenseRows(expenses) {
         const status = expenseStatusMeta(expense);
         const isSelected = expense.id === expensesState.selectedId;
         return `
-            <tr class="cursor-pointer border-t border-line/70 ${isSelected ? "bg-brand/5" : "bg-white/30 hover:bg-white/60"}" data-expense-select="${expense.id}">
-                <td class="px-4 py-2 align-top font-mono text-sm text-ink">${escapeHtml(expense.entry_date)}</td>
+            <tr class="cursor-pointer border-t border-line/70 ${isSelected ? "bg-brand/5" : "bg-white/30 hover:bg-white/60"}" data-record-id="${expense.id}">
+                <td class="px-4 py-2 align-top font-mono text-sm">
+                    <button type="button" class="text-left font-semibold text-brand hover:underline" aria-current="${isSelected}"
+                        aria-label="${escapeHtml(expense.entry_date)}, ${escapeHtml(expense.project_number)}, ${escapeHtml(expense.description)}">${escapeHtml(expense.entry_date)}</button>
+                </td>
                 <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(expense.project_number)}</td>
                 <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(expense.vendor)}</td>
                 <td class="px-4 py-2 align-top text-sm text-muted">${escapeHtml(expense.description)}</td>
@@ -254,16 +258,6 @@ function renderExpenseRows(expenses) {
             </tr>
         `;
     }).join("");
-    tbody.querySelectorAll("[data-expense-select]").forEach((row) => {
-        row.addEventListener("click", () => {
-            const nextId = Number(row.dataset.expenseSelect);
-            if (nextId === expensesState.selectedId || !editorProtection.allowTransition()) return;
-            expensesState.selectedId = nextId;
-            expensesState.draftExpense = null;
-            render();
-            editorProtection.accept();
-        });
-    });
 }
 
 function updateDerivedPreview(expense) {
@@ -285,7 +279,9 @@ function updateDerivedPreview(expense) {
     setText("expense-detail-customer", expense.customer_name || "None");
     setText("expense-detail-total", currency(expense.line_total_cents));
     setText("expense-detail-invoice", expense.invoice_number || "Not linked");
-    setText("expense-derived-billing", `${derivedLabel} Quantity ${quantityLabel(expense.quantity)} at ${expenseUnitCostLabel(expense.unit_cost_ten_thousandths)} each.`);
+    const hasPricing = expense.quantity > 0 && Number.isSafeInteger(expense.unit_cost_ten_thousandths);
+    setText("expense-derived-billing", hasPricing
+        ? `${derivedLabel} Quantity ${quantityLabel(expense.quantity)} at ${expenseUnitCostLabel(expense.unit_cost_ten_thousandths)} each.` : derivedLabel);
 }
 
 function renderEditor(expense) {
@@ -300,7 +296,7 @@ function renderEditor(expense) {
     document.getElementById("expense-vendor").value = current.vendor;
     document.getElementById("expense-category").value = current.category;
     document.getElementById("expense-description").value = current.description;
-    document.getElementById("expense-quantity").value = current.quantity;
+    document.getElementById("expense-quantity").value = current.quantity ?? "";
     const unitCostInput = document.getElementById("expense-unit-cost");
     unitCostInput.value = current.unit_cost_input ?? expenseUnitCostInput(current.unit_cost_ten_thousandths);
     unitCostInput.setCustomValidity?.(Number.isSafeInteger(expenseUnitCostFromInput(unitCostInput.value)) ? "" : "Enter a unit cost with up to four decimal places.");
@@ -313,7 +309,8 @@ function syncDraftFromForm() {
     if (!editorProtection.canWrite() || expensesState.isSaving) return;
     const projectId = Number(document.getElementById("expense-project")?.value || 0);
     const project = projectById(projectId);
-    const quantity = Number(document.getElementById("expense-quantity")?.value || 0);
+    const quantityInput = document.getElementById("expense-quantity").value;
+    const quantity = quantityInput === "" ? null : Number(quantityInput);
     const unitCostInput = document.getElementById("expense-unit-cost");
     const unitCost = expenseUnitCostFromInput(unitCostInput?.value || "");
     unitCostInput?.setCustomValidity?.(Number.isSafeInteger(unitCost) ? "" : "Enter a unit cost with up to four decimal places.");
@@ -327,7 +324,7 @@ function syncDraftFromForm() {
         customer_name: project?.customer_name || source.customer_name,
         vendor: String(document.getElementById("expense-vendor")?.value ?? source.vendor),
         description: String(document.getElementById("expense-description")?.value ?? source.description),
-        quantity: quantity || 0,
+        quantity,
         unit_cost_ten_thousandths: unitCost,
         unit_cost_input: unitCostInput?.value || "",
         line_total_cents: expenseLineTotalCents(quantity, unitCost),
@@ -341,9 +338,10 @@ function syncDraftFromForm() {
 
 async function saveExpense(event) {
     event.preventDefault();
-    if (expensesState.isSaving || !editorProtection.canWrite()) {
+    if (expensesState.isLoading || expensesState.isSaving || !editorProtection.canWrite()) {
         return;
     }
+    const addAnother = event.submitter?.value === "add-another";
     syncDraftFromForm();
     const draft = expensesState.draftExpense || emptyExpenseDraft();
     if (!Number.isSafeInteger(draft.unit_cost_ten_thousandths) || !Number.isSafeInteger(draft.line_total_cents)) {
@@ -385,16 +383,23 @@ async function saveExpense(event) {
             throw new Error("Expense response was missing the saved record.");
         }
         upsertExpense(saved);
-        expensesState.selectedId = saved.id;
-        expensesState.draftExpense = null;
-        render();
-        editorProtection.saved();
+        expensesState.selectedId = addAnother ? null : saved.id;
+        expensesState.draftExpense = addAnother ? emptyExpenseDraft({
+            entry_date: saved.entry_date, project_id: saved.project_id,
+            category: "", quantity: null, unit_cost_input: ""
+        }) : null;
         expensesState.loadError = "";
     } catch (error) {
         showToast(extractErrorMessage(error, "Unable to save expense."));
+        return;
     } finally {
         expensesState.isSaving = false;
         render();
+    }
+    editorProtection.saved();
+    if (addAnother) {
+        document.getElementById("expense-vendor").focus();
+        showToast("Expense saved.", "success");
     }
 }
 
@@ -425,6 +430,7 @@ function clearExpenseDraft(copyCurrent = false) {
     expensesState.draftExpense = emptyExpenseDraft();
     render();
     editorProtection.accept({ lock: true, duplicate: copyCurrent });
+    document.getElementById("expense-project").focus();
 }
 
 async function deleteExpense() {
@@ -450,6 +456,11 @@ async function deleteExpense() {
 }
 
 function bindEvents() {
+    bindLedgerRowSelection("expense-table-body", "expense-editor-title", expensesState, (id) => {
+        expensesState.selectedId = id;
+        expensesState.draftExpense = null;
+        render();
+    });
     document.getElementById("delete-expense-button")?.addEventListener("click", () => { void deleteExpense(); });
     document.getElementById("expense-search")?.addEventListener("input", (event) => {
         expensesState.searchQuery = event.target.value;
@@ -477,7 +488,7 @@ function bindEvents() {
     document.getElementById("new-expense-button")?.addEventListener("click", () => clearExpenseDraft(false));
     document.getElementById("clear-expense-form-button")?.addEventListener("click", () => clearExpenseDraft(false));
     document.getElementById("duplicate-expense-button")?.addEventListener("click", () => clearExpenseDraft(true));
-    document.getElementById("reset-expense-filters-button")?.addEventListener("click", () => {
+    bindFilterReset("reset-expense-filters-button", () => {
         expensesState.searchQuery = "";
         expensesState.projectFilter = "all";
         expensesState.yearFilter = "all";
@@ -500,6 +511,8 @@ function bindEvents() {
 }
 
 function render() {
+    syncFilterReset("reset-expense-filters-button", expensesState.searchQuery,
+        expensesState.projectFilter, expensesState.yearFilter, expensesState.categoryFilter, expensesState.statusFilter);
     renderProjectOptions();
     renderYearOptions();
     renderCategoryOptions();

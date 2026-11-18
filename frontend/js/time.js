@@ -52,10 +52,8 @@ function setEmptyState(title, message) {
         return;
     }
 
-    emptyState.innerHTML = `
-        <p class="font-display text-lg font-semibold text-ink">${escapeHtml(title)}</p>
-        <p class="mt-2 text-sm leading-6 text-muted">${escapeHtml(message)}</p>
-    `;
+    emptyState.querySelector("p.font-display").textContent = title;
+    emptyState.querySelector("p.mt-2").textContent = message;
 }
 
 function timeBootstrapErrorMessage(error) {
@@ -111,8 +109,8 @@ function emptyTimeDraft(overrides = {}) {
 function normalizedTimeDraft(entry) {
     const fallback = emptyTimeDraft();
     const project = projectById(entry?.project_id) || timeState.projects[0] || null;
-    const rate = rateForProject(project?.id, entry?.rate_code) || project?.rates?.[0] || null;
-    const minutes = Number(entry?.minutes ?? fallback.minutes);
+    const rate = entry?.rate_code === "" ? null : rateForProject(project?.id, entry?.rate_code) || project?.rates?.[0];
+    const { minutes = fallback.minutes } = entry || {};
 
     return {
         ...fallback,
@@ -122,7 +120,7 @@ function normalizedTimeDraft(entry) {
         project_description: project?.description || fallback.project_description,
         customer_id: project?.customer_id || fallback.customer_id,
         customer_name: project?.customer_name || fallback.customer_name,
-        rate_code: rate?.rate_code || fallback.rate_code,
+        rate_code: rate?.rate_code || "",
         rate_cents: rate?.rate_cents || 0,
         minutes,
         line_total_cents: Math.round((minutes * (rate?.rate_cents || 0)) / 60)
@@ -227,8 +225,11 @@ function renderEntryRows(entries) {
         const status = entryStatusMeta(entry);
         const isSelected = entry.id === timeState.selectedId;
         return `
-            <tr class="cursor-pointer border-t border-line/70 ${isSelected ? "bg-brand/5" : "bg-white/30 hover:bg-white/60"}" data-time-select="${entry.id}">
-                <td class="px-4 py-2 align-top font-mono text-sm text-ink">${escapeHtml(entry.entry_date)}</td>
+            <tr class="cursor-pointer border-t border-line/70 ${isSelected ? "bg-brand/5" : "bg-white/30 hover:bg-white/60"}" data-record-id="${entry.id}">
+                <td class="px-4 py-2 align-top font-mono text-sm">
+                    <button type="button" class="text-left font-semibold text-brand hover:underline" aria-current="${isSelected}"
+                        aria-label="${escapeHtml(entry.entry_date)}, ${escapeHtml(entry.project_number)}, ${escapeHtml(entry.description)}">${escapeHtml(entry.entry_date)}</button>
+                </td>
                 <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(entry.project_number)}</td>
                 <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(entry.customer_name)}</td>
                 <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(entry.project_description)}</td>
@@ -239,17 +240,6 @@ function renderEntryRows(entries) {
             </tr>
         `;
     }).join("");
-
-    tbody.querySelectorAll("[data-time-select]").forEach((row) => {
-        row.addEventListener("click", () => {
-            const nextId = Number(row.dataset.timeSelect);
-            if (nextId === timeState.selectedId || !editorProtection.allowTransition()) return;
-            timeState.selectedId = nextId;
-            timeState.draftEntry = null;
-            render();
-            editorProtection.accept();
-        });
-    });
 }
 
 function renderRateOptions(projectId, selectedCode) {
@@ -260,7 +250,7 @@ function renderRateOptions(projectId, selectedCode) {
 
     const project = projectById(projectId);
     const rates = project?.rates || [];
-    select.innerHTML = rates.map((rate) => `<option value="${escapeHtml(rate.rate_code)}">${escapeHtml(rate.rate_code)} · ${currency(rate.rate_cents)}</option>`).join("");
+    select.innerHTML = '<option value="" disabled>Select rate</option>' + rates.map((rate) => `<option value="${escapeHtml(rate.rate_code)}">${escapeHtml(rate.rate_code)} · ${currency(rate.rate_cents)}</option>`).join("");
     if (selectedCode && rates.some((rate) => rate.rate_code === selectedCode)) {
         select.value = selectedCode;
     }
@@ -296,7 +286,7 @@ function renderEditor(entry) {
     document.getElementById("time-entry-date").value = current.entry_date;
     document.getElementById("time-project").value = String(current.project_id || "");
     document.getElementById("time-description").value = current.description;
-    document.getElementById("time-hours").value = hoursFromMinutes(current.minutes);
+    document.getElementById("time-hours").value = current.minutes === null ? "" : hoursFromMinutes(current.minutes);
     renderRateOptions(current.project_id, current.rate_code);
     document.getElementById("time-rate-code").value = current.rate_code;
     updateDerivedPreview(current);
@@ -309,7 +299,8 @@ function syncDraftFromForm() {
     const rateCode = String(document.getElementById("time-rate-code")?.value || "");
     const project = projectById(projectId);
     const rate = rateForProject(projectId, rateCode);
-    const minutes = minutesFromHours(document.getElementById("time-hours")?.value);
+    const hours = document.getElementById("time-hours").value;
+    const minutes = hours === "" ? null : minutesFromHours(hours);
     const source = timeState.draftEntry || selectedEntry() || emptyTimeDraft();
     timeState.draftEntry = {
         ...source,
@@ -417,10 +408,11 @@ async function loadEntries() {
 async function saveEntry(event) {
     event.preventDefault();
 
-    if (timeState.isSaving || !editorProtection.canWrite()) {
+    if (timeState.isLoading || timeState.isSaving || !editorProtection.canWrite()) {
         return;
     }
 
+    const addAnother = event.submitter?.value === "add-another";
     syncDraftFromForm();
     const entryId = Number(document.getElementById("time-entry-id")?.value || 0);
     const draft = timeState.draftEntry || emptyTimeDraft();
@@ -457,17 +449,22 @@ async function saveEntry(event) {
         }
 
         upsertEntry(saved);
-        timeState.selectedId = saved.id;
-        timeState.draftEntry = null;
-        render();
-        editorProtection.saved();
+        timeState.selectedId = addAnother ? null : saved.id;
+        timeState.draftEntry = addAnother ? normalizedTimeDraft({
+            entry_date: saved.entry_date, project_id: saved.project_id, minutes: null, rate_code: ""
+        }) : null;
     } catch (error) {
         showToast(error instanceof Error ? error.message : "Unable to save time entry.");
+        return;
     } finally {
         timeState.isSaving = false;
+        render();
     }
-
-    render();
+    editorProtection.saved();
+    if (addAnother) {
+        document.getElementById("time-description").focus();
+        showToast("Time entry saved.", "success");
+    }
 }
 
 function clearEntryDraft(copyCurrent = false) {
@@ -498,6 +495,7 @@ function clearEntryDraft(copyCurrent = false) {
     timeState.draftEntry = emptyTimeDraft();
     render();
     editorProtection.accept({ lock: true, duplicate: copyCurrent });
+    document.getElementById("time-project").focus();
 }
 
 async function deleteTimeEntry() {
@@ -523,6 +521,11 @@ async function deleteTimeEntry() {
 }
 
 function bindEvents() {
+    bindLedgerRowSelection("time-table-body", "time-editor-title", timeState, (id) => {
+        timeState.selectedId = id;
+        timeState.draftEntry = null;
+        render();
+    });
     document.getElementById("delete-time-button")?.addEventListener("click", () => { void deleteTimeEntry(); });
     document.getElementById("time-search")?.addEventListener("input", (event) => {
         timeState.searchQuery = event.target.value;
@@ -546,7 +549,7 @@ function bindEvents() {
     document.getElementById("new-time-entry-button")?.addEventListener("click", () => clearEntryDraft(false));
     document.getElementById("clear-time-form-button")?.addEventListener("click", () => clearEntryDraft(false));
     document.getElementById("duplicate-time-button")?.addEventListener("click", () => clearEntryDraft(true));
-    document.getElementById("reset-time-filters-button")?.addEventListener("click", () => {
+    bindFilterReset("reset-time-filters-button", () => {
         timeState.searchQuery = "";
         timeState.projectFilter = "all";
         timeState.yearFilter = "all";
@@ -570,6 +573,8 @@ function bindEvents() {
 }
 
 function render() {
+    syncFilterReset("reset-time-filters-button", timeState.searchQuery,
+        timeState.projectFilter, timeState.yearFilter, timeState.statusFilter);
     renderProjectOptions();
     renderYearOptions();
     renderStatusFilters();
