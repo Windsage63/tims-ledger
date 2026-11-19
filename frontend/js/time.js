@@ -525,6 +525,7 @@ function bindEvents() {
         timeState.selectedId = id;
         timeState.draftEntry = null;
         render();
+        editorProtection.accept();
     });
     document.getElementById("delete-time-button")?.addEventListener("click", () => { void deleteTimeEntry(); });
     document.getElementById("time-search")?.addEventListener("input", (event) => {

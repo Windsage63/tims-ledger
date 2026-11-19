@@ -23,57 +23,7 @@
                 </article>
             </section>
 
-            <section class="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1.15fr)_minmax(29rem,1fr)]">
-                <article class="card">
-                    <div class="toolbar">
-                        <div class="filter-fields">
-                            <div class="grid w-full gap-3 lg:grid-cols-[minmax(0,1fr)_10rem]">
-                                <div>
-                                    <label class="field-label" for="invoice-search">Search</label>
-                                    <input class="field" id="invoice-search" placeholder="Search invoice number, customer, project, or notes" type="search">
-                                </div>
-                                <div>
-                                    <label class="field-label" for="invoice-year-filter">Year</label>
-                                    <select class="field" id="invoice-year-filter"></select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="filter-tabs" id="invoice-status-filter-group">
-                            <button class="tab" data-invoice-status-filter="all" type="button">All</button>
-                            <button class="tab" data-invoice-status-filter="draft" type="button">Draft</button>
-                            <button class="tab" data-invoice-status-filter="printed" type="button">Open</button>
-                            <button class="tab" data-invoice-status-filter="overdue" type="button">Overdue</button>
-                            <button class="tab" data-invoice-status-filter="paid" type="button">Paid</button>
-                        </div>
-                        <button class="tab" disabled id="reset-invoice-filters-button" type="button">Reset Filters</button>
-                        <button class="btn-primary ml-auto" id="new-invoice-button" type="button">New Invoice</button>
-                    </div>
-
-                    <div class="mt-3 overflow-x-auto rounded border border-line bg-white/70">
-                        <table class="data-table invoice-table">
-                            <thead class="bg-panel/65 text-muted">
-                                <tr>
-                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Invoice</th>
-                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Customer</th>
-                                    <th class="text-right">Balance</th>
-                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Status</th>
-                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Project</th>
-                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Date</th>
-                                    <th>Due</th>
-                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide text-right">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody id="invoice-table-body"></tbody>
-                        </table>
-                    </div>
-
-                    <div class="mt-3 hidden rounded border border-dashed border-line bg-panel/40 p-8 text-center" id="invoice-empty-state">
-                        <p class="font-display text-lg font-semibold text-ink">No invoices match the current filter.</p>
-                        <p class="mt-2 text-sm leading-6 text-muted">Adjust the year or status filter, or create a new invoice.</p>
-                        <button class="tab mt-3" id="clear-empty-filters" type="button" hidden>Clear filters</button>
-                    </div>
-                </article>
-
+            <section class="mt-4 grid gap-3 xl:grid-cols-[minmax(29rem,1fr)_minmax(0,1.15fr)]">
                 <article class="card">
                     <header class="sticky top-0 z-10 -mx-4 -mt-4 mb-4 rounded-t border-b border-line bg-white px-4 py-3" aria-label="Invoice actions">
                         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -186,6 +136,56 @@
                         </div>
                     </section>
 
+                </article>
+
+                <article class="card">
+                    <div class="toolbar">
+                        <div class="filter-fields">
+                            <div class="grid w-full gap-3 lg:grid-cols-[minmax(0,1fr)_10rem]">
+                                <div>
+                                    <label class="field-label" for="invoice-search">Search</label>
+                                    <input class="field" id="invoice-search" placeholder="Search invoice number, customer, project, or notes" type="search">
+                                </div>
+                                <div>
+                                    <label class="field-label" for="invoice-year-filter">Year</label>
+                                    <select class="field" id="invoice-year-filter"></select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="filter-tabs" id="invoice-status-filter-group">
+                            <button class="tab" data-invoice-status-filter="all" type="button">All</button>
+                            <button class="tab" data-invoice-status-filter="draft" type="button">Draft</button>
+                            <button class="tab" data-invoice-status-filter="printed" type="button">Open</button>
+                            <button class="tab" data-invoice-status-filter="overdue" type="button">Overdue</button>
+                            <button class="tab" data-invoice-status-filter="paid" type="button">Paid</button>
+                        </div>
+                        <button class="tab" disabled id="reset-invoice-filters-button" type="button">Reset Filters</button>
+                        <button class="btn-primary ml-auto" id="new-invoice-button" type="button">New Invoice</button>
+                    </div>
+
+                    <div class="mt-3 overflow-x-auto rounded border border-line bg-white/70">
+                        <table class="data-table invoice-table">
+                            <thead class="bg-panel/65 text-muted">
+                                <tr>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Invoice</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Customer</th>
+                                    <th class="text-right">Balance</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Status</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Project</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide">Date</th>
+                                    <th>Due</th>
+                                    <th class="px-4 py-2 font-semibold uppercase tracking-wide text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoice-table-body"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-3 hidden rounded border border-dashed border-line bg-panel/40 p-8 text-center" id="invoice-empty-state">
+                        <p class="font-display text-lg font-semibold text-ink">No invoices match the current filter.</p>
+                        <p class="mt-2 text-sm leading-6 text-muted">Adjust the year or status filter, or create a new invoice.</p>
+                        <button class="tab mt-3" id="clear-empty-filters" type="button" hidden>Clear filters</button>
+                    </div>
                 </article>
             </section>
 {% endblock %}

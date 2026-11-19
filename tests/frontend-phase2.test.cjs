@@ -40,6 +40,34 @@ function runtime() {
     return { context, controls, field, load, run, windowEvents, documentEvents };
 }
 
+test('stacked ledger selection reveals the editor only after a successful load', async () => {
+    const r = runtime();
+    r.load('utils.js');
+    let finishLoad, focused = 0, scrolled = 0;
+    r.context.selectRecord = () => new Promise((resolve) => { finishLoad = resolve; });
+    r.context.editorProtection = { allowTransition: () => true };
+    const body = r.field('ledger');
+    const title = r.field('title');
+    body.closest = () => ({ getBoundingClientRect: () => ({ top: 10, bottom: 210 }) });
+    title.closest = () => ({
+        getBoundingClientRect: () => ({ top: -600, bottom: 0 }),
+        scrollIntoView: () => { scrolled++; }
+    });
+    title.focus = () => { focused++; };
+    r.run("bindLedgerRowSelection('ledger', 'title', {}, selectRecord)");
+    const row = { dataset: { recordId: '2' }, querySelector: () => null };
+    const click = () => body.listeners.click({ target: { closest: () => row } });
+    for (const success of [false, true]) {
+        const done = click();
+        assert.equal(focused, 0);
+        assert.equal(scrolled, 0);
+        finishLoad(success);
+        await done;
+        assert.equal(focused, Number(success));
+        assert.equal(scrolled, Number(success));
+    }
+});
+
 test('a statement link opens the requested ledger record and a missing link never selects a different record', async () => {
     const r = runtime();
     r.load('utils.js');

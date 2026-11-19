@@ -342,10 +342,10 @@ function renderPaymentRows(payments) {
         const status = paymentStatusMeta(payment);
         const isSelected = payment.id === paymentsState.selectedPaymentId;
         return `
-            <tr class="cursor-pointer border-t border-line/70 ${isSelected ? "bg-brand/5" : "bg-white/30 hover:bg-white/60"}" data-payment-select="${payment.id}">
+            <tr class="cursor-pointer border-t border-line/70 ${isSelected ? "bg-brand/5" : "bg-white/30 hover:bg-white/60"}" data-record-id="${payment.id}">
                 <td class="px-4 py-2 align-top font-mono text-sm text-ink">${escapeHtml(payment.payment_date)}</td>
                 <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(payment.customer_name)}</td>
-                <td class="px-4 py-2 align-top font-mono text-sm text-ink">${escapeHtml(payment.reference_number)}</td>
+                <td class="px-4 py-2 align-top font-mono text-sm text-ink"><button type="button" class="text-left font-semibold text-brand hover:underline" aria-current="${isSelected}">${escapeHtml(payment.reference_number || `Payment ${payment.id}`)}</button></td>
                 <td class="px-4 py-2 align-top text-right font-mono text-sm text-ink">${currency(payment.amount_cents)}</td>
                 <td class="px-4 py-2 align-top text-right font-mono text-sm text-ink">${currency(payment.unapplied_amount_cents)}</td>
                 <td class="px-4 py-2 align-top"><span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${status.classes}">${status.label}</span></td>
@@ -353,13 +353,6 @@ function renderPaymentRows(payments) {
         `;
     }).join("");
 
-    tbody.querySelectorAll("[data-payment-select]").forEach((row) => {
-        row.addEventListener("click", async () => {
-            const id = Number(row.dataset.paymentSelect);
-            if (id === paymentsState.selectedPaymentId || !editorProtection.allowTransition()) return;
-            await loadEditor(id);
-        });
-    });
 }
 
 function renderApplications() {
@@ -690,6 +683,7 @@ async function deleteSelectedPayment() {
 }
 
 function bindEvents() {
+    bindLedgerRowSelection("payment-table-body", "payment-editor-title", paymentsState, loadEditor);
     const openList = document.getElementById("open-invoices-list");
     openList.addEventListener("input", (event) => {
         const input = event.target.closest("[data-application-input]");

@@ -273,8 +273,8 @@ function renderInvoiceRows(invoices) {
         const status = invoiceStatusMeta(invoice);
         const isSelected = invoice.id === invoicesState.selectedInvoiceId;
         return `
-            <tr class="cursor-pointer border-t border-line/70 ${isSelected ? "bg-brand/5" : "bg-white/30 hover:bg-white/60"}" data-invoice-select="${invoice.id}">
-                <td class="px-4 py-2 align-top font-mono text-sm text-ink">${escapeHtml(invoice.invoice_number)}</td>
+            <tr class="cursor-pointer border-t border-line/70 ${isSelected ? "bg-brand/5" : "bg-white/30 hover:bg-white/60"}" data-record-id="${invoice.id}">
+                <td class="px-4 py-2 align-top font-mono text-sm text-ink"><button type="button" class="text-left font-semibold text-brand hover:underline" aria-current="${isSelected}">${escapeHtml(invoice.invoice_number)}</button></td>
                 <td class="px-4 py-2 align-top text-sm text-ink">${escapeHtml(invoice.customer_name)}</td>
                 <td class="text-right font-mono">${currency(invoice.open_balance_cents || 0)}</td>
                 <td class="px-4 py-2 align-top"><span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${status.classes}">${escapeHtml(status.label)}</span></td>
@@ -285,13 +285,6 @@ function renderInvoiceRows(invoices) {
             </tr>
         `;
     }).join("");
-    tbody.querySelectorAll("[data-invoice-select]").forEach((row) => {
-        row.addEventListener("click", async () => {
-            const id = Number(row.dataset.invoiceSelect);
-            if (id === invoicesState.selectedInvoiceId || !editorProtection.allowTransition()) return;
-            await loadEditor(id);
-        });
-    });
 }
 
 function renderSelectableSourceList(containerId, items, type, invoiceId, isDisabled, formatter) {
@@ -638,6 +631,7 @@ async function deleteDraftInvoice() {
 }
 
 function bindEvents() {
+    bindLedgerRowSelection("invoice-table-body", "invoice-editor-title", invoicesState, loadEditor);
     document.querySelectorAll("[data-select-all-source]").forEach((master) => {
         const type = master.dataset.selectAllSource;
         master.addEventListener("change", () => changeSourceSelection(type, visibleSourceInputs(type), master.checked));

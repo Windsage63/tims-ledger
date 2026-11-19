@@ -45,7 +45,7 @@ PAGE_REGISTRY: dict[str, Page] = {
         group='Sales',
         heading='Invoices',
         new_label='Invoice',
-        script_url='/frontend/js/invoices.js?v=20261118-ledger-actions',
+        script_url='/frontend/js/invoices.js?v=20261118-ledger-selection',
         help_text='Invoices can be edited and re-saved. Changes will be reflected in the invoice ledger and associated projects. To edit a time or expense entry that is already on an invoice, first remove it from the invoice, then edit, then add it back.',
     ),
     "payments.html": Page(
@@ -56,7 +56,7 @@ PAGE_REGISTRY: dict[str, Page] = {
         group='Sales',
         heading='Receive Payments',
         new_label='Payment',
-        script_url='/frontend/js/payments.js?v=20261118-ledger-actions',
+        script_url='/frontend/js/payments.js?v=20261118-ledger-selection',
         help_text='Business totals cover all saved records and are unaffected by ledger filters. Total Income includes unapplied payments and negative corrections. Payments can be split among multiple invoices, but can only originate from a single customer.',
     ),
     "customers.html": Page(
@@ -67,7 +67,7 @@ PAGE_REGISTRY: dict[str, Page] = {
         group='Sales',
         heading='Customers',
         new_label='Customer',
-        script_url='/frontend/js/customers.js?v=20261118-ledger-actions',
+        script_url='/frontend/js/customers.js?v=20261118-ledger-selection',
         help_text='Maintain customer contact details and review balances. Select a row to view contact details and its statement. Enable Edit Mode to change an existing customer, or use New Customer.',
     ),
     "projects.html": Page(
@@ -78,7 +78,7 @@ PAGE_REGISTRY: dict[str, Page] = {
         group='Work',
         heading='Projects',
         new_label='Project',
-        script_url='/frontend/js/projects.js?v=20261118-ledger-actions',
+        script_url='/frontend/js/projects.js?v=20261118-ledger-selection',
         help_text="This module handles projects and rates. A saved project's customer cannot be changed. You can add parts pricing as custom rates and then bill by the unit on the timesheet screen.",
     ),
     "time.html": Page(
@@ -89,7 +89,7 @@ PAGE_REGISTRY: dict[str, Page] = {
         group='Work',
         heading='Time',
         new_label='Time Entry',
-        script_url='/frontend/js/time.js?v=20261118-ledger-actions',
+        script_url='/frontend/js/time.js?v=20261118-ledger-selection',
         help_text='Enter labor hours or item units in Hrs/Units and select the project rate code. Use a new project when a continuing engagement needs new pricing.',
     ),
     "expenses.html": Page(
@@ -100,7 +100,7 @@ PAGE_REGISTRY: dict[str, Page] = {
         group='Work',
         heading='Expenses',
         new_label='Expense',
-        script_url='/frontend/js/expenses.js?v=20261118-ledger-actions',
+        script_url='/frontend/js/expenses.js?v=20261118-ledger-selection',
         help_text='General office costs and other company expenses can be associated with an internal project and marked unbillable to track other costs. Use unbillable expenses for the costs of parts that have been sold under custom rate codes to track cost of sales for parts.',
     ),
     "company.html": Page(

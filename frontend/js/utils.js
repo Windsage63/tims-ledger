@@ -152,14 +152,13 @@ function showToast(message, kind = "error") {
 function bindLedgerRowSelection(bodyId, titleId, state, selectRecord) {
     const body = document.getElementById(bodyId);
     const title = document.getElementById(titleId);
-    body.addEventListener("click", (event) => {
+    body.addEventListener("click", async (event) => {
         const row = event.target.closest("tr[data-record-id]");
-        if (!row || state.isLoading || state.isSaving) return;
+        if (!row || state.isLoading || state.isSaving || state.isEditorLoading) return;
         const id = Number(row.dataset.recordId);
-        if (id !== state.selectedId) {
+        if (!row.querySelector('button[aria-current="true"]')) {
             if (!editorProtection.allowTransition()) return;
-            selectRecord(id);
-            editorProtection.accept();
+            if (await selectRecord(id) === false) return;
         }
 
         const editor = title.closest("article");
@@ -172,7 +171,7 @@ function bindLedgerRowSelection(bodyId, titleId, state, selectRecord) {
             }
         } else {
             // Rendering replaces the row button. Keep keyboard navigation in the list.
-            body.querySelector(`tr[data-record-id="${id}"] button`).focus({ preventScroll: true });
+            body.querySelector(`tr[data-record-id="${id}"] button`)?.focus({ preventScroll: true });
         }
     });
 }

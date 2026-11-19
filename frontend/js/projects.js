@@ -513,6 +513,7 @@ function bindEvents() {
         projectState.selectedId = id;
         projectState.draftProject = null;
         render();
+        editorProtection.accept();
     });
     document.getElementById("delete-project-button")?.addEventListener("click", () => { void deleteProject(); });
     document.getElementById("project-form")?.addEventListener("input", syncProjectFields);

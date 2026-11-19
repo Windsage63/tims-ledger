@@ -273,8 +273,9 @@ function renderCustomerRows(customers) {
     emptyState.classList.add("hidden");
     list.innerHTML = customers.map((customer) => {
         const status = getStatusMeta(customer);
-        return `<tr class="${customer.id === state.selectedId ? "bg-brand/5" : ""}">
-            <td><button class="text-left font-semibold text-brand hover:underline" data-customer-select="${customer.id}" type="button">${escapeHtml(customer.customer_name)}</button><div class="text-xs text-muted">${escapeHtml(customer.contact_name)}</div></td>
+        const isSelected = customer.id === state.selectedId;
+        return `<tr class="cursor-pointer ${isSelected ? "bg-brand/5" : "hover:bg-panel"}" data-record-id="${customer.id}">
+            <td><button class="text-left font-semibold text-brand hover:underline" aria-current="${isSelected}" type="button">${escapeHtml(customer.customer_name)}</button><div class="text-xs text-muted">${escapeHtml(customer.contact_name)}</div></td>
             <td class="text-right font-mono">${currency(customer.open_ar_cents)}</td>
             <td class="whitespace-nowrap">${escapeHtml(customer.phone)}</td><td>${escapeHtml(customer.email)}</td>
             <td class="whitespace-nowrap">${escapeHtml(customer.city)}, ${escapeHtml(customer.state)}</td>
@@ -453,12 +454,8 @@ function bindEvents() {
     }));
     document.getElementById("refresh-statement-button")?.addEventListener("click", () => void loadCustomerStatement(true));
     document.getElementById("customer-form")?.addEventListener("input", syncCustomerDraft);
-    document.getElementById("customer-table-body")?.addEventListener("click", (event) => {
-        const button = event.target.closest("[data-customer-select]");
-        if (!button) return;
-        const nextId = Number(button.dataset.customerSelect);
-        if (nextId === state.selectedId || !editorProtection.allowTransition()) return;
-        state.selectedId = nextId;
+    bindLedgerRowSelection("customer-table-body", "editor-title", state, (id) => {
+        state.selectedId = id;
         state.draftCustomer = null;
         render();
         editorProtection.accept();

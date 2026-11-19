@@ -27,7 +27,7 @@
                 </article>
             </section>
 
-            <section class="mt-4 grid gap-3">
+            <section class="mt-4 grid gap-3 xl:grid-cols-[minmax(28rem,1fr)_minmax(0,1.45fr)]">
                 <article class="card" aria-labelledby="expense-editor-title">
                     <div class="mb-5 flex items-start justify-between gap-3">
                         <div>
@@ -110,7 +110,7 @@
                             <p class="mt-2 text-sm leading-6 text-ink" id="expense-derived-billing">Select project, cost, and billable treatment.</p>
                         </div>
 
-                        <div class="grid gap-3 pt-2 sm:grid-cols-2 xl:grid-cols-3">
+                        <div class="flex flex-wrap gap-3 pt-2">
                             <button class="btn-primary" type="submit">Save Expense</button>
                             <button class="btn-secondary" type="submit" value="add-another">Save &amp; add another</button>
                             <button class="btn-secondary" id="duplicate-expense-button" type="button">Duplicate</button>
@@ -122,7 +122,7 @@
 
                 <article class="card" aria-label="Expense entries">
                     <div class="toolbar">
-                        <div class="filter-fields">
+                        <div class="filter-fields xl:min-w-full">
                             <div class="grid min-w-0 w-full gap-3 md:grid-cols-4 2xl:max-w-4xl 2xl:grid-cols-[minmax(0,1fr)_12rem_10rem_10rem]">
                                 <div class="min-w-0">
                                     <label class="field-label" for="expense-search">Search</label>

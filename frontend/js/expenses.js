@@ -460,6 +460,7 @@ function bindEvents() {
         expensesState.selectedId = id;
         expensesState.draftExpense = null;
         render();
+        editorProtection.accept();
     });
     document.getElementById("delete-expense-button")?.addEventListener("click", () => { void deleteExpense(); });
     document.getElementById("expense-search")?.addEventListener("input", (event) => {

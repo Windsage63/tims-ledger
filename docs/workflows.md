@@ -126,7 +126,9 @@ Select a saved record, enable Edit Mode, and click its Delete button. Confirm th
 
 ## 10. User Intentionally Edits Existing Records
 
-On Time, Expenses, and Projects, click anywhere in a ledger row or tab to its date or project number and press Enter or Space. When the editor is above or below the list, selection brings it into view and focuses its heading. In the side-by-side layout, focus stays on the selected row’s identifier.
+All six ledger screens show the editor on the left and the list on the right when space permits. In narrower windows, the editor appears above the list. Keyboard navigation follows the same order.
+
+On all six ledger screens, click anywhere in a row or use Tab to reach its record identifier and press Enter or Space. For Invoices, Receive Payments, and Customers, the identifier is the invoice number, payment reference, or customer name. When the editor is above or below the list, selection brings it into view and focuses its heading. In the side-by-side layout, focus stays on the selected row’s identifier.
 
 1. Customers, Projects, Time, Expenses, Invoices, and Payments open with saved records protected. Use the New button beside the ledger filters to start a draft there, or choose a record type from the global **+ New** menu on any screen. New records and duplicates remain editable without enabling mode.
 2. Use the header EDIT MODE button to enable editing. Each saved record shows **Protected** or **Editing** beside its editor title. The button turns red with black lettering when editing is enabled.
